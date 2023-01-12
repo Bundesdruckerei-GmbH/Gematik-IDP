@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<suppressions xmlns="https://jeremylong.github.io/DependencyCheck/dependency-suppression.1.3.xsd">
+    <suppress>
+        <notes>Payara Server is not in use!</notes>
+        <gav regex="true">^org.eclipse.microprofile.config:microprofile-config-api:.*$</gav>
+        <cve>CVE-2022-37422</cve>
+    </suppress>
+</suppressions>

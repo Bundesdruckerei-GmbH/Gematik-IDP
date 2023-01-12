@@ -1,0 +1,272 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>de.bdr.servko</groupId>
+    <artifactId>gematik-idp</artifactId>
+    <version>1.0.0-SNAPSHOT</version>
+    <description>
+        Keycloak plugin allowing authentication with the gematik Authenticator and central IDP.
+    </description>
+
+    <properties>
+        <!-- Keycloak Properties -->
+        <keycloak.version>19.0.3</keycloak.version>
+
+        <!-- Maven Plugin Versions -->
+        <maven-surefire-plugin.version>2.22.2</maven-surefire-plugin.version>
+        <maven-failsafe-plugin.version>2.22.2</maven-failsafe-plugin.version>
+        <maven-compiler-plugin.version>3.10.1</maven-compiler-plugin.version>
+        <maven-shade-plugin.version>3.4.1</maven-shade-plugin.version>
+        <wildfly-maven-plugin.version>3.0.2.Final</wildfly-maven-plugin.version>
+        <dependency-check-maven.version>7.4.4</dependency-check-maven.version>
+
+        <!-- Misc Plugin Versions -->
+        <kotlin.version>1.7.20</kotlin.version>
+
+        <!-- Test Plugin Versions -->
+        <junit-platform-surefire-provider.version>1.3.2</junit-platform-surefire-provider.version>
+        <junit5-plugin.version>5.9.1</junit5-plugin.version>
+        <mockito-plugin.version>4.8.1</mockito-plugin.version>
+        <mockito-kotlin.version>4.0.0</mockito-kotlin.version>
+        <assertj-plugin.version>3.23.1</assertj-plugin.version>
+
+        <!-- Sonar Properties -->
+        <skipDependencyCheck>true</skipDependencyCheck>
+        <dependency.check.report.dir>target/dependency-check</dependency.check.report.dir>
+        <sonar.dependencyCheck.jsonReportPath>${dependency.check.report.dir}/dependency-check-report.json</sonar.dependencyCheck.jsonReportPath>
+        <sonar.dependencyCheck.htmlReportPath>${dependency.check.report.dir}/dependency-check-report.html</sonar.dependencyCheck.htmlReportPath>
+        <sonar.coverage.jacoco.xmlReportPaths>${project.basedir}/../jacoco-reports/target/site/jacoco-aggregate/jacoco.xml</sonar.coverage.jacoco.xmlReportPaths>
+        <maven.compiler.source>11</maven.compiler.source>
+        <maven.compiler.target>11</maven.compiler.target>
+        <dependencyCheck.cveUrlModified>https://nistdata.partner.bdr.de/1.1/nvdcve-1.1-modified.json.gz</dependencyCheck.cveUrlModified>
+        <dependencyCheck.cveUrlBase>https://nistdata.partner.bdr.de/1.1/nvdcve-1.1-%d.json.gz</dependencyCheck.cveUrlBase>
+        <dependencyCheck.failBuildOnCVSS>8</dependencyCheck.failBuildOnCVSS>
+    </properties>
+
+    <distributionManagement>
+        <repository>
+            <id>servko-maven-final</id>
+            <name>Partner Artifactory-releases</name>
+            <url>https://partner.bdr.de/artifactory/servko-maven-final</url>
+        </repository>
+        <snapshotRepository>
+            <id>servko-maven-staging</id>
+            <name>Partner Artifactory-snapshots</name>
+            <url>https://partner.bdr.de/artifactory/servko-maven-staging</url>
+        </snapshotRepository>
+    </distributionManagement>
+
+    <dependencies>
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-core</artifactId>
+            <scope>provided</scope>
+            <version>${keycloak.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-services</artifactId>
+            <version>${keycloak.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-server-spi</artifactId>
+            <scope>provided</scope>
+            <version>${keycloak.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-server-spi-private</artifactId>
+            <scope>provided</scope>
+            <version>${keycloak.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-crypto-default</artifactId>
+            <scope>provided</scope>
+            <version>${keycloak.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.bitbucket.b_c</groupId>
+            <artifactId>jose4j</artifactId>
+            <version>0.9.2</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.bouncycastle</groupId>
+                    <artifactId>bcprov-jdk15on</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+
+        <dependency>
+            <groupId>org.jetbrains.kotlin</groupId>
+            <artifactId>kotlin-stdlib</artifactId>
+            <version>${kotlin.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.jetbrains.kotlin</groupId>
+            <artifactId>kotlin-test</artifactId>
+            <version>${kotlin.version}</version>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <version>${junit5-plugin.version}</version>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-inline</artifactId>
+            <version>${mockito-plugin.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.mockito.kotlin</groupId>
+            <artifactId>mockito-kotlin</artifactId>
+            <version>${mockito-kotlin.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.assertj</groupId>
+            <artifactId>assertj-core</artifactId>
+            <version>${assertj-plugin.version}</version>
+            <scope>test</scope>
+        </dependency>
+
+    </dependencies>
+
+    <build>
+        <sourceDirectory>${project.basedir}/src/main/kotlin</sourceDirectory>
+        <testSourceDirectory>${project.basedir}/src/test/kotlin</testSourceDirectory>
+        <plugins>
+            <plugin>
+                <groupId>org.wildfly.plugins</groupId>
+                <artifactId>wildfly-maven-plugin</artifactId>
+                <version>${wildfly-maven-plugin.version}</version>
+                <configuration>
+                    <skip>false</skip>
+                </configuration>
+            </plugin>
+
+            <plugin>
+                <groupId>org.jetbrains.kotlin</groupId>
+                <artifactId>kotlin-maven-plugin</artifactId>
+                <version>${kotlin.version}</version>
+                <executions>
+                    <execution>
+                        <id>compile</id>
+                        <phase>process-sources</phase>
+                        <goals>
+                            <goal>compile</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>test-compile</id>
+                        <goals>
+                            <goal>test-compile</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <jvmTarget>11</jvmTarget>
+                    <compilerPlugins>
+                        <plugin>all-open</plugin>
+                        <plugin>no-arg</plugin>
+                    </compilerPlugins>
+                </configuration>
+
+
+                <dependencies>
+                    <dependency>
+                        <groupId>org.jetbrains.kotlin</groupId>
+                        <artifactId>kotlin-maven-allopen</artifactId>
+                        <version>${kotlin.version}</version>
+                    </dependency>
+                    <dependency>
+                        <groupId>org.jetbrains.kotlin</groupId>
+                        <artifactId>kotlin-maven-noarg</artifactId>
+                        <version>${kotlin.version}</version>
+                    </dependency>
+                </dependencies>
+            </plugin>
+
+            <plugin>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>${maven-surefire-plugin.version}</version>
+            </plugin>
+
+
+            <plugin>
+                <artifactId>maven-shade-plugin</artifactId>
+                <version>${maven-shade-plugin.version}</version>
+                <executions>
+                    <execution>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>shade</goal>
+                        </goals>
+                        <configuration>
+                            <!-- Do not minimize jar, as that would strip classes that are required at runtime (e.g. xmldsig ObjectFactory) -->
+                            <minimizeJar>false</minimizeJar>
+                            <artifactSet>
+                                <includes>
+                                    <include>org.jetbrains.kotlin:kotlin-stdlib</include>
+                                    <include>org.jetbrains.kotlin:kotlin-stdlib-common</include>
+                                    <include>org.bitbucket.b_c:jose4j</include>
+                                    <include>org.bouncycastle:bcprov-jdk15on</include>
+                                </includes>
+                            </artifactSet>
+                            <filters>
+                                <filter>
+                                    <artifact>*:*</artifact>
+                                    <excludes>
+                                        <exclude>META-INF/*.SF</exclude>
+                                        <exclude>META-INF/*.DSA</exclude>
+                                        <exclude>META-INF/*.RSA</exclude>
+                                    </excludes>
+                                </filter>
+                            </filters>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.owasp</groupId>
+                <artifactId>dependency-check-maven</artifactId>
+                <version>${dependency-check-maven.version}</version>
+                <configuration>
+                    <skip>${skipDependencyCheck}</skip>
+                    <format>ALL</format>
+                    <ossindexAnalyzerEnabled>false</ossindexAnalyzerEnabled>
+                    <!-- Partner Netz -->
+                    <cveUrlModified>${dependencyCheck.cveUrlModified}</cveUrlModified>
+                    <cveUrlBase>${dependencyCheck.cveUrlBase}</cveUrlBase>
+
+                    <outputDirectory>${dependency.check.report.dir}</outputDirectory>
+
+                    <!-- for false positives -->
+                    <suppressionFiles>
+                        <suppressionFile>suppressed-cves.xml</suppressionFile>
+                    </suppressionFiles>
+                    <!-- for false positives -->
+
+                    <failBuildOnCVSS>${dependencyCheck.failBuildOnCVSS}</failBuildOnCVSS>
+                </configuration>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>aggregate</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+
+</project>
