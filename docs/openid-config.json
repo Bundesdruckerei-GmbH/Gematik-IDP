@@ -1,0 +1,45 @@
+{
+  "iat": 1668082729,
+  "exp": 1668169129,
+  "issuer": "https://idp.app.ti-dienste.de",
+  "jwks_uri": "https://idp.app.ti-dienste.de/certs",
+  "uri_disc": "https://idp.app.ti-dienste.de/.well-known/openid-configuration",
+  "authorization_endpoint": "https://idp.app.ti-dienste.de/auth",
+  "sso_endpoint": "https://idp.app.ti-dienste.de/auth/sso_response",
+  "token_endpoint": "https://idp.app.ti-dienste.de/token",
+  "auth_pair_endpoint": "https://idp.app.ti-dienste.de/auth/alternative",
+  "uri_pair": "https://idp-pairing.zentral.idp.splitdns.ti-dienste.de/pairings",
+  "kk_app_list_uri": "https://idp.app.ti-dienste.de/directory/kk_apps",
+  "third_party_authorization_endpoint": "https://idp.app.ti-dienste.de/extauth",
+  "uri_puk_idp_enc": "https://idp.app.ti-dienste.de/certs/puk_idp_enc",
+  "uri_puk_idp_sig": "https://idp.app.ti-dienste.de/certs/puk_idp_sig",
+  "code_challenge_methods_supported": [
+    "S256"
+  ],
+  "response_types_supported": [
+    "code"
+  ],
+  "grant_types_supported": [
+    "authorization_code"
+  ],
+  "id_token_signing_alg_values_supported": [
+    "BP256R1"
+  ],
+  "acr_values_supported": [
+    "gematik-ehealth-loa-high"
+  ],
+  "response_modes_supported": [
+    "query"
+  ],
+  "token_endpoint_auth_methods_supported": [
+    "none"
+  ],
+  "scopes_supported": [
+    "openid",
+    "e-rezept",
+    "pairing"
+  ],
+  "subject_types_supported": [
+    "pairwise"
+  ]
+}
