@@ -1,0 +1,8 @@
+{
+  "use": "enc",
+  "kid": "puk_idp_enc",
+  "kty": "EC",
+  "crv": "BP-256",
+  "x": "QLpJ_LpFx-6yJhsb4OvHwU1khLnviiOwYOvmf5clK7w",
+  "y": "mHuknfNkoMmSbytt4br0YGihOixcmBKy80UfSLdXGe4"
+}
