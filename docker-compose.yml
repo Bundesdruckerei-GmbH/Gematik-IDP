@@ -1,0 +1,50 @@
+version: "3.7"
+
+services:
+  keycloak-gematik-idp:
+    image: gematik-idp/keycloak
+    build: .
+    container_name: keycloak-gematik-idp
+    restart: always
+    ports:
+      - "8080:8080"
+      - "8443:8443"
+      - "5005:5005"
+    environment:
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin
+      KC_DB_URL_HOST: postgres-gematik-idp
+      KC_DB_URL_DATABASE: gematik-idp
+      KC_DB_USERNAME: gematik-idp
+      KC_DB_PASSWORD: gematik-idp
+      # See: https://www.keycloak.org/server/all-provider-config#_connections_jpa
+      KC_SPI_CONNECTIONS_JPA_QUARKUS_MIGRATION_STRATEGY: update
+      KC_DB_POOL_MIN_SIZE: 2
+      KC_DB_POOL_MAX_SIZE: 5
+      KC_DB_POOL_INITIAL_SIZE: 2
+      KC_HTTP_PORT: 8080
+      KC_HTTPS_PORT: 8443
+      KC_LOG_LEVEL: "info"
+      KC_LOG_CONSOLE_OUTPUT: "default"
+      # Enable Debugger:
+      JAVA_OPTS: -Xms64m -Xmx512m -XX:MetaspaceSize=96M -XX:MaxMetaspaceSize=256m -Djava.net.preferIPv4Stack=true -Djboss.modules.system.pkgs=org.jboss.byteman -Djava.awt.headless=true -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005
+    volumes:
+      - ./sample-realm:/opt/keycloak/data/import/
+      - ./target/gematik-idp-1.0.0-SNAPSHOT.jar:/opt/keycloak/providers/gematik-idp-1.0.0-SNAPSHOT.jar
+      - ./themes/gematik-idp:/opt/keycloak/themes/gematik-idp
+    entrypoint: "/opt/keycloak/bin/kc.sh start-dev --import-realm"
+
+  postgres-gematik-idp:
+    image: postgres
+    restart: always
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: gematik-idp
+      POSTGRES_USER: gematik-idp
+      POSTGRES_PASSWORD: gematik-idp
+    volumes:
+      - postgres-gematik-idp_data:/var/lib/postgresql/data
+
+volumes:
+  postgres-gematik-idp_data: { }

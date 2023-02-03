@@ -20,8 +20,9 @@
         <maven-failsafe-plugin.version>2.22.2</maven-failsafe-plugin.version>
         <maven-compiler-plugin.version>3.10.1</maven-compiler-plugin.version>
         <maven-shade-plugin.version>3.4.1</maven-shade-plugin.version>
+        <maven.compiler.source>11</maven.compiler.source>
+        <maven.compiler.target>11</maven.compiler.target>
         <wildfly-maven-plugin.version>3.0.2.Final</wildfly-maven-plugin.version>
-        <dependency-check-maven.version>7.4.4</dependency-check-maven.version>
 
         <!-- Misc Plugin Versions -->
         <kotlin.version>1.7.20</kotlin.version>
@@ -33,31 +34,16 @@
         <mockito-kotlin.version>4.0.0</mockito-kotlin.version>
         <assertj-plugin.version>3.23.1</assertj-plugin.version>
 
-        <!-- Sonar Properties -->
+
+        <!-- Dependency Check Plugin -->
         <skipDependencyCheck>true</skipDependencyCheck>
         <dependency.check.report.dir>target/dependency-check</dependency.check.report.dir>
-        <sonar.dependencyCheck.jsonReportPath>${dependency.check.report.dir}/dependency-check-report.json</sonar.dependencyCheck.jsonReportPath>
-        <sonar.dependencyCheck.htmlReportPath>${dependency.check.report.dir}/dependency-check-report.html</sonar.dependencyCheck.htmlReportPath>
-        <sonar.coverage.jacoco.xmlReportPaths>${project.basedir}/../jacoco-reports/target/site/jacoco-aggregate/jacoco.xml</sonar.coverage.jacoco.xmlReportPaths>
-        <maven.compiler.source>11</maven.compiler.source>
-        <maven.compiler.target>11</maven.compiler.target>
-        <dependencyCheck.cveUrlModified>https://nistdata.partner.bdr.de/1.1/nvdcve-1.1-modified.json.gz</dependencyCheck.cveUrlModified>
-        <dependencyCheck.cveUrlBase>https://nistdata.partner.bdr.de/1.1/nvdcve-1.1-%d.json.gz</dependencyCheck.cveUrlBase>
+        <dependency-check-maven.version>7.4.4</dependency-check-maven.version>
+        <!-- Store your own Nist data mirrors here. If these are empty, the default sources are used. -->
+        <dependencyCheck.cveUrlModified></dependencyCheck.cveUrlModified>
+        <dependencyCheck.cveUrlBase></dependencyCheck.cveUrlBase>
         <dependencyCheck.failBuildOnCVSS>8</dependencyCheck.failBuildOnCVSS>
     </properties>
-
-    <distributionManagement>
-        <repository>
-            <id>servko-maven-final</id>
-            <name>Partner Artifactory-releases</name>
-            <url>https://partner.bdr.de/artifactory/servko-maven-final</url>
-        </repository>
-        <snapshotRepository>
-            <id>servko-maven-staging</id>
-            <name>Partner Artifactory-snapshots</name>
-            <url>https://partner.bdr.de/artifactory/servko-maven-staging</url>
-        </snapshotRepository>
-    </distributionManagement>
 
     <dependencies>
         <dependency>
@@ -244,7 +230,7 @@
                     <skip>${skipDependencyCheck}</skip>
                     <format>ALL</format>
                     <ossindexAnalyzerEnabled>false</ossindexAnalyzerEnabled>
-                    <!-- Partner Netz -->
+
                     <cveUrlModified>${dependencyCheck.cveUrlModified}</cveUrlModified>
                     <cveUrlBase>${dependencyCheck.cveUrlBase}</cveUrlBase>
 

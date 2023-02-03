@@ -1,3 +1,20 @@
+/*
+ *  Copyright 2023 Bundesdruckerei GmbH and/or its affiliates
+ *  and other contributors.
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *  http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
+
 package de.bdr.servko.keycloak.gematik.idp
 
 import de.bdr.servko.keycloak.gematik.idp.extension.BrainpoolCurves
@@ -16,7 +33,6 @@ import org.keycloak.broker.provider.IdentityProvider
 import org.keycloak.broker.provider.util.IdentityBrokerState
 import org.keycloak.common.util.Base64Url
 import org.keycloak.common.util.SecretGenerator
-import org.keycloak.common.util.Time
 import org.keycloak.crypto.Algorithm
 import org.keycloak.forms.login.LoginFormsProvider
 import org.keycloak.forms.login.freemarker.model.ClientBean
@@ -133,7 +149,7 @@ open class GematikIDPEndpoint(
     ): Response {
         if (code == null || encodedState == null) {
             logger.error("Authenticator returned error: $error | error-details: $errorDetails | error-uri $errorUri")
-            return forms.setError("authenticator.errorIdp", errorDetails?.take(20) ?: "Unknown")
+            return forms.setError("authenticator.errorIdp", errorDetails?.take(20) ?: "Unknown", errorUri)
                 .createErrorPage(Response.Status.BAD_REQUEST)
         }
 
@@ -174,8 +190,7 @@ open class GematikIDPEndpoint(
                 val smcbData = idToken.jwtClaims.claimsMap
 
                 val telematikId = hbaData[ContextData.CONTEXT_HBA_TELEMATIK_ID.claim.value] as String
-                val identityContext =
-                    BrokeredIdentityContext("${telematikId}_${Time.currentTimeMillis()}")
+                val identityContext = BrokeredIdentityContext(telematikId)
                         .apply {
                             authenticationSession = authSession
                             idp = gematikIDP

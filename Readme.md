@@ -1,23 +1,30 @@
 # Gematik IDP
 
-[IDP plugin](https://www.keycloak.org/docs/latest/server_development/index.html#identity-brokering-apis) to integrate 
+[IDP plugin](https://www.keycloak.org/docs/latest/server_development/index.html#identity-brokering-apis) to integrate
 the gematik central-IDP with the gematik Authenticator application.
-Allows an user to login with his HBA (Heil-Berufs-Ausweis) card, supplying HBA and SMCB (Elektronischer
-Praxis-/Institutionsausweis) card information.
+Allows a user to log in with his HBA (Heil-Berufs-Ausweis) card, supplying HBA and SMCB (Elektronischer
+Praxis-/Institutionsausweis) card information. Additionally, HBA- and SMCB-specific IDP mappers are provided.
 
-Additionally, HBA- and SMCB-specific IDP mappers are provided.
+Please be aware, that this plugin was tested using Keycloak 19 Quarkus. It was also confirmed to be working Keycloak 18,
+while being built for Keycloak 19. It may not function with other versions.
 
-Please be aware, that this plugin is written for Keycloak in Version 19 and below. Keycloak 20 support will be added
-later, including support for the new admin console theme.
+Keycloak 20 support will be added later, including support for the new admin console theme.
 
 ## Installation
+
 1. Run `mvn clean install` in this directory.
 2. After completion, install `gematik-idp-1.0.0-SNAPSHOT.jar` into your Keycloak instance by copying it into your Docker
-container under `/opt/keycloak/providers/` and rebuilding the [Quarkus environment](https://www.keycloak.org/server/containers). 
-3. Add the new Identity Provider `gematik-idp` following the official guide [Integrating identity providers](https://www.keycloak.org/docs/latest/server_admin/index.html#_identity_broker).
-Specific configuration properties are listed below.
+   container under `/opt/keycloak/providers/` and rebuilding
+   the [Quarkus environment](https://www.keycloak.org/server/containers).
+3. Add the new Identity Provider `gematik-idp` following the official
+   guide [Integrating identity providers](https://www.keycloak.org/docs/latest/server_admin/index.html#_identity_broker)
+   .
+   Specific configuration properties are listed below.
 
 ## Configuration
+
+If you don't see any of these attributes, please make sure to switch to the old admin console theme. We currently don't
+support the new theme with this plugin.
 
 | Name                                 | Value                                                                                                                                               | Description                                                                                                                                                                                                                                                                                            |
 |--------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
@@ -29,6 +36,41 @@ Specific configuration properties are listed below.
 | Gematik IDP User-Agent               |                                                                                                                                                     | User-Agent Header as specified in "gemILF_PS_eRp - A_20015-01": `<Produktname>/<Produktversion> <Herstellername>/<client_id>`                                                                                                                                                                          |
 | Client ID                            |                                                                                                                                                     | Client ID to verify your request on C-IDP side. Assigned on registration for the IDP on Gematik side                                                                                                                                                                                                   |
 | Default Scopes                       | default: openid                                                                                                                                     | Scopes to send on each request. Atm. "gem-auth" is required, because Fachdienst registration is missing.                                                                                                                                                                                               |
+
+## Theme
+
+A base login theme is provided under `/themes` and named `gematik-idp`. This theme contains only the necessary files
+for this plugin and can be adapted according to your requirements.
+
+## Local Deployment
+
+⚠️**Disclaimer: The following steps and files are not intended
+for [production usage](https://www.keycloak.org/server/configuration-production)! Use at your own risk!** ⚠️
+
+A `docker-compose.yml` file is provided, which starts a Keycloak and a Postgres container, respectively. It also imports
+the fully configured Gematik-IDP realm defined under `sample-realm/GematikIDP-ref-idp.json`. This deployment depends on 
+a parallel running [ref-idp-server](https://github.com/gematik/ref-idp-server) instance, which you need to build and 
+deploy by yourself (instructions are provided in the repository).
+
+You'll need to manually switch the Admin console theme to `keycloak` in the master realm. The new admin console theme is
+currently not supported by this plugin.
+
+You need to configure your ref-idp instance with the following clients:
+
+````json
+{
+  "idp": {
+    "registeredClient": {
+      "localhost": {
+        "redirectUri": "http://localhost:8080/auth/realms/GematikIDP/broker/gematik-idp/endpoint/result"
+      },
+      "localhost_https": {
+        "redirectUri": "https://localhost:8443/auth/realms/GematikIDP/broker/gematik-idp/endpoint/result"
+      }
+    }
+  }
+}
+````
 
 ## Flow Diagram
 
