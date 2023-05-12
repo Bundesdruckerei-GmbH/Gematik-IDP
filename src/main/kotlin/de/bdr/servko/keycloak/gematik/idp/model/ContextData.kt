@@ -15,7 +15,7 @@
  *  limitations under the License.
  */
 
-package de.bdr.servko.keycloak.gematik.idp
+package de.bdr.servko.keycloak.gematik.idp.model
 
 import org.keycloak.representations.IDToken
 

@@ -1,20 +1,4 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!--
-    Copyright 2023 Bundesdruckerei GmbH and/or its affiliates
-    and other contributors.
-
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-    
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
--->
 <project xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
@@ -22,26 +6,30 @@
 
     <groupId>de.bdr.servko</groupId>
     <artifactId>gematik-idp</artifactId>
-    <version>1.0.0-SNAPSHOT</version>
+    <version>1.1.0</version>
     <description>
         Keycloak plugin allowing authentication with the gematik Authenticator and central IDP.
     </description>
 
     <properties>
         <!-- Keycloak Properties -->
-        <keycloak.version>19.0.3</keycloak.version>
+        <keycloak.version>20.0.5</keycloak.version>
 
         <!-- Maven Plugin Versions -->
         <maven-surefire-plugin.version>2.22.2</maven-surefire-plugin.version>
         <maven-failsafe-plugin.version>2.22.2</maven-failsafe-plugin.version>
         <maven-compiler-plugin.version>3.10.1</maven-compiler-plugin.version>
         <maven-shade-plugin.version>3.4.1</maven-shade-plugin.version>
-        <maven.compiler.source>11</maven.compiler.source>
-        <maven.compiler.target>11</maven.compiler.target>
         <wildfly-maven-plugin.version>3.0.2.Final</wildfly-maven-plugin.version>
+        <dependency-check-maven.version>7.4.4</dependency-check-maven.version>
+        <jacoco-maven.version>0.8.10</jacoco-maven.version>
 
         <!-- Misc Plugin Versions -->
         <kotlin.version>1.7.20</kotlin.version>
+        <jose4j.version>0.9.3</jose4j.version>
+        <snakeyaml.version>2.0</snakeyaml.version>
+        <kerby-asn1.version>2.0.3</kerby-asn1.version>
+        <sshd-common.version>2.9.2</sshd-common.version>
 
         <!-- Test Plugin Versions -->
         <junit-platform-surefire-provider.version>1.3.2</junit-platform-surefire-provider.version>
@@ -50,12 +38,15 @@
         <mockito-kotlin.version>4.0.0</mockito-kotlin.version>
         <assertj-plugin.version>3.23.1</assertj-plugin.version>
 
-
-        <!-- Dependency Check Plugin -->
+        <!-- Sonar Properties -->
         <skipDependencyCheck>true</skipDependencyCheck>
         <dependency.check.report.dir>target/dependency-check</dependency.check.report.dir>
-        <dependency-check-maven.version>7.4.4</dependency-check-maven.version>
-        <!-- Store your own Nist data mirrors here. If these are empty, the default sources are used. -->
+        <sonar.dependencyCheck.jsonReportPath>${dependency.check.report.dir}/dependency-check-report.json</sonar.dependencyCheck.jsonReportPath>
+        <sonar.dependencyCheck.htmlReportPath>${dependency.check.report.dir}/dependency-check-report.html</sonar.dependencyCheck.htmlReportPath>
+        <sonar.coverage.jacoco.xmlReportPaths>target/site/jacoco/jacoco.xml</sonar.coverage.jacoco.xmlReportPaths>
+        <maven.compiler.source>11</maven.compiler.source>
+        <maven.compiler.target>11</maven.compiler.target>
+        <!-- With these two variables, you can store your own Nist data mirrors. If these are empty, the default sources are used. -->
         <dependencyCheck.cveUrlModified></dependencyCheck.cveUrlModified>
         <dependencyCheck.cveUrlBase></dependencyCheck.cveUrlBase>
         <dependencyCheck.failBuildOnCVSS>8</dependencyCheck.failBuildOnCVSS>
@@ -92,15 +83,46 @@
             <version>${keycloak.version}</version>
         </dependency>
         <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-model-infinispan</artifactId>
+            <scope>provided</scope>
+            <version>${keycloak.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-model-map</artifactId>
+            <scope>provided</scope>
+            <version>${keycloak.version}</version>
+        </dependency>
+        <dependency>
             <groupId>org.bitbucket.b_c</groupId>
             <artifactId>jose4j</artifactId>
-            <version>0.9.2</version>
+            <version>${jose4j.version}</version>
             <exclusions>
                 <exclusion>
                     <groupId>org.bouncycastle</groupId>
                     <artifactId>bcprov-jdk15on</artifactId>
                 </exclusion>
             </exclusions>
+        </dependency>
+
+        <!-- Fixes CVE-2022-25857 -->
+        <dependency>
+            <groupId>org.yaml</groupId>
+            <artifactId>snakeyaml</artifactId>
+            <version>${snakeyaml.version}</version>
+        </dependency>
+        <!-- Fixes CVE-2023-25613 -->
+        <dependency>
+            <groupId>org.apache.kerby</groupId>
+            <artifactId>kerby-asn1</artifactId>
+            <version>${kerby-asn1.version}</version>
+        </dependency>
+        <!-- Fixes CVE-2022-45047 contained in the Infinispan cache dependencies -->
+        <dependency>
+            <groupId>org.apache.sshd</groupId>
+            <artifactId>sshd-common</artifactId>
+            <version>${sshd-common.version}</version>
         </dependency>
 
         <dependency>
@@ -147,6 +169,19 @@
         <sourceDirectory>${project.basedir}/src/main/kotlin</sourceDirectory>
         <testSourceDirectory>${project.basedir}/src/test/kotlin</testSourceDirectory>
         <plugins>
+            <plugin>
+                <artifactId>maven-deploy-plugin</artifactId>
+                <version>3.0.0</version>
+                <executions>
+                    <execution>
+                        <id>default-deploy</id>
+                        <phase>deploy</phase>
+                        <goals>
+                            <goal>deploy</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
             <plugin>
                 <groupId>org.wildfly.plugins</groupId>
                 <artifactId>wildfly-maven-plugin</artifactId>
@@ -199,12 +234,33 @@
             </plugin>
 
             <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>${maven-surefire-plugin.version}</version>
+            </plugin>
+            <plugin>
+                <groupId>org.jacoco</groupId>
+                <artifactId>jacoco-maven-plugin</artifactId>
+                <version>${jacoco-maven.version}</version>
+                <executions>
+                    <execution>
+                        <id>prepare-agent</id>
+                        <goals>
+                            <goal>prepare-agent</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>report</id>
+                        <goals>
+                            <goal>report</goal>
+                        </goals>
+                    </execution>
+                </executions>
             </plugin>
 
 
             <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-shade-plugin</artifactId>
                 <version>${maven-shade-plugin.version}</version>
                 <executions>
@@ -246,7 +302,7 @@
                     <skip>${skipDependencyCheck}</skip>
                     <format>ALL</format>
                     <ossindexAnalyzerEnabled>false</ossindexAnalyzerEnabled>
-
+                    <!-- Partner Netz -->
                     <cveUrlModified>${dependencyCheck.cveUrlModified}</cveUrlModified>
                     <cveUrlBase>${dependencyCheck.cveUrlBase}</cveUrlBase>
 

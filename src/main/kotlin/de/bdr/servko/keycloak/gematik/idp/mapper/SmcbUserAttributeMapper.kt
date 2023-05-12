@@ -17,7 +17,7 @@
 
 package de.bdr.servko.keycloak.gematik.idp.mapper
 
-import de.bdr.servko.keycloak.gematik.idp.CardType
+import de.bdr.servko.keycloak.gematik.idp.model.CardType
 
 class SmcbUserAttributeMapper : AbstractGematikIDPUserAttributeMapper() {
 

@@ -13,10 +13,12 @@
  *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
+ *
  */
 
 package de.bdr.servko.keycloak.gematik.idp
 
+import de.bdr.servko.keycloak.gematik.idp.model.GematikIDPConfig
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.keycloak.broker.provider.AuthenticationRequest
@@ -57,6 +59,7 @@ internal class GematikIDPTest {
     }
     private val keycloakContext = mock<KeycloakContext> {
         on { uri } doReturn keycloakUriInfo
+        on { realm } doReturn realm
     }
     private val session = mock<KeycloakSession> {
         on { context } doReturn keycloakContext
@@ -77,7 +80,7 @@ internal class GematikIDPTest {
         val tabId = "tab123"
         whenever(request.state).thenReturn(
             IdentityBrokerState.decoded(
-                UUID.randomUUID().toString(), clientId, tabId
+                UUID.randomUUID().toString(), null, clientId, tabId
             )
         )
 

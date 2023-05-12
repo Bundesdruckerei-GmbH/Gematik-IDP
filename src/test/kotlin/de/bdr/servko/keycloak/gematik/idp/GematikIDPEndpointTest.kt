@@ -13,6 +13,7 @@
  *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
+ *
  */
 
 package de.bdr.servko.keycloak.gematik.idp
@@ -20,6 +21,8 @@ package de.bdr.servko.keycloak.gematik.idp
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
 import de.bdr.servko.keycloak.gematik.idp.extension.BrainpoolCurves
+import de.bdr.servko.keycloak.gematik.idp.model.ContextData
+import de.bdr.servko.keycloak.gematik.idp.model.GematikIDPConfig
 import de.bdr.servko.keycloak.gematik.idp.token.TestTokenUtil
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
@@ -75,6 +78,7 @@ internal class GematikIDPEndpointTest {
         }
         val keycloakContext = mock<KeycloakContext> {
             on { uri } doAnswer { keycloakUriInfo }
+            on { realm } doAnswer { realmMock }
         }
         on { context } doReturn keycloakContext
     }
@@ -90,6 +94,8 @@ internal class GematikIDPEndpointTest {
         setTimeoutMs("20000")
         setIdpTimeoutMs("10000")
         setIdpUserAgent("Servko/1.0.0 Servko/Client")
+        setMultipleIdentityMode(true)
+        setNewAuthenticationFlow(false)
     }
     private val idp = GematikIDP(sessionMock, config)
 
@@ -101,7 +107,7 @@ internal class GematikIDPEndpointTest {
     private val smcbKeyVerifier = PkceUtils.generateCodeVerifier()
     private val smcbTokenMock = TestUtils.getJsonSmcbToken()
 
-    private val service = object : GematikIDPService(sessionMock) {
+    private val service = object : GematikIDPService(sessionMock, authSessionManagerMock) {
         override fun doGet(idpUrl: String, userAgent: String): String {
             if (idpUrl == TestUtils.discoveryDocument.pukEncUri) {
                 return encJwkMock
@@ -120,6 +126,7 @@ internal class GematikIDPEndpointTest {
         }
 
         override fun skipAllValidators(): Boolean = true
+
     }
 
     private val objectUnderTest = object : GematikIDPEndpoint(
@@ -129,8 +136,7 @@ internal class GematikIDPEndpointTest {
         idp,
         config,
         formsMock,
-        service,
-        authSessionManagerMock
+        service
     ) {
         override fun generateTokenKeyBytes(): ByteArray =
             if (isHba) {
@@ -199,23 +205,20 @@ internal class GematikIDPEndpointTest {
         BrainpoolCurves.init()
 
         whenever(authSessionMock.getAuthNote(GematikIDPEndpoint.CODE_VERIFIER)).thenReturn(hbaKeyVerifier)
-        whenever(authSessionMock.getAuthNote(GematikIDPEndpoint.GEMATIK_IDP_STEP)).thenReturn(GematikIDPEndpoint.GematikIDPStep.STARTING_AUTHENTICATOR.name)
+        whenever(authSessionMock.getAuthNote(GematikIDPEndpoint.GEMATIK_IDP_STEP)).thenReturn(GematikIDPEndpoint.GematikIDPStep.REQUESTED_HBA_DATA.name)
 
         val hbaResult = objectUnderTest.result("", state)
-        assertThat(hbaResult.statusInfo).isEqualTo(Response.Status.FOUND)
-        assertAuthenticatorUrl(hbaResult.location, "openid Institutions_ID")
+        assertThat(hbaResult.statusInfo).isEqualTo(Response.Status.OK)
 
         val hbaCapture = argumentCaptor<String>()
         verify(authSessionMock).setAuthNote(eq(GematikIDPEndpoint.HBA_DATA), hbaCapture.capture())
-        verify(authSessionMock).setAuthNote(
-            GematikIDPEndpoint.GEMATIK_IDP_STEP,
-            GematikIDPEndpoint.GematikIDPStep.RECEIVED_HBA_DATA.name
-        )
+        verify(authSessionMock).setAuthNote(GematikIDPEndpoint.GEMATIK_IDP_STEP, GematikIDPEndpoint.GematikIDPStep.RECEIVED_HBA_DATA.name)
+        verify(authSessionMock).setAuthNote(GematikIDPEndpoint.GEMATIK_IDP_STEP, GematikIDPEndpoint.GematikIDPStep.REQUESTED_SMCB_DATA.name)
 
         isHba = false
 
         whenever(authSessionMock.getAuthNote(GematikIDPEndpoint.CODE_VERIFIER)).thenReturn(smcbKeyVerifier)
-        whenever(authSessionMock.getAuthNote(GematikIDPEndpoint.GEMATIK_IDP_STEP)).thenReturn(GematikIDPEndpoint.GematikIDPStep.RECEIVED_HBA_DATA.name)
+        whenever(authSessionMock.getAuthNote(GematikIDPEndpoint.GEMATIK_IDP_STEP)).thenReturn(GematikIDPEndpoint.GematikIDPStep.REQUESTED_SMCB_DATA.name)
         whenever(authSessionMock.getAuthNote(GematikIDPEndpoint.HBA_DATA)).thenReturn(hbaCapture.firstValue)
         whenever(callbackMock.authenticated(any())).thenReturn(Response.ok().build())
 
@@ -245,6 +248,38 @@ internal class GematikIDPEndpointTest {
     }
 
     @Test
+    fun result_HbaDataDoesntGetWrittenIntoSMCBFieldsOnSecondTry() {
+        CryptoIntegration.init(javaClass.classLoader)
+        BrainpoolCurves.init()
+
+        whenever(authSessionMock.getAuthNote(GematikIDPEndpoint.CODE_VERIFIER)).thenReturn(hbaKeyVerifier)
+        whenever(authSessionMock.getAuthNote(GematikIDPEndpoint.GEMATIK_IDP_STEP))
+            .thenReturn(GematikIDPEndpoint.GematikIDPStep.REQUESTED_HBA_DATA.name)
+
+        val hbaResult = objectUnderTest.result("", state)
+        assertThat(hbaResult.statusInfo).isEqualTo(Response.Status.OK)
+
+        val hbaCapture = argumentCaptor<String>()
+        verify(authSessionMock).setAuthNote(eq(GematikIDPEndpoint.HBA_DATA), hbaCapture.capture())
+        verify(authSessionMock).setAuthNote(
+            GematikIDPEndpoint.GEMATIK_IDP_STEP,
+            GematikIDPEndpoint.GematikIDPStep.RECEIVED_HBA_DATA.name
+        )
+
+        isHba = true
+
+        whenever(authSessionMock.getAuthNote(GematikIDPEndpoint.CODE_VERIFIER)).thenReturn(smcbKeyVerifier)
+        whenever(authSessionMock.getAuthNote(GematikIDPEndpoint.GEMATIK_IDP_STEP)).thenReturn(GematikIDPEndpoint.GematikIDPStep.RECEIVED_HBA_DATA.name)
+        whenever(authSessionMock.getAuthNote(GematikIDPEndpoint.HBA_DATA)).thenReturn(hbaCapture.firstValue)
+        whenever(callbackMock.authenticated(any())).thenReturn(Response.ok().build())
+
+        val smcbResult = objectUnderTest.result("", state)
+        assertThat(smcbResult.statusInfo).isEqualTo(Response.Status.OK)
+
+        verify(callbackMock, never()).authenticated(any())
+    }
+
+    @Test
     fun `result resolveAuthSession fails`() {
         testResolveAuthSessionFailure {
             objectUnderTest.result("", state)
@@ -253,16 +288,20 @@ internal class GematikIDPEndpointTest {
 
     @Test
     fun `result receive error`() {
+        val error = "invalid_scope"
+        val errorDetails = "AUTHCL_0001"
+        val errorUri = "https://wiki.gematik.de/pages/viewpage.action?pageId=466488828"
+
         whenever(formsMock.setError(anyString(), any())).thenReturn(formsMock)
         whenever(formsMock.createErrorPage(Response.Status.BAD_REQUEST))
             .thenReturn(Response.status(Response.Status.BAD_REQUEST).build())
 
         val result = objectUnderTest.result(
             null,
-            state,
-            "invalid_scope",
-            "AUTHCL_0001",
-            "https://wiki.gematik.de/pages/viewpage.action?pageId=466488828"
+            null,
+            error,
+            errorDetails,
+            errorUri
         )
 
         assertThat(result.statusInfo).isEqualTo(Response.Status.BAD_REQUEST)
@@ -271,7 +310,7 @@ internal class GematikIDPEndpointTest {
         val errorParamCaptor = argumentCaptor<String>()
         verify(formsMock).setError(errorCaptor.capture(), errorParamCaptor.capture())
         assertThat(errorCaptor.firstValue).isEqualTo("authenticator.errorIdp")
-        assertThat(errorParamCaptor.firstValue).isEqualTo("AUTHCL_0001")
+        assertThat(errorParamCaptor.firstValue).isEqualTo(errorDetails)
     }
 
     private fun assertAuthenticatorUrl(authenticatorUrl: URI, scope: String = "openid Person_ID") {
@@ -279,7 +318,7 @@ internal class GematikIDPEndpointTest {
             .hasHost("localhost")
             .hasPort(8000)
             .hasPath("/")
-        val queryParams = authenticatorUrl.query.split("=", limit = 2)
+        val queryParams = authenticatorUrl.query.split("=", "&", limit = 2)
         assertThat(queryParams).hasSize(2)
         assertThat(queryParams[0]).isEqualTo("challenge_path")
         val challengeUri = URI.create(queryParams[1].replace(" ", "%20"))

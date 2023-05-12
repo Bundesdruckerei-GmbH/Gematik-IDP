@@ -1,0 +1,21 @@
+{
+  "at_hash": "I6X9qNrUSbZ7jTMr8jX5cw",
+  "sub": "iOiCVbs8ALdu53x_iCMaVJ-22ENCwSp52md3ui1TI0A",
+  "organizationName": "Universitätsklinik MitteTEST-ONLY",
+  "professionOID": "1.2.276.0.76.4.53",
+  "idNummer": "5-SMC-B-Testkarte-883110000129071",
+  "amr": [
+    "mfa",
+    "sc",
+    "pin"
+  ],
+  "iss": "https://idp.zentral.idp.splitdns.ti-dienste.de",
+  "nonce": "7xYQMScMPwBPG80gX8BAMw",
+  "aud": "AuthenticatorDevLocalHttps",
+  "acr": "gematik-ehealth-loa-high",
+  "azp": "AuthenticatorDevLocalHttps",
+  "auth_time": 1668000962,
+  "exp": 1668001264,
+  "iat": 1668000964,
+  "jti": "e537d633347d0b61"
+}

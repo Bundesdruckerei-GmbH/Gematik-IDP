@@ -1,3 +1,20 @@
+<!--
+  ~  Copyright 2023 Bundesdruckerei GmbH and/or its affiliates
+  ~  and other contributors.
+  ~
+  ~  Licensed under the Apache License, Version 2.0 (the "License");
+  ~  you may not use this file except in compliance with the License.
+  ~  You may obtain a copy of the License at
+  ~
+  ~  http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~  Unless required by applicable law or agreed to in writing, software
+  ~  distributed under the License is distributed on an "AS IS" BASIS,
+  ~  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~  See the License for the specific language governing permissions and
+  ~  limitations under the License.
+  -->
+
 <div class="col-sm-9 col-md-10 col-sm-push-3 col-md-push-2">
     <ol class="breadcrumb">
         <li><a href="#/realms/{{realm.realm}}/identity-provider-settings">{{:: 'identity-providers' | translate}}</a>
@@ -41,7 +58,7 @@
                 <label class="col-md-2 control-label" for="enabled">{{:: 'enabled' | translate}}</label>
                 <div class="col-md-6">
                     <input id="enabled" ng-model="identityProvider.enabled" off-text="{{:: 'offText' | translate}}"
-                           on-text="{{:: 'onText' | translate}}" onoffswitch/>
+                           on-text="{{:: 'onText' | translate}}" onoffswitch />
                 </div>
                 <kc-tooltip>{{:: 'identity-provider.enabled.tooltip' | translate}}</kc-tooltip>
             </div>
@@ -51,9 +68,20 @@
                 <div class="col-md-6">
                     <input id="hideOnLoginPage" name="identityProvider.config.hideOnLoginPage"
                            ng-model="identityProvider.config.hideOnLoginPage" off-text="{{:: 'offText' | translate}}"
-                           on-text="{{:: 'onText' | translate}}" onoffswitchvalue/>
+                           on-text="{{:: 'onText' | translate}}" onoffswitchvalue />
                 </div>
                 <kc-tooltip>{{:: 'hide-on-login-page.tooltip' | translate}}</kc-tooltip>
+            </div>
+            <div class="form-group">
+                <label class="col-md-2 control-label" for="multipleIdentityMode">{{:: 'gematik-idp.multiple-identity-mode' |
+                    translate}}</label>
+                <div class="col-md-6">
+                    <input id="multipleIdentityMode" name="identityProvider.config.multiple-identity-mode"
+                           ng-model="identityProvider.config.multipleIdentityMode"
+                           off-text="{{:: 'offText' | translate}}"
+                           on-text="{{:: 'onText' | translate}}" onoffswitchvalue />
+                </div>
+                <kc-tooltip>{{:: 'gematik-idp.multiple-identity-mode.tooltip' | translate}}</kc-tooltip>
             </div>
             <div class="form-group">
                 <label class="col-md-2 control-label" for="guiOrder">{{:: 'gui-order' | translate}}</label>
@@ -122,13 +150,22 @@
                 </div>
                 <kc-tooltip>{{:: 'gematik-idp.authenticator-url.tooltip' | translate}}</kc-tooltip>
             </div>
+            <div class="form-group">
+                <label class="col-md-2 control-label" for="newAuthenticationFlow">{{:: 'gematik-idp.new-authentication-flow' |
+                    translate}}</label>
+                <div class="col-md-6">
+                    <input id="newAuthenticationFlow" name="identityProvider.config.new-authentication-flow"
+                           ng-model="identityProvider.config.newAuthenticationFlow" off-text="{{:: 'offText' | translate}}"
+                           on-text="{{:: 'onText' | translate}}" onoffswitchvalue/>
+                </div>
+                <kc-tooltip>{{:: 'gematik-idp.new-authentication-flow.tooltip' | translate}}</kc-tooltip>
+            </div>
             <div class="form-group clearfix">
-                <label class="col-md-2 control-label" for="openidConfigUrl"><span class="required">*</span>
+                <label class="col-md-2 control-label" for="openidConfigUrl">
                     {{:: 'gematik-idp.authenticator-authorization-url' | translate}}</label>
                 <div class="col-md-6">
                     <input class="form-control" id="authenticatorAuthorizationUrl" type="text"
-                           ng-model="identityProvider.config.authenticatorAuthorizationUrl"
-                           required>
+                           ng-model="identityProvider.config.authenticatorAuthorizationUrl">
                 </div>
                 <kc-tooltip>{{:: 'gematik-idp.authenticator-authorization-url.tooltip' | translate}}</kc-tooltip>
             </div>
@@ -144,12 +181,48 @@
             <div class="form-group clearfix">
                 <label class="col-md-2 control-label" for="openidConfigUrl"><span class="required">*</span>
                     {{:: 'gematik-idp.openid-connect-config-url' | translate}}</label>
-                <div class="col-md-6">
+                <div class="col-md-4">
                     <input class="form-control" id="openidConfigUrl" type="text"
                            ng-model="identityProvider.config.openidConfigUrl"
                            required>
                 </div>
                 <kc-tooltip>{{:: 'gematik-idp.openid-connect-config-url.tooltip' | translate}}</kc-tooltip>
+                <div class="col-md-2">
+                    <button type="button" data-ng-click="getIdpConfig()"
+                            data-ng-hide="gematikIdpConfig !== null">
+                        {{:: 'gematik-idp.show-config' | translate}}
+                    </button>
+                    <button type="button" data-ng-click="closeIdpConfig()" data-ng-hide="gematikIdpConfig === null">
+                        {{:: 'gematik-idp.hide-config' | translate}}
+                    </button>
+                </div>
+
+            </div>
+
+            <div class="form-group clearfix" data-ng-hide="gematikIdpConfig == null">
+                <div class="col-md-6 col-md-offset-2">
+                    <div
+                         ng-bind-html="'gematik-idp.config.hint' | translate:{ href: identityProvider.config.openidConfigUrl}">
+                    </div>
+                    <table class="table table-striped table-bordered">
+                        <thead>
+                            <tr>
+                                <th>
+                                    {{:: 'gematik-idp.config.table-key' | translate}}
+                                </th>
+                                <th>
+                                    {{:: 'gematik-idp.config.table-value' | translate}}
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr ng-repeat="(key, value) in gematikIdpConfig">
+                                <td>{{ key }}</td>
+                                <td>{{ value }}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
             </div>
             <div class="form-group clearfix">
                 <label class="col-md-2 control-label" for="idpTimeoutMs">
@@ -173,7 +246,8 @@
                 <label class="col-md-2 control-label" for="idpUserAgent"><span class="required">*</span>
                     {{:: 'gematik-idp.userAgent' | translate}}</label>
                 <div class="col-md-6">
-                    <input class="form-control" id="idpUserAgent" type="text" ng-model="identityProvider.config.idpUserAgent"
+                    <input class="form-control" id="idpUserAgent" type="text"
+                           ng-model="identityProvider.config.idpUserAgent"
                            required>
                 </div>
                 <kc-tooltip>{{:: 'gematik-idp.userAgent.tooltip' | translate}}</kc-tooltip>

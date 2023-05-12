@@ -1,0 +1,22 @@
+{
+  "at_hash": "byUWoaFbh-Z6Szoc5_qwKQ",
+  "sub": "yW1IXZ30FhP4Oz7wo8MuDBSeN4UD_B-1ZfS7zQjw4U8",
+  "professionOID": "1.2.276.0.76.4.30",
+  "idNummer": "1-HBA-Testkarte-883110000129083",
+  "amr": [
+    "mfa",
+    "sc",
+    "pin"
+  ],
+  "iss": "https://idp.zentral.idp.splitdns.ti-dienste.de",
+  "given_name": "Roland",
+  "nonce": "FWhtWRk5ihFcyJKVbmesyQ",
+  "aud": "AuthenticatorDevLocalHttps",
+  "acr": "gematik-ehealth-loa-high",
+  "azp": "AuthenticatorDevLocalHttps",
+  "auth_time": 1668000959,
+  "exp": 1668001261,
+  "iat": 1668000961,
+  "family_name": "MaiÞer",
+  "jti": "1479d5cade962bba"
+}
