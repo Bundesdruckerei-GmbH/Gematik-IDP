@@ -1,6 +1,6 @@
 # New Authentication Flow
 
-Supported only in Gematik-Authentication version above 4.0 via the `authenticator://` Authenticator Url's, while 
+Supported only in Gematik Authenticator version above 4.0 via the `authenticator://` Authenticator Url's, while 
 **Use new Authentication Flow** is set to **ON**.
 
 ## Flow Diagram
@@ -20,10 +20,10 @@ Supported only in Gematik-Authentication version above 4.0 via the `authenticato
     - uri_puk_idp_enc
     - uri_puk_idp_sig
     - exp (expiration time)
-7. After fetchting the config, Keycloak redirects the user to /startAuth
+7. After fetching the config, Keycloak redirects the user to /startAuth
 8. /startAuth is called from the browser
 9. Keycloak generates `code_verifier` and store it in the session of the user
-10. Generate the deeplink to the authenticator, passing among other things
+10. Generate the deeplink to the Authenticator, passing among other things
     1. challenge_path: url to the C-IDP
     2. redirect_url: url to Keycloak
     3. code_challenge: generated `code_verifier`
@@ -39,7 +39,7 @@ Supported only in Gematik-Authentication version above 4.0 via the `authenticato
 19. Call to C-IDP to retrieve ID-token
 20. Responds with json, which contains id_token and access_token as JWE
 21. Keycloak decrypts id_token, verifies it and stores [HBA data](/docs/hba-id-token.json) in the session
-22. Keycloak responses status call from step 12. with 200 and provides the URL to the next step.
+22. Keycloak responses status call from step 12 with 200 and provides the URL to the next step.
 23. User browser calls `nextStepUrl` from the status response
 24. Second deeplink to fetch [SMCB data](/docs/smcb-id-token.json), scope changed to Institutions_ID
     - same flow as 11 - 22 is executed

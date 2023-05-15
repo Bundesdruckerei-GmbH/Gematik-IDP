@@ -1,7 +1,7 @@
 # Old Authentication Flow
 
-Supported both by the `authenticator://` (Gematik-Authentication version above 3.1) and `https://localhost:39000` (
-Gematik-Authentication version below 3.1) endpoints configurable via **Authenticator Url's**, while **Use new
+Supported both by the `authenticator://` (**Gematik Authenticator** version above 3.1) and `https://localhost:39000` (
+**Gematik Authenticator** version below 3.1) endpoints configurable via **Authenticator Url's**, while **Use new
 Authentication Flow** is set to **OFF**.
 
 ## Authentication using the `authenticator://` Authenticator Url
@@ -36,7 +36,7 @@ an exception in the plugin backend.
     - uri_puk_idp_enc
     - uri_puk_idp_sig
     - exp (expiration time)
-7. After fetchting the config, Keycloak redirects the user to /startAuth
+7. After fetching the config, Keycloak redirects the user to /startAuth
 8. /startAuth is called from the browser
 9. Keycloak generates `code_verifier` and store it in the session of the user
 10. Generate the deeplink to the authenticator, passing among other things
