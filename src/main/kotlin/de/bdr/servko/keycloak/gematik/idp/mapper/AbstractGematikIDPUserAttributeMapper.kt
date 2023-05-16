@@ -17,10 +17,10 @@
 
 package de.bdr.servko.keycloak.gematik.idp.mapper
 
-import de.bdr.servko.keycloak.gematik.idp.CardType
-import de.bdr.servko.keycloak.gematik.idp.ContextData
-import de.bdr.servko.keycloak.gematik.idp.GematikClaim
 import de.bdr.servko.keycloak.gematik.idp.GematikIDPFactory
+import de.bdr.servko.keycloak.gematik.idp.model.CardType
+import de.bdr.servko.keycloak.gematik.idp.model.ContextData
+import de.bdr.servko.keycloak.gematik.idp.model.GematikClaim
 import org.jboss.logging.Logger
 import org.keycloak.broker.provider.AbstractIdentityProviderMapper
 import org.keycloak.broker.provider.BrokeredIdentityContext

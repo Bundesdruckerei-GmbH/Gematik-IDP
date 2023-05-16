@@ -1,0 +1,34 @@
+HBA-DATA:
+at_hash:NrRpwKnd3tVD1vjeKj0Jyw
+, sub:BCuZoHCEnTWoGvkcxqJYxlNjkqqQNIWZiDeCvloJtp0
+, professionOID:1.2.276.0.76.4.30
+, idNummer:1-HBA-Testkarte-883110000129083
+, amr:[mfa, sc, pin]
+, iss:https://idp.zentral.idp.splitdns.ti-dienste.de
+, given_name:Roland
+, nonce:gldrOF7wghSMQEjBZdfB-Q
+, aud:AuthenticatorDevLocal
+, acr:gematik-ehealth-loa-high
+, azp:AuthenticatorDevLocal
+, auth_time:1666607687
+, exp:1666607990
+, iat:1666607690
+, family_name:MaiÞer
+, jti:e8c29b2c704d0acf
+
+SMCB-DATA:
+at_hash:gB9Ay90swzvDP9EZ1NNWYQ
+, sub:V-8QaL50swgERk092e8jLKKg4_OHTFx7r4QEfCEPHAE
+, organizationName:Universitätsklinik MitteTEST-ONLY
+, professionOID:1.2.276.0.76.4.53
+, idNummer:5-SMC-B-Testkarte-883110000129071
+, amr:[mfa, sc, pin]
+, iss:https://idp.zentral.idp.splitdns.ti-dienste.de
+, nonce:Pyyxk4_H-knbmfj3NFpWqA
+, aud:AuthenticatorDevLocal
+, acr:gematik-ehealth-loa-high
+, azp:AuthenticatorDevLocal
+, auth_time:1666607691
+, exp:1666607993
+, iat:1666607693
+, jti:6d2502ffd5aaebd5

@@ -1290,15 +1290,16 @@
       "linkOnly": false,
       "firstBrokerLoginFlowAlias": "first broker login",
       "config": {
-        "authenticatorUrl": "http://localhost:39000/",
+        "authenticatorUrl": "authenticator://",
         "authenticatorAuthorizationUrl": "http://localhost:8081/sign_response",
         "clientId": "localhost_https",
-        "idpUserAgent": "servko/build bdr/develop",
+        "idpUserAgent": "servko/build bdr/localhost_https",
         "idpTimeoutMs": "600000",
+        "multipleIdentityMode": "false",
         "openidConfigUrl": "http://host.docker.internal:8081/.well-known/openid-configuration",
         "timeoutMs": "600000",
         "syncMode": "IMPORT",
-        "defaultScope": "openid authenticator-dev",
+        "defaultScope": "openid gem-auth",
         "useJwksUrl": "true"
       }
     }

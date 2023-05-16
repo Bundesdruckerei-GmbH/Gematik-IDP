@@ -13,15 +13,19 @@
  *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
+ *
  */
 
 package de.bdr.servko.keycloak.gematik.idp
 
+import de.bdr.servko.keycloak.gematik.idp.model.GematikIDPConfig
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.entry
 import org.junit.jupiter.api.Test
 import org.keycloak.common.crypto.CryptoIntegration
+import org.keycloak.models.KeycloakContext
 import org.keycloak.models.KeycloakSession
+import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.mock
 import java.time.Clock
 import java.time.Instant
@@ -29,7 +33,10 @@ import java.time.ZoneId
 
 internal class GematikIDPFactoryTest {
 
-    private val session = mock<KeycloakSession>()
+    private val session = mock<KeycloakSession> {
+        val keycloakContext = mock<KeycloakContext> { on { realm }.doReturn(mock {}) }
+        on { context }.thenReturn(keycloakContext)
+    }
     private val configUrl = "http://localhost:8081/.well-known/openid-configuration"
     private val userAgent = "Servko/1.0.0 Servko/Client"
     private val config = GematikIDPConfig().apply {

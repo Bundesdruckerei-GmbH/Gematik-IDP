@@ -1,5 +1,5 @@
 /*
- *  Copyright ${YEAR} Bundesdruckerei GmbH and/or its affiliates
+ *  Copyright 2023 Bundesdruckerei GmbH and/or its affiliates
  *  and other contributors.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,10 +13,9 @@
  *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
- *
  */
 
-package de.bdr.servko.keycloak.gematik.idp
+package de.bdr.servko.keycloak.gematik.idp.model
 
 import org.jose4j.jwt.JwtClaims
 

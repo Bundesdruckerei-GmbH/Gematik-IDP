@@ -45,9 +45,34 @@ services:
       JAVA_OPTS: -Xms64m -Xmx512m -XX:MetaspaceSize=96M -XX:MaxMetaspaceSize=256m -Djava.net.preferIPv4Stack=true -Djboss.modules.system.pkgs=org.jboss.byteman -Djava.awt.headless=true -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005
     volumes:
       - ./sample-realm:/opt/keycloak/data/import/
-      - ./target/gematik-idp-1.0.0-SNAPSHOT.jar:/opt/keycloak/providers/gematik-idp-1.0.0-SNAPSHOT.jar
+      - ./target/gematik-idp-1.1.0.jar:/opt/keycloak/providers/gematik-idp-1.1.0.jar
       - ./themes/gematik-idp:/opt/keycloak/themes/gematik-idp
     entrypoint: "/opt/keycloak/bin/kc.sh start-dev --import-realm"
+
+  idp-server:
+    image: gematik1/idp-server:22.0.3
+    container_name: gem-ref-idp-server
+    restart: always
+    ports:
+      - "8081:8080"
+      - "8180:8180"
+    environment:
+      SERVER_PORT: 8080
+      MANAGEMENT_PORT: 8180
+      LOGGING_LEVEL_ORG_SPRINGFRAMEWORK_WEB_SERVLET: DEBUG
+      SPRING_APPLICATION_JSON: >
+        {
+          "idp": {
+            "registeredClient": {
+              "localhost": {
+                "redirectUri": "http://localhost:8080/auth/realms/GematikIDP/broker/gematik-idp/endpoint/result"
+              },
+              "localhost_https": {
+                "redirectUri": "https://localhost:8443/auth/realms/GematikIDP/broker/gematik-idp/endpoint/result"
+              }
+            }
+          }
+        }
 
   postgres-gematik-idp:
     image: postgres
@@ -62,4 +87,4 @@ services:
       - postgres-gematik-idp_data:/var/lib/postgresql/data
 
 volumes:
-  postgres-gematik-idp_data: {}
+  postgres-gematik-idp_data: { }
