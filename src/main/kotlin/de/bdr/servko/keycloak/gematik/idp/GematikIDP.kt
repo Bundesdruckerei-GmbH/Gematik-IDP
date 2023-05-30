@@ -19,11 +19,11 @@
 package de.bdr.servko.keycloak.gematik.idp
 
 import de.bdr.servko.keycloak.gematik.idp.model.GematikIDPConfig
+import de.bdr.servko.keycloak.gematik.idp.model.GematikIDPState
 import org.keycloak.OAuth2Constants
 import org.keycloak.broker.provider.AbstractIdentityProvider
 import org.keycloak.broker.provider.AuthenticationRequest
 import org.keycloak.broker.provider.IdentityProvider
-import org.keycloak.broker.provider.util.IdentityBrokerState
 import org.keycloak.events.EventBuilder
 import org.keycloak.models.FederatedIdentityModel
 import org.keycloak.models.KeycloakSession
@@ -37,10 +37,6 @@ import javax.ws.rs.core.Response
 class GematikIDP(session: KeycloakSession, config: GematikIDPConfig) :
     AbstractIdentityProvider<GematikIDPConfig>(session, config) {
 
-    companion object {
-        const val STATE_DELIMITER = "__"
-    }
-
     /**
      * First call made on login page.
      * Redirect to /callback/startAuth so all requests are handled in
@@ -48,11 +44,13 @@ class GematikIDP(session: KeycloakSession, config: GematikIDPConfig) :
      */
     override fun performLogin(request: AuthenticationRequest): Response =
         request.authenticationSession.let {
+            val state = GematikIDPState.fromIdentityBrokerState(request.state, it.parentSession.id)
+
             Response.seeOther(
                 getEndpointUri(
                     session,
                     it.realm,
-                    request.state,
+                    state,
                     config,
                     GematikIDPEndpoint.START_AUTH_PATH
                 )
@@ -76,7 +74,7 @@ class GematikIDP(session: KeycloakSession, config: GematikIDPConfig) :
     fun getEndpointUri(
         session: KeycloakSession,
         realm: RealmModel,
-        state: IdentityBrokerState?,
+        state: GematikIDPState?,
         config: GematikIDPConfig,
         endpoint: String
     ): URI =
@@ -84,9 +82,9 @@ class GematikIDP(session: KeycloakSession, config: GematikIDPConfig) :
             .path(IdentityBrokerService::class.java, "getEndpoint")
             .path(GematikIDPEndpoint::class.java, endpoint)
             .apply {
-                //C-IDP state has pattern ^[_\\-a-zA-Z0-9]{1,32}$
+                //C-IDP state has pattern ^[_\\-a-zA-Z0-9]{1,512}$
                 state?.let {
-                    queryParam(OAuth2Constants.STATE, "${it.clientId}$STATE_DELIMITER${it.tabId}")
+                    queryParam(OAuth2Constants.STATE, it.encode())
                 }
             }
             .build(realm.name, config.alias)

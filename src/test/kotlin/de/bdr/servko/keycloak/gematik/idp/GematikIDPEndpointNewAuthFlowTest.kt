@@ -23,6 +23,7 @@ import de.bdr.servko.keycloak.gematik.idp.exception.SessionNotFoundException
 import de.bdr.servko.keycloak.gematik.idp.extension.BrainpoolCurves
 import de.bdr.servko.keycloak.gematik.idp.model.ContextData
 import de.bdr.servko.keycloak.gematik.idp.model.GematikIDPConfig
+import de.bdr.servko.keycloak.gematik.idp.model.GematikIDPState
 import de.bdr.servko.keycloak.gematik.idp.model.GematikIDPStatusResponse
 import de.bdr.servko.keycloak.gematik.idp.token.TestTokenUtil
 import org.assertj.core.api.Assertions.assertThat
@@ -48,7 +49,12 @@ internal class GematikIDPEndpointNewAuthFlowTest {
 
     private val realmName = "test-realm"
     private val idpAlias = "gematik-idp"
+    private val rootSessionId = "root-session"
     private val clientId = "gematik_client"
+    private val tabId = "tabId"
+
+    private val state: String = GematikIDPState(rootSessionId, clientId, tabId).encode()
+
     private val hbaKeyVerifier = PkceUtils.generateCodeVerifier()
     private val hbaTokenMock = TestUtils.getJsonHbaToken()
     private val smcbKeyVerifier = PkceUtils.generateCodeVerifier()
@@ -108,7 +114,6 @@ internal class GematikIDPEndpointNewAuthFlowTest {
 
     private val service = mock<GematikIDPService> {
         on { resolveAuthSessionFromEncodedState(any(), any()) }.thenReturn(authSessionMock)
-        on { decodeIdentityBrokerState(any()) }.thenCallRealMethod()
         on { getJWKS(any(), any()) }.thenCallRealMethod()
         on { getJWK(any(), any()) }.thenCallRealMethod()
     }
@@ -132,7 +137,6 @@ internal class GematikIDPEndpointNewAuthFlowTest {
         override fun skipAllValidators(): Boolean = true
     }
 
-    private val state: String = "$clientId${GematikIDP.STATE_DELIMITER}tabId"
     private val code: String = "dg99COL1CfysxnBuUTxz4gjfNdtD6OoCca5sdKwdUSY="
 
 

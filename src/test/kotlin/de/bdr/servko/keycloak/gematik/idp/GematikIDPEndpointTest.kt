@@ -23,6 +23,7 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import de.bdr.servko.keycloak.gematik.idp.extension.BrainpoolCurves
 import de.bdr.servko.keycloak.gematik.idp.model.ContextData
 import de.bdr.servko.keycloak.gematik.idp.model.GematikIDPConfig
+import de.bdr.servko.keycloak.gematik.idp.model.GematikIDPState
 import de.bdr.servko.keycloak.gematik.idp.token.TestTokenUtil
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
@@ -36,8 +37,9 @@ import org.keycloak.forms.login.freemarker.model.ClientBean
 import org.keycloak.models.*
 import org.keycloak.protocol.oidc.OIDCLoginProtocol
 import org.keycloak.protocol.oidc.utils.PkceUtils
-import org.keycloak.services.managers.AuthenticationSessionManager
 import org.keycloak.sessions.AuthenticationSessionModel
+import org.keycloak.sessions.AuthenticationSessionProvider
+import org.keycloak.sessions.RootAuthenticationSessionModel
 import org.mockito.ArgumentMatchers.anyString
 import org.mockito.kotlin.*
 import java.net.URI
@@ -48,7 +50,11 @@ internal class GematikIDPEndpointTest {
 
     private val realmName = "test-realm"
     private val idpAlias = "gematik-idp"
+    private val rootSessionId = "rootSessionId"
     private val clientId = "gematik_client"
+    private val tabId = "tabId"
+
+    private val state: String = GematikIDPState(rootSessionId, clientId, tabId).encode()
 
     private val clientMock = mock<ClientModel> {
         on { isEnabled } doReturn true
@@ -68,8 +74,12 @@ internal class GematikIDPEndpointTest {
         on { realm } doReturn realmMock
         on { client } doReturn clientMock
     }
-    private val authSessionManagerMock = mock<AuthenticationSessionManager> {
-        on { getCurrentAuthenticationSession(realmMock, clientMock, "tabId") } doReturn authSessionMock
+    private val rootAuthSessionMock = mock<RootAuthenticationSessionModel> {
+        on { getAuthenticationSession(clientMock, tabId) } doReturn authSessionMock
+    }
+
+    private val authSessionProvider = mock<AuthenticationSessionProvider> {
+        on { getRootAuthenticationSession(realmMock, rootSessionId) } doReturn rootAuthSessionMock
     }
 
     private val sessionMock = mock<KeycloakSession> {
@@ -81,6 +91,7 @@ internal class GematikIDPEndpointTest {
             on { realm } doAnswer { realmMock }
         }
         on { context } doReturn keycloakContext
+        on { authenticationSessions() } doReturn authSessionProvider
     }
 
     private val gematikClientId = "AuthenticatorDevLocalHttps"
@@ -107,7 +118,7 @@ internal class GematikIDPEndpointTest {
     private val smcbKeyVerifier = PkceUtils.generateCodeVerifier()
     private val smcbTokenMock = TestUtils.getJsonSmcbToken()
 
-    private val service = object : GematikIDPService(sessionMock, authSessionManagerMock) {
+    private val service = object : GematikIDPService(sessionMock) {
         override fun doGet(idpUrl: String, userAgent: String): String {
             if (idpUrl == TestUtils.discoveryDocument.pukEncUri) {
                 return encJwkMock
@@ -147,8 +158,6 @@ internal class GematikIDPEndpointTest {
 
         override fun skipAllValidators(): Boolean = true
     }
-
-    private val state: String = "$clientId${GematikIDP.STATE_DELIMITER}tabId"
 
     @Test
     fun startAuth() {
@@ -212,8 +221,14 @@ internal class GematikIDPEndpointTest {
 
         val hbaCapture = argumentCaptor<String>()
         verify(authSessionMock).setAuthNote(eq(GematikIDPEndpoint.HBA_DATA), hbaCapture.capture())
-        verify(authSessionMock).setAuthNote(GematikIDPEndpoint.GEMATIK_IDP_STEP, GematikIDPEndpoint.GematikIDPStep.RECEIVED_HBA_DATA.name)
-        verify(authSessionMock).setAuthNote(GematikIDPEndpoint.GEMATIK_IDP_STEP, GematikIDPEndpoint.GematikIDPStep.REQUESTED_SMCB_DATA.name)
+        verify(authSessionMock).setAuthNote(
+            GematikIDPEndpoint.GEMATIK_IDP_STEP,
+            GematikIDPEndpoint.GematikIDPStep.RECEIVED_HBA_DATA.name
+        )
+        verify(authSessionMock).setAuthNote(
+            GematikIDPEndpoint.GEMATIK_IDP_STEP,
+            GematikIDPEndpoint.GematikIDPStep.REQUESTED_SMCB_DATA.name
+        )
 
         isHba = false
 
