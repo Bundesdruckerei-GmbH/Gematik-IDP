@@ -19,10 +19,7 @@
 package de.bdr.servko.keycloak.gematik.idp
 
 import de.bdr.servko.keycloak.gematik.idp.extension.BrainpoolCurves
-import de.bdr.servko.keycloak.gematik.idp.model.CardType
-import de.bdr.servko.keycloak.gematik.idp.model.ContextData
-import de.bdr.servko.keycloak.gematik.idp.model.GematikIDPConfig
-import de.bdr.servko.keycloak.gematik.idp.model.GematikIDPStatusResponse
+import de.bdr.servko.keycloak.gematik.idp.model.*
 import org.jboss.logging.Logger
 import org.jose4j.json.internal.json_simple.parser.JSONParser
 import org.jose4j.jwe.ContentEncryptionAlgorithmIdentifiers
@@ -173,7 +170,11 @@ open class GematikIDPEndpoint(
             (step == GematikIDPStep.IDP_ERROR)
         ) {
             val authenticatorNextStepUrl = gematikIDP.getEndpointUri(
-                session, realm, service.decodeIdentityBrokerState(encodedState), config, AUTHENTICATOR_NEXT_STEP
+                session,
+                realm,
+                GematikIDPState.fromEncodedState(encodedState),
+                config,
+                AUTHENTICATOR_NEXT_STEP
             )
             return Response.ok()
                 .entity(GematikIDPStatusResponse(step.name, URI(authenticatorNextStepUrl.toString())))
@@ -204,6 +205,7 @@ open class GematikIDPEndpoint(
             GematikIDPStep.RECEIVED_HBA_DATA -> {
                 handleHBAData(encodedState, codeVerifier, authSession)
             }
+
             GematikIDPStep.IDP_ERROR -> {
                 val error = authSession.getAuthNote(ERROR)
                 val errorDetails = authSession.getAuthNote(ERROR_DETAILS)
@@ -211,6 +213,7 @@ open class GematikIDPEndpoint(
 
                 handleIdpErrorWhenCalledFromBrowser(error, errorDetails, errorUri)
             }
+
             else -> {
                 val smcbData = getCertificateDataFromAuthNote(authSession, SMCB_DATA)
                 handleSMCBData(authSession, smcbData)
@@ -267,12 +270,14 @@ open class GematikIDPEndpoint(
                 authSession.setAuthNote(HBA_DATA, JsonSerialization.writeValueAsString(claimsMap))
                 authSession.setAuthNote(GEMATIK_IDP_STEP, step.name)
             }
+
             GematikIDPStep.REQUESTED_SMCB_DATA -> {
                 logger.debug("SMCB-DATA: ${claimsMap.map { (k, v) -> "$k:$v\n" }}")
                 step = GematikIDPStep.RECEIVED_SMCB_DATA
                 authSession.setAuthNote(SMCB_DATA, JsonSerialization.writeValueAsString(claimsMap))
                 authSession.setAuthNote(GEMATIK_IDP_STEP, step.name)
             }
+
             else -> {
                 callback.error("invalid step $step")
             }
@@ -299,7 +304,11 @@ open class GematikIDPEndpoint(
         return Response.noContent().build()
     }
 
-    private fun handleIdpErrorWhenCalledFromBrowser(error: String?, errorDetails: String?, errorUri: String?): Response {
+    private fun handleIdpErrorWhenCalledFromBrowser(
+        error: String?,
+        errorDetails: String?,
+        errorUri: String?
+    ): Response {
         logger.error("Authenticator returned error: $error | error-details: $errorDetails | error-uri $errorUri")
         return forms.setError("authenticator.errorIdp", errorDetails?.take(20) ?: "Unknown")
             .createErrorPage(Response.Status.BAD_REQUEST)
@@ -317,7 +326,7 @@ open class GematikIDPEndpoint(
         scope: String,
     ): Response {
         val authenticatorUrl = generateAuthenticatorUrl(encodedState, codeVerifier, scope)
-        val brokerState = service.decodeIdentityBrokerState(encodedState)
+        val brokerState = GematikIDPState.fromEncodedState(encodedState)
         val timeoutUrl =
             gematikIDP.getEndpointUri(session, realm, brokerState, config, "timeout")
 
@@ -349,9 +358,11 @@ open class GematikIDPEndpoint(
             GematikIDPStep.RECEIVED_HBA_DATA -> {
                 return handleHBAData(encodedState, codeVerifier, authSession)
             }
+
             GematikIDPStep.RECEIVED_SMCB_DATA -> {
                 return handleSMCBData(authSession, claims)
             }
+
             else -> {
                 callback.error("invalid step $step")
             }
@@ -438,7 +449,13 @@ open class GematikIDPEndpoint(
      * challengePath is the central IDP
      */
     private fun generateAuthenticatorUrl(encodedState: String, codeVerifier: String, scope: String): URI {
-        val redirectUri = gematikIDP.getEndpointUri(session, realm, null, config, RESULT_PATH)
+        val redirectUri = gematikIDP.getEndpointUri(
+            session,
+            realm,
+            null,
+            config,
+            RESULT_PATH
+        )
         val challengePath = generateChallengePath(
             redirectUri,
             encodedState,
@@ -501,7 +518,8 @@ open class GematikIDPEndpoint(
         val idJwt = service.fetchToken(
             config.tokenUrl,
             config.clientId,
-            gematikIDP.getEndpointUri(session, realm, null, config, RESULT_PATH).toString(),
+            gematikIDP.getEndpointUri(session, realm, null, config, RESULT_PATH)
+                .toString(),
             code,
             keyVerifier,
             config.getIdpTimeoutMs(),

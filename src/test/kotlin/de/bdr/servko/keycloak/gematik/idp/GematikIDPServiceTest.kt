@@ -19,7 +19,7 @@
 package de.bdr.servko.keycloak.gematik.idp
 
 import de.bdr.servko.keycloak.gematik.idp.exception.SessionNotFoundException
-import de.bdr.servko.keycloak.gematik.idp.extension.AuthenticationSessionAdapterExtension
+import de.bdr.servko.keycloak.gematik.idp.model.GematikIDPState
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
@@ -27,17 +27,21 @@ import org.keycloak.models.ClientModel
 import org.keycloak.models.KeycloakContext
 import org.keycloak.models.KeycloakSession
 import org.keycloak.models.RealmModel
-import org.keycloak.services.managers.AuthenticationSessionManager
 import org.keycloak.sessions.AuthenticationSessionModel
+import org.keycloak.sessions.AuthenticationSessionProvider
+import org.keycloak.sessions.RootAuthenticationSessionModel
 import org.mockito.kotlin.doAnswer
 import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
 
+
 internal class GematikIDPServiceTest {
     private val realmName = "test-realm"
     private val clientId = "gematik_client"
-    private val state: String = "$clientId${GematikIDP.STATE_DELIMITER}tabId"
+    private val rootSessionId = "root-session"
+    private val tabId = "tabId"
+    private val state: String = GematikIDPState(rootSessionId, clientId, tabId).encode()
 
     private val clientMock = mock<ClientModel> {
         on { isEnabled } doReturn true
@@ -48,42 +52,28 @@ internal class GematikIDPServiceTest {
         on { getClientByClientId(clientId) } doReturn clientMock
     }
 
-    private val authenticationSessionManagerMock = mock<AuthenticationSessionManager> {}
-
-    private val authenticationSessionAdapterExtensionMock = mock<AuthenticationSessionAdapterExtension> {}
-
     private val authSessionMock = mock<AuthenticationSessionModel> {}
+    private val rootAuthSessionMock = mock<RootAuthenticationSessionModel> {
+        on { getAuthenticationSession(clientMock, tabId) } doReturn authSessionMock
+    }
+
+    private val authSessionProvider = mock<AuthenticationSessionProvider> {
+        on { getRootAuthenticationSession(realmMock, rootSessionId) } doReturn rootAuthSessionMock
+    }
 
     private val sessionMock = mock<KeycloakSession> {
         val keycloakContext = mock<KeycloakContext> {
             on { realm } doAnswer { realmMock }
         }
         on { context } doReturn keycloakContext
+        on { authenticationSessions() } doReturn authSessionProvider
     }
 
-    private val underTest =
-        GematikIDPService(sessionMock, authenticationSessionManagerMock, authenticationSessionAdapterExtensionMock)
+    private val underTest = GematikIDPService(sessionMock)
 
     @Test
     fun authSessionFoundThroughSessionManager() {
         // arrange
-        whenever(authenticationSessionManagerMock.getCurrentAuthenticationSession(realmMock, clientMock, "tabId"))
-            .thenReturn(authSessionMock)
-
-        // act
-        val result = underTest.resolveAuthSessionFromEncodedState(realmMock, state)
-
-        // assert
-        assertThat(result).isEqualTo(authSessionMock)
-    }
-
-    @Test
-    fun authSessionFoundThroughSessionExtensionViaCache() {
-        // arrange
-        whenever(authenticationSessionManagerMock.getCurrentAuthenticationSession(realmMock, clientMock, "tabId"))
-            .thenReturn(null)
-        whenever(authenticationSessionAdapterExtensionMock.getAuthenticationSessionFor("tabId", clientMock))
-            .thenReturn(authSessionMock)
 
         // act
         val result = underTest.resolveAuthSessionFromEncodedState(realmMock, state)
@@ -95,10 +85,9 @@ internal class GematikIDPServiceTest {
     @Test
     fun authSessionNotFound() {
         // arrange
-        whenever(authenticationSessionManagerMock.getCurrentAuthenticationSession(realmMock, clientMock, "tabId"))
-            .thenReturn(null)
-        whenever(authenticationSessionAdapterExtensionMock.getAuthenticationSessionFor("tabId", clientMock))
-            .thenReturn(null)
+        whenever(sessionMock.authenticationSessions()).thenReturn(authSessionProvider)
+        whenever(authSessionProvider.getRootAuthenticationSession(realmMock, rootSessionId)).thenReturn(rootAuthSessionMock)
+        whenever(rootAuthSessionMock.getAuthenticationSession(clientMock, tabId)).thenReturn(null)
 
         // act + assert
         assertThrows<SessionNotFoundException> {

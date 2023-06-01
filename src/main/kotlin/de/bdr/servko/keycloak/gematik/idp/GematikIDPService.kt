@@ -21,8 +21,8 @@ package de.bdr.servko.keycloak.gematik.idp
 import com.fasterxml.jackson.databind.JsonNode
 import de.bdr.servko.keycloak.gematik.idp.exception.IdpUnavailableException
 import de.bdr.servko.keycloak.gematik.idp.exception.SessionNotFoundException
-import de.bdr.servko.keycloak.gematik.idp.extension.AuthenticationSessionAdapterExtension
 import de.bdr.servko.keycloak.gematik.idp.extension.BrainpoolCurves
+import de.bdr.servko.keycloak.gematik.idp.model.GematikIDPState
 import org.bouncycastle.jce.provider.BouncyCastleProvider
 import org.jboss.logging.Logger
 import org.jose4j.json.JsonUtil
@@ -33,26 +33,17 @@ import org.jose4j.jwt.JwtClaims
 import org.jose4j.jwt.consumer.JwtConsumerBuilder
 import org.jose4j.jwx.HeaderParameterNames
 import org.keycloak.OAuth2Constants
-import org.keycloak.broker.provider.util.IdentityBrokerState
 import org.keycloak.broker.provider.util.SimpleHttp
 import org.keycloak.common.util.Base64
 import org.keycloak.common.util.DerUtils
 import org.keycloak.models.KeycloakSession
 import org.keycloak.models.RealmModel
-import org.keycloak.services.managers.AuthenticationSessionManager
 import org.keycloak.sessions.AuthenticationSessionModel
 import java.io.ByteArrayInputStream
 import java.security.PublicKey
 import javax.ws.rs.core.HttpHeaders
 
-open class GematikIDPService(
-    private val session: KeycloakSession,
-    private val authenticationSessionManager: AuthenticationSessionManager = AuthenticationSessionManager(session),
-    private val authenticationSessionAdapterExtension: AuthenticationSessionAdapterExtension = AuthenticationSessionAdapterExtension(
-        session,
-        session.context.realm
-    )
-) {
+open class GematikIDPService(private val session: KeycloakSession) {
     private val logger = Logger.getLogger(this::class.java)
 
     /**
@@ -183,26 +174,17 @@ open class GematikIDPService(
         realm: RealmModel,
         encodedState: String,
     ): AuthenticationSessionModel {
-        val state = decodeIdentityBrokerState(encodedState)
+        val state = GematikIDPState.fromEncodedState(encodedState)
 
         val client = realm.getClientByClientId(state.clientId)
         if (client == null || !client.isEnabled) {
             throw Exception("client not found or disabled")
         }
 
-        return authenticationSessionManager.getCurrentAuthenticationSession(realm, client, state.tabId)
-            ?: authenticationSessionAdapterExtension.getAuthenticationSessionFor(
-                state.tabId,
-                client
-            ) ?: throw authSessionNotFound(encodedState)
-    }
+        val rootAuthSession = session.authenticationSessions().getRootAuthenticationSession(realm, state.rootSessionId)
 
-    fun decodeIdentityBrokerState(encodedState: String) =
-        encodedState.split(GematikIDP.STATE_DELIMITER).takeIf {
-            it.size == 2
-        }?.let {
-            IdentityBrokerState.decoded("", null, it.component1(), it.component2())
-        } ?: throw Exception("invalid state $encodedState")
+        return rootAuthSession.getAuthenticationSession(client, state.tabId) ?: throw authSessionNotFound(encodedState)
+    }
 
     private fun authSessionNotFound(encodedState: String?): SessionNotFoundException {
         val realm = session.context.realm
