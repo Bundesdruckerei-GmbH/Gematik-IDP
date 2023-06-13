@@ -116,9 +116,12 @@ open class GematikIDPEndpoint(
 
         val codeVerifier = PkceUtils.generateCodeVerifier()
         authSession.setAuthNote(CODE_VERIFIER, codeVerifier)
-        authSession.setAuthNote(GEMATIK_IDP_STEP, GematikIDPStep.REQUESTED_HBA_DATA.name)
+        var disableHbaAuthentication = config.getDisableHbaAuthentication()
+        var nextStep = if (disableHbaAuthentication) GematikIDPStep.REQUESTED_SMCB_DATA.name else GematikIDPStep.REQUESTED_HBA_DATA.name;
+        var scope = if (disableHbaAuthentication) SCOPE_SMCB else SCOPE_HBA
+        authSession.setAuthNote(GEMATIK_IDP_STEP, nextStep)
 
-        return generateAuthenticatorFormResponse(encodedState, codeVerifier, SCOPE_HBA)
+        return generateAuthenticatorFormResponse(encodedState, codeVerifier, scope)
     }
 
     /**
@@ -373,10 +376,15 @@ open class GematikIDPEndpoint(
         authSession: AuthenticationSessionModel,
         claims: Map<String, Any>,
     ): Response {
-        val hbaData = getCertificateDataFromAuthNote(authSession, HBA_DATA)
         val smcbData = claims
+        var telematikId = smcbData[ContextData.CONTEXT_SMCB_TELEMATIK_ID.claim.value] as String
 
-        val telematikId = hbaData[ContextData.CONTEXT_HBA_TELEMATIK_ID.claim.value] as String
+        var hbaData = emptyMap<String, Any>()
+        if (!config.getDisableHbaAuthentication()) {
+            hbaData = getCertificateDataFromAuthNote(authSession, HBA_DATA)
+            telematikId = hbaData[ContextData.CONTEXT_HBA_TELEMATIK_ID.claim.value] as String
+        }
+
         val identityContext =
             BrokeredIdentityContext(determineIdentityProviderID(telematikId))
                 .apply {

@@ -108,6 +108,20 @@ internal class GematikIDPEndpointTest {
         setMultipleIdentityMode(true)
         setNewAuthenticationFlow(false)
     }
+    private val configHbaDisabled: GematikIDPConfig = GematikIDPConfig().apply {
+        alias = idpAlias
+        clientId = gematikClientId
+        defaultScope = "openid"
+        updateOpenidConfig(TestUtils.discoveryDocument)
+        setAuthenticatorUrl("http://localhost:8000/")
+        setAuthenticatorAuthorizationUrl(TestUtils.discoveryDocument.authorizationEndpoint)
+        setTimeoutMs("20000")
+        setIdpTimeoutMs("10000")
+        setIdpUserAgent("Servko/1.0.0 Servko/Client")
+        setMultipleIdentityMode(true)
+        setNewAuthenticationFlow(false)
+        setDisableHbaAuthentication(true)
+    }
     private val idp = GematikIDP(sessionMock, config)
 
     private var isHba = true
@@ -159,6 +173,25 @@ internal class GematikIDPEndpointTest {
         override fun skipAllValidators(): Boolean = true
     }
 
+    private val objectUnderTestHbaDisabled = object : GematikIDPEndpoint(
+            realmMock,
+            callbackMock,
+            sessionMock,
+            idp,
+            configHbaDisabled,
+            formsMock,
+            service
+    ) {
+        override fun generateTokenKeyBytes(): ByteArray =
+                if (isHba) {
+                    Base64.decode("dg99COL1CfysxnBuUTxz4gjfNdtD6OoCca5sdKwdUSY=")
+                } else {
+                    Base64.decode("zdztIiMMgVa3jKdvrNG04BtbTZ4TjbbziazVjLLmEbM=")
+                }
+
+        override fun skipAllValidators(): Boolean = true
+    }
+
     @Test
     fun startAuth() {
         assertThat(objectUnderTest.startAuth(state).statusInfo).isEqualTo(Response.Status.OK)
@@ -172,6 +205,24 @@ internal class GematikIDPEndpointTest {
         verify(formsMock).setAttribute(
             "timeoutUrl",
             URI.create("http://localhost:8080/realms/$realmName/broker/$idpAlias/endpoint/timeout?state=$state")
+        )
+        verify(formsMock).setAttribute("timeoutMs", 20000)
+        verify(formsMock).createForm("gematik-idp.ftl")
+    }
+
+    @Test
+    fun startAuthHbaDisabled() {
+        assertThat(objectUnderTestHbaDisabled.startAuth(state).statusInfo).isEqualTo(Response.Status.OK)
+
+        val authenticatorUrlCaptor = argumentCaptor<URI>()
+
+        verify(formsMock).setAttribute(eq("authenticatorUrl"), authenticatorUrlCaptor.capture())
+        val authenticatorUrl = authenticatorUrlCaptor.firstValue
+        assertAuthenticatorUrl(authenticatorUrl, "openid Institutions_ID")
+
+        verify(formsMock).setAttribute(
+                "timeoutUrl",
+                URI.create("http://localhost:8080/realms/$realmName/broker/$idpAlias/endpoint/timeout?state=$state")
         )
         verify(formsMock).setAttribute("timeoutMs", 20000)
         verify(formsMock).createForm("gematik-idp.ftl")

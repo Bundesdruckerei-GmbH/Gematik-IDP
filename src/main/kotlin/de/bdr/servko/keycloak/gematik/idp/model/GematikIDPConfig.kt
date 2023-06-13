@@ -36,6 +36,8 @@ private const val MULTIPLE_IDENTITY_MODE = "multipleIdentityMode"
 
 private const val NEW_AUTHENTICATION_FLOW = "newAuthenticationFlow"
 
+private const val DISABLE_HBA_AUTHENTICATION = "disableHbaAuthentication";
+
 class GematikIDPConfig(model: IdentityProviderModel? = null) : OIDCIdentityProviderConfig(model) {
 
     fun setAuthenticatorUrl(url: String) = config.put(AUTHENTICATOR_URL, url)
@@ -78,6 +80,11 @@ class GematikIDPConfig(model: IdentityProviderModel? = null) : OIDCIdentityProvi
         config.put(NEW_AUTHENTICATION_FLOW, multipleIdentityMode.toString())
 
     fun getNewAuthenticationFlow() = config[NEW_AUTHENTICATION_FLOW]?.toBoolean() == true
+
+    fun setDisableHbaAuthentication(disableHbaAuthentication: Boolean) =
+            config.put(DISABLE_HBA_AUTHENTICATION, disableHbaAuthentication.toString())
+
+    fun getDisableHbaAuthentication() = config[DISABLE_HBA_AUTHENTICATION]?.toBoolean() == true
 
     override fun getDefaultScope(): String {
         var defaultScope = super.getDefaultScope() ?: "openid"

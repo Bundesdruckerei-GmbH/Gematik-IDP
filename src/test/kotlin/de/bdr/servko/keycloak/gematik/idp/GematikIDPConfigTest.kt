@@ -223,4 +223,17 @@ internal class GematikIDPConfigTest {
 
         Assertions.assertThat(idpConfig.getNewAuthenticationFlow()).isEqualTo(multipleIdentityMode)
     }
+
+    @ParameterizedTest
+    @ValueSource(booleans = [true, false])
+    fun setDisableHbaAuthentication(disableHbaAuthentication: Boolean) {
+        val config= LinkedHashMap<String, String>()
+        val model = OIDCIdentityProviderConfig()
+        model.config = config
+
+        val idpConfig = GematikIDPConfig(model)
+        idpConfig.setNewAuthenticationFlow(disableHbaAuthentication)
+
+        Assertions.assertThat(idpConfig.getNewAuthenticationFlow()).isEqualTo(disableHbaAuthentication)
+    }
 }

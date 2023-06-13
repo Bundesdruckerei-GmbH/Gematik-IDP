@@ -108,6 +108,21 @@ internal class GematikIDPEndpointNewAuthFlowTest {
         setMultipleIdentityMode(true)
         setNewAuthenticationFlow(true)
     }
+    private val configHbaDisabled: GematikIDPConfig = GematikIDPConfig().apply {
+        alias = idpAlias
+        clientId = gematikClientId
+        defaultScope = "openid"
+        setOpenidConfigUrl("http://localhost:8000/")
+        updateOpenidConfig(TestUtils.discoveryDocument)
+        setAuthenticatorUrl("http://localhost:8000/")
+        setAuthenticatorAuthorizationUrl(TestUtils.discoveryDocument.authorizationEndpoint)
+        setTimeoutMs("20000")
+        setIdpTimeoutMs("10000")
+        setIdpUserAgent("Servko/1.0.0 Servko/Client")
+        setMultipleIdentityMode(true)
+        setNewAuthenticationFlow(true)
+        setDisableHbaAuthentication(true)
+    }
     private val idp = GematikIDP(sessionMock, config)
 
     private var isHba = true
@@ -133,6 +148,25 @@ internal class GematikIDPEndpointNewAuthFlowTest {
             } else {
                 Base64.decode("zdztIiMMgVa3jKdvrNG04BtbTZ4TjbbziazVjLLmEbM=")
             }
+
+        override fun skipAllValidators(): Boolean = true
+    }
+
+    private val underTestHbaDisabled = object : GematikIDPEndpoint(
+            realmMock,
+            callbackMock,
+            sessionMock,
+            idp,
+            configHbaDisabled,
+            formsMock,
+            service
+    ) {
+        override fun generateTokenKeyBytes(): ByteArray =
+                if (isHba) {
+                    Base64.decode("dg99COL1CfysxnBuUTxz4gjfNdtD6OoCca5sdKwdUSY=")
+                } else {
+                    Base64.decode("zdztIiMMgVa3jKdvrNG04BtbTZ4TjbbziazVjLLmEbM=")
+                }
 
         override fun skipAllValidators(): Boolean = true
     }
@@ -328,6 +362,22 @@ internal class GematikIDPEndpointNewAuthFlowTest {
         )
         verify(formsMock).setAttribute("timeoutMs", 20000)
         verify(formsMock).createForm("gematik-idp.ftl")
+    }
+
+    @Test
+    fun authenticatorNextStep_HbaDisabled() {
+        // arrange
+        whenever(authSessionMock.getAuthNote("CODE_VERIFIER")).thenReturn(smcbKeyVerifier)
+        whenever(authSessionMock.getAuthNote("GEMATIK_IDP_STEP"))
+                .thenReturn(GematikIDPEndpoint.GematikIDPStep.RECEIVED_SMCB_DATA.name)
+        whenever(authSessionMock.getAuthNote("SMCB_DATA")).thenReturn(TestUtils.getJsonSmcbToken())
+        whenever(callbackMock.authenticated(any())).thenReturn(Response.ok().build())
+
+        // act
+        val result = underTestHbaDisabled.authenticatorNextStep(state)
+
+        // assert
+        assertThat(result.statusInfo).isEqualTo(Response.Status.OK)
     }
 
     @Test

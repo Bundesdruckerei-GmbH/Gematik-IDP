@@ -62,5 +62,6 @@ object TestUtils {
         val token_type: String = "Bearer",
         val id_token: String,
         val access_token: String,
+        val idNummer: String = "telematik ID",
     )
 }
