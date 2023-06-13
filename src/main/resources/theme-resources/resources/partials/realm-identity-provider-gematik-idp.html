@@ -160,6 +160,16 @@
                 </div>
                 <kc-tooltip>{{:: 'gematik-idp.new-authentication-flow.tooltip' | translate}}</kc-tooltip>
             </div>
+            <div class="form-group">
+                <label class="col-md-2 control-label" for="disableHbaAuthentication">{{:: 'gematik-idp.disable-hba-authentication' |
+                    translate}}</label>
+                <div class="col-md-6">
+                    <input id="disableHbaAuthentication" name="identityProvider.config.disable-hba-authentication"
+                           ng-model="identityProvider.config.disableHbaAuthentication" off-text="{{:: 'offText' | translate}}"
+                           on-text="{{:: 'onText' | translate}}" onoffswitchvalue/>
+                </div>
+                <kc-tooltip>{{:: 'gematik-idp.disable-hba-authentication.tooltip' | translate}}</kc-tooltip>
+            </div>
             <div class="form-group clearfix">
                 <label class="col-md-2 control-label" for="openidConfigUrl">
                     {{:: 'gematik-idp.authenticator-authorization-url' | translate}}</label>
