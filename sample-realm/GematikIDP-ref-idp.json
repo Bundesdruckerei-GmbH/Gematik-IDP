@@ -134,14 +134,14 @@
                 "view-clients",
                 "manage-events",
                 "query-users",
-                "view-identity-providers",
                 "impersonation",
                 "view-authorization",
+                "view-identity-providers",
                 "query-groups",
                 "view-users",
                 "manage-clients",
-                "view-realm",
                 "query-realms",
+                "view-realm",
                 "query-clients",
                 "manage-users",
                 "manage-authorization",
@@ -389,6 +389,15 @@
           "clientRole": true,
           "containerId": "d2213016-9dc6-4669-a6d8-d7dba751b839",
           "attributes": {}
+        },
+        {
+          "id": "6ecb1a36-3101-4e75-8d41-2d0f423e9fc0",
+          "name": "view-groups",
+          "description": "${role_view-groups}",
+          "composite": false,
+          "clientRole": true,
+          "containerId": "d2213016-9dc6-4669-a6d8-d7dba751b839",
+          "attributes": {}
         }
       ]
     }
@@ -411,9 +420,10 @@
   "otpPolicyDigits": 6,
   "otpPolicyLookAheadWindow": 1,
   "otpPolicyPeriod": 30,
+  "otpPolicyCodeReusable": false,
   "otpSupportedApplications": [
-    "FreeOTP",
-    "Google Authenticator"
+    "totpAppFreeOTPName",
+    "totpAppGoogleName"
   ],
   "webAuthnPolicyRpEntityName": "keycloak",
   "webAuthnPolicySignatureAlgorithms": [
@@ -452,7 +462,8 @@
       {
         "client": "account-console",
         "roles": [
-          "manage-account"
+          "manage-account",
+          "view-groups"
         ]
       }
     ]
@@ -577,7 +588,9 @@
       "publicClient": true,
       "frontchannelLogout": false,
       "protocol": "openid-connect",
-      "attributes": {},
+      "attributes": {
+        "post.logout.redirect.uris": "+"
+      },
       "authenticationFlowBindingOverrides": {},
       "fullScopeAllowed": false,
       "nodeReRegistrationTimeout": 0,
@@ -615,7 +628,9 @@
       "publicClient": false,
       "frontchannelLogout": false,
       "protocol": "openid-connect",
-      "attributes": {},
+      "attributes": {
+        "post.logout.redirect.uris": "+"
+      },
       "authenticationFlowBindingOverrides": {},
       "fullScopeAllowed": false,
       "nodeReRegistrationTimeout": 0,
@@ -653,7 +668,9 @@
       "publicClient": false,
       "frontchannelLogout": false,
       "protocol": "openid-connect",
-      "attributes": {},
+      "attributes": {
+        "post.logout.redirect.uris": "+"
+      },
       "authenticationFlowBindingOverrides": {},
       "fullScopeAllowed": false,
       "nodeReRegistrationTimeout": 0,
@@ -831,7 +848,8 @@
           "consentRequired": false,
           "config": {
             "id.token.claim": "true",
-            "access.token.claim": "true"
+            "access.token.claim": "true",
+            "userinfo.token.claim": "true"
           }
         }
       ]
@@ -1089,6 +1107,7 @@
           "consentRequired": false,
           "config": {
             "multivalued": "true",
+            "userinfo.token.claim": "true",
             "user.attribute": "foo",
             "id.token.claim": "true",
             "access.token.claim": "true",
@@ -1269,6 +1288,7 @@
   },
   "smtpServer": {},
   "loginTheme": "gematik-idp",
+  "adminTheme": "gematik-idp",
   "eventsEnabled": false,
   "eventsListeners": [
     "jboss-logging"
@@ -1290,69 +1310,375 @@
       "linkOnly": false,
       "firstBrokerLoginFlowAlias": "first broker login",
       "config": {
+        "clientId": "localhost",
+        "multipleIdentityMode": "false",
+        "idpTimeoutMs": "600000",
+        "authenticationFlow": "MULTI",
+        "openidConfigUrl": "http://host.docker.internal:8081/.well-known/openid-configuration",
+        "newAuthenticationFlow": "true",
+        "useJwksUrl": "true",
         "authenticatorUrl": "authenticator://",
         "authenticatorAuthorizationUrl": "http://localhost:8081/sign_response",
-        "clientId": "localhost_https",
-        "idpUserAgent": "servko/build bdr/localhost_https",
+        "idpUserAgent": "servko/build bdr/localhost",
+        "timeoutMs": "600000",
+        "syncMode": "FORCE",
+        "defaultScope": "openid gem-auth"
+      }
+    },
+    {
+      "alias": "gematik-idp-hba",
+      "internalId": "43c7e3c6-84b9-47c4-b1ee-14bba3f83a46",
+      "providerId": "gematik-idp",
+      "enabled": true,
+      "updateProfileFirstLoginMode": "on",
+      "trustEmail": false,
+      "storeToken": false,
+      "addReadTokenRoleOnCreate": false,
+      "authenticateByDefault": false,
+      "linkOnly": false,
+      "firstBrokerLoginFlowAlias": "first broker login",
+      "config": {
+        "authenticatorUrl": "authenticator://",
+        "clientId": "localhost_hba",
+        "authenticatorAuthorizationUrl": "http://localhost:8081/sign_response",
+        "idpUserAgent": "servko/build bdr/localhost_hba",
+        "authenticationFlow": "HBA",
         "idpTimeoutMs": "600000",
-        "multipleIdentityMode": "false",
         "openidConfigUrl": "http://host.docker.internal:8081/.well-known/openid-configuration",
         "timeoutMs": "600000",
-        "syncMode": "IMPORT",
+        "syncMode": "FORCE",
+        "defaultScope": "openid gem-auth",
+        "useJwksUrl": "true"
+      }
+    },
+    {
+      "alias": "gematik-idp-smcb",
+      "internalId": "83500eaa-826b-4bef-a617-7913a6548bc8",
+      "providerId": "gematik-idp",
+      "enabled": true,
+      "updateProfileFirstLoginMode": "on",
+      "trustEmail": false,
+      "storeToken": false,
+      "addReadTokenRoleOnCreate": false,
+      "authenticateByDefault": false,
+      "linkOnly": false,
+      "firstBrokerLoginFlowAlias": "first broker login",
+      "config": {
+        "authenticatorUrl": "authenticator://",
+        "clientId": "localhost_smcb",
+        "authenticatorAuthorizationUrl": "http://localhost:8081/sign_response",
+        "idpUserAgent": "servko/build bdr/localhost_smcb",
+        "authenticationFlow": "SMCB",
+        "idpTimeoutMs": "600000",
+        "openidConfigUrl": "http://host.docker.internal:8081/.well-known/openid-configuration",
+        "timeoutMs": "600000",
+        "syncMode": "FORCE",
         "defaultScope": "openid gem-auth",
         "useJwksUrl": "true"
       }
     }
   ],
-  "identityProviderMappers": [],
+  "identityProviderMappers": [
+    {
+      "id": "27f385ab-28d5-4cc1-90b8-622fb67fc5b3",
+      "name": "smcb_profession_oid",
+      "identityProviderAlias": "gematik-idp-hba",
+      "identityProviderMapper": "gematik-idp-smcb-user-mapper",
+      "config": {
+        "syncMode": "INHERIT",
+        "userAttribute": "smcb_profession_oid",
+        "claimAttribute": "PROFESSION_OID"
+      }
+    },
+    {
+      "id": "1178d980-f6b5-4de2-b727-2ea5aabef71f",
+      "name": "smcb_family_name",
+      "identityProviderAlias": "gematik-idp-smcb",
+      "identityProviderMapper": "gematik-idp-smcb-user-mapper",
+      "config": {
+        "syncMode": "INHERIT",
+        "userAttribute": "smcb_family_name",
+        "claimAttribute": "FAMILY_NAME"
+      }
+    },
+    {
+      "id": "54ef8443-a7e0-46a3-a2c7-8ddb05ca938e",
+      "name": "hba_profession_oid",
+      "identityProviderAlias": "gematik-idp",
+      "identityProviderMapper": "gematik-idp-hba-user-mapper",
+      "config": {
+        "syncMode": "INHERIT",
+        "userAttribute": "hba_profession_oid",
+        "claimAttribute": "PROFESSION_OID"
+      }
+    },
+    {
+      "id": "bf1c7144-787f-4bd6-a1d4-076fade8ac16",
+      "name": "hba_given_name",
+      "identityProviderAlias": "gematik-idp-smcb",
+      "identityProviderMapper": "gematik-idp-hba-user-mapper",
+      "config": {
+        "syncMode": "INHERIT",
+        "userAttribute": "hba_given_name",
+        "claimAttribute": "GIVEN_NAME"
+      }
+    },
+    {
+      "id": "95bd354d-0b05-4080-ac80-632655fb398a",
+      "name": "smcb_family_name",
+      "identityProviderAlias": "gematik-idp-hba",
+      "identityProviderMapper": "gematik-idp-smcb-user-mapper",
+      "config": {
+        "syncMode": "INHERIT",
+        "userAttribute": "smcb_family_name",
+        "claimAttribute": "FAMILY_NAME"
+      }
+    },
+    {
+      "id": "1d3b3a91-7d4e-41a3-9231-532032034454",
+      "name": "smcb_profession_oid",
+      "identityProviderAlias": "gematik-idp-smcb",
+      "identityProviderMapper": "gematik-idp-smcb-user-mapper",
+      "config": {
+        "syncMode": "INHERIT",
+        "userAttribute": "smcb_profession_oid",
+        "claimAttribute": "PROFESSION_OID"
+      }
+    },
+    {
+      "id": "16acce74-ccc8-4bd3-883c-5c9eeb614d40",
+      "name": "smcb_organization_name",
+      "identityProviderAlias": "gematik-idp",
+      "identityProviderMapper": "gematik-idp-smcb-user-mapper",
+      "config": {
+        "syncMode": "INHERIT",
+        "userAttribute": "smcb_organization_name",
+        "claimAttribute": "ORGANIZATION_NAME"
+      }
+    },
+    {
+      "id": "85ca1086-d587-427a-a106-95f54861e2d9",
+      "name": "hba_family_name",
+      "identityProviderAlias": "gematik-idp-smcb",
+      "identityProviderMapper": "gematik-idp-hba-user-mapper",
+      "config": {
+        "syncMode": "INHERIT",
+        "userAttribute": "hba_family_name",
+        "claimAttribute": "FAMILY_NAME"
+      }
+    },
+    {
+      "id": "0355e86f-4533-4b3a-b572-e70631db8ef2",
+      "name": "hba_profession_oid",
+      "identityProviderAlias": "gematik-idp-hba",
+      "identityProviderMapper": "gematik-idp-hba-user-mapper",
+      "config": {
+        "syncMode": "INHERIT",
+        "userAttribute": "hba_profession_oid",
+        "claimAttribute": "PROFESSION_OID"
+      }
+    },
+    {
+      "id": "03a2344b-557e-45aa-86a9-978eb61ddcd0",
+      "name": "hba_family_name",
+      "identityProviderAlias": "gematik-idp",
+      "identityProviderMapper": "gematik-idp-hba-user-mapper",
+      "config": {
+        "syncMode": "INHERIT",
+        "userAttribute": "hba_family_name",
+        "claimAttribute": "FAMILY_NAME"
+      }
+    },
+    {
+      "id": "abb3e540-a184-4a3e-a975-a3ca715d335a",
+      "name": "smcb_organization_name",
+      "identityProviderAlias": "gematik-idp-hba",
+      "identityProviderMapper": "gematik-idp-smcb-user-mapper",
+      "config": {
+        "syncMode": "INHERIT",
+        "userAttribute": "smcb_organization_name",
+        "claimAttribute": "ORGANIZATION_NAME"
+      }
+    },
+    {
+      "id": "b7a0ef83-669a-4d21-ac44-826b4c70d037",
+      "name": "smcb_telematik_id",
+      "identityProviderAlias": "gematik-idp-hba",
+      "identityProviderMapper": "gematik-idp-smcb-user-mapper",
+      "config": {
+        "syncMode": "INHERIT",
+        "userAttribute": "smcb_telematik_id",
+        "claimAttribute": "TELEMATIK_ID"
+      }
+    },
+    {
+      "id": "f3050322-3089-47b1-b247-205aea987a80",
+      "name": "smcb_organization_name",
+      "identityProviderAlias": "gematik-idp-smcb",
+      "identityProviderMapper": "gematik-idp-smcb-user-mapper",
+      "config": {
+        "syncMode": "INHERIT",
+        "userAttribute": "smcb_organization_name",
+        "claimAttribute": "ORGANIZATION_NAME"
+      }
+    },
+    {
+      "id": "7d24aaf9-aaa7-4f75-be8e-0533e5f0d098",
+      "name": "smcb_given_name",
+      "identityProviderAlias": "gematik-idp-smcb",
+      "identityProviderMapper": "gematik-idp-smcb-user-mapper",
+      "config": {
+        "syncMode": "INHERIT",
+        "userAttribute": "smcb_given_name",
+        "claimAttribute": "GIVEN_NAME"
+      }
+    },
+    {
+      "id": "23bc46c1-72ab-4ebb-8281-2dd5e9f73fae",
+      "name": "hba_telematik_id",
+      "identityProviderAlias": "gematik-idp-smcb",
+      "identityProviderMapper": "gematik-idp-hba-user-mapper",
+      "config": {
+        "syncMode": "INHERIT",
+        "userAttribute": "hba_telematik_id",
+        "claimAttribute": "TELEMATIK_ID"
+      }
+    },
+    {
+      "id": "ea1e883b-ad22-4535-add6-1ffa394d50dc",
+      "name": "smcb_given_name",
+      "identityProviderAlias": "gematik-idp",
+      "identityProviderMapper": "gematik-idp-smcb-user-mapper",
+      "config": {
+        "syncMode": "INHERIT",
+        "userAttribute": "smcb_given_name",
+        "claimAttribute": "GIVEN_NAME"
+      }
+    },
+    {
+      "id": "c301f66c-6027-4006-aec0-bba4f0284317",
+      "name": "hba_profession_oid",
+      "identityProviderAlias": "gematik-idp-smcb",
+      "identityProviderMapper": "gematik-idp-hba-user-mapper",
+      "config": {
+        "syncMode": "INHERIT",
+        "userAttribute": "hba_profession_oid",
+        "claimAttribute": "PROFESSION_OID"
+      }
+    },
+    {
+      "id": "3951b297-316c-42c1-98e6-5f107669560a",
+      "name": "smcb_telematik_id",
+      "identityProviderAlias": "gematik-idp-smcb",
+      "identityProviderMapper": "gematik-idp-smcb-user-mapper",
+      "config": {
+        "syncMode": "INHERIT",
+        "userAttribute": "smcb_telematik_id",
+        "claimAttribute": "TELEMATIK_ID"
+      }
+    },
+    {
+      "id": "b94a72f5-9657-47dd-b31c-c84c618b99da",
+      "name": "hba_given_name",
+      "identityProviderAlias": "gematik-idp",
+      "identityProviderMapper": "gematik-idp-hba-user-mapper",
+      "config": {
+        "syncMode": "INHERIT",
+        "userAttribute": "hba_given_name",
+        "claimAttribute": "GIVEN_NAME"
+      }
+    },
+    {
+      "id": "b46cb509-c57d-487f-b64b-c93d2412af68",
+      "name": "hba_telematik_id",
+      "identityProviderAlias": "gematik-idp",
+      "identityProviderMapper": "gematik-idp-hba-user-mapper",
+      "config": {
+        "syncMode": "INHERIT",
+        "userAttribute": "hba_telematik_id",
+        "claimAttribute": "TELEMATIK_ID"
+      }
+    },
+    {
+      "id": "580b9cbf-359f-4724-9d9b-bdedf4fcbad7",
+      "name": "smcb_family_name",
+      "identityProviderAlias": "gematik-idp",
+      "identityProviderMapper": "gematik-idp-smcb-user-mapper",
+      "config": {
+        "syncMode": "INHERIT",
+        "userAttribute": "smcb_family_name",
+        "claimAttribute": "FAMILY_NAME"
+      }
+    },
+    {
+      "id": "c70c12c3-6bae-4179-a4b0-09fad6c9ae3a",
+      "name": "hba_given_name",
+      "identityProviderAlias": "gematik-idp-hba",
+      "identityProviderMapper": "gematik-idp-hba-user-mapper",
+      "config": {
+        "syncMode": "INHERIT",
+        "userAttribute": "hba_given_name",
+        "claimAttribute": "GIVEN_NAME"
+      }
+    },
+    {
+      "id": "8b21dceb-3de2-4177-91e6-67ed06c8988c",
+      "name": "hba_family_name",
+      "identityProviderAlias": "gematik-idp-hba",
+      "identityProviderMapper": "gematik-idp-hba-user-mapper",
+      "config": {
+        "syncMode": "INHERIT",
+        "userAttribute": "hba_family_name",
+        "claimAttribute": "FAMILY_NAME"
+      }
+    },
+    {
+      "id": "b68e179d-9498-4535-8d79-ffa887b44a1c",
+      "name": "smcb_telematik_id",
+      "identityProviderAlias": "gematik-idp",
+      "identityProviderMapper": "gematik-idp-smcb-user-mapper",
+      "config": {
+        "syncMode": "INHERIT",
+        "userAttribute": "smcb_telematik_id",
+        "claimAttribute": "TELEMATIK_ID"
+      }
+    },
+    {
+      "id": "3a09b3e2-fe06-4fbc-91b3-cbf9a0059ef3",
+      "name": "hba_telematik_id",
+      "identityProviderAlias": "gematik-idp-hba",
+      "identityProviderMapper": "gematik-idp-hba-user-mapper",
+      "config": {
+        "syncMode": "INHERIT",
+        "userAttribute": "hba_telematik_id",
+        "claimAttribute": "TELEMATIK_ID"
+      }
+    },
+    {
+      "id": "e2fb7814-3713-4ae0-a891-91d1118e1066",
+      "name": "smcb_given_name",
+      "identityProviderAlias": "gematik-idp-hba",
+      "identityProviderMapper": "gematik-idp-smcb-user-mapper",
+      "config": {
+        "syncMode": "INHERIT",
+        "userAttribute": "smcb_given_name",
+        "claimAttribute": "GIVEN_NAME"
+      }
+    },
+    {
+      "id": "7516821f-661c-4d7b-a197-b75acc3272dd",
+      "name": "smcb_profession_oid",
+      "identityProviderAlias": "gematik-idp",
+      "identityProviderMapper": "gematik-idp-smcb-user-mapper",
+      "config": {
+        "syncMode": "INHERIT",
+        "userAttribute": "smcb_profession_oid",
+        "claimAttribute": "PROFESSION_OID"
+      }
+    }
+  ],
   "components": {
     "org.keycloak.services.clientregistration.policy.ClientRegistrationPolicy": [
-      {
-        "id": "c1392e88-73e4-4998-8a39-08dea337b3fe",
-        "name": "Max Clients Limit",
-        "providerId": "max-clients",
-        "subType": "anonymous",
-        "subComponents": {},
-        "config": {
-          "max-clients": [
-            "200"
-          ]
-        }
-      },
-      {
-        "id": "19be5339-3527-4763-9fde-a7bd220ac393",
-        "name": "Allowed Protocol Mapper Types",
-        "providerId": "allowed-protocol-mappers",
-        "subType": "anonymous",
-        "subComponents": {},
-        "config": {
-          "allowed-protocol-mapper-types": [
-            "saml-user-attribute-mapper",
-            "oidc-sha256-pairwise-sub-mapper",
-            "oidc-usermodel-attribute-mapper",
-            "oidc-usermodel-property-mapper",
-            "oidc-full-name-mapper",
-            "oidc-address-mapper",
-            "saml-role-list-mapper",
-            "saml-user-property-mapper"
-          ]
-        }
-      },
-      {
-        "id": "043de053-631f-483d-8f8c-a8ebe49fccdb",
-        "name": "Trusted Hosts",
-        "providerId": "trusted-hosts",
-        "subType": "anonymous",
-        "subComponents": {},
-        "config": {
-          "host-sending-registration-request-must-match": [
-            "true"
-          ],
-          "client-uris-must-match": [
-            "true"
-          ]
-        }
-      },
       {
         "id": "fa54ba62-111c-4282-923b-524ae040fe5f",
         "name": "Full Scope Disabled",
@@ -1374,12 +1700,58 @@
         }
       },
       {
+        "id": "c1392e88-73e4-4998-8a39-08dea337b3fe",
+        "name": "Max Clients Limit",
+        "providerId": "max-clients",
+        "subType": "anonymous",
+        "subComponents": {},
+        "config": {
+          "max-clients": [
+            "200"
+          ]
+        }
+      },
+      {
+        "id": "19be5339-3527-4763-9fde-a7bd220ac393",
+        "name": "Allowed Protocol Mapper Types",
+        "providerId": "allowed-protocol-mappers",
+        "subType": "anonymous",
+        "subComponents": {},
+        "config": {
+          "allowed-protocol-mapper-types": [
+            "oidc-address-mapper",
+            "oidc-full-name-mapper",
+            "oidc-usermodel-attribute-mapper",
+            "oidc-usermodel-property-mapper",
+            "saml-user-property-mapper",
+            "oidc-sha256-pairwise-sub-mapper",
+            "saml-role-list-mapper",
+            "saml-user-attribute-mapper"
+          ]
+        }
+      },
+      {
         "id": "0549a42e-42d4-4421-8d8b-bee283ce6857",
         "name": "Consent Required",
         "providerId": "consent-required",
         "subType": "anonymous",
         "subComponents": {},
         "config": {}
+      },
+      {
+        "id": "043de053-631f-483d-8f8c-a8ebe49fccdb",
+        "name": "Trusted Hosts",
+        "providerId": "trusted-hosts",
+        "subType": "anonymous",
+        "subComponents": {},
+        "config": {
+          "host-sending-registration-request-must-match": [
+            "true"
+          ],
+          "client-uris-must-match": [
+            "true"
+          ]
+        }
       },
       {
         "id": "758355b2-d6b8-476f-9ef3-d7c7e3d6c04c",
@@ -1402,26 +1774,32 @@
         "config": {
           "allowed-protocol-mapper-types": [
             "saml-user-property-mapper",
+            "oidc-full-name-mapper",
             "oidc-usermodel-property-mapper",
             "saml-role-list-mapper",
-            "oidc-usermodel-attribute-mapper",
-            "oidc-sha256-pairwise-sub-mapper",
-            "oidc-address-mapper",
             "saml-user-attribute-mapper",
-            "oidc-full-name-mapper"
+            "oidc-address-mapper",
+            "oidc-sha256-pairwise-sub-mapper",
+            "oidc-usermodel-attribute-mapper"
           ]
         }
       }
     ],
-    "org.keycloak.userprofile.UserProfileProvider": [
-      {
-        "id": "1dc01311-265b-424e-a85d-bc1821767f1e",
-        "providerId": "declarative-user-profile",
-        "subComponents": {},
-        "config": {}
-      }
-    ],
     "org.keycloak.keys.KeyProvider": [
+      {
+        "id": "59da3508-a2ce-42a7-baa6-4e5c0df85f6a",
+        "name": "hmac-generated",
+        "providerId": "hmac-generated",
+        "subComponents": {},
+        "config": {
+          "priority": [
+            "100"
+          ],
+          "algorithm": [
+            "HS256"
+          ]
+        }
+      },
       {
         "id": "7f42bc55-49a9-4697-94c7-3f31583acde9",
         "name": "rsa-generated",
@@ -1441,20 +1819,6 @@
         "config": {
           "priority": [
             "100"
-          ]
-        }
-      },
-      {
-        "id": "59da3508-a2ce-42a7-baa6-4e5c0df85f6a",
-        "name": "hmac-generated",
-        "providerId": "hmac-generated",
-        "subComponents": {},
-        "config": {
-          "priority": [
-            "100"
-          ],
-          "algorithm": [
-            "HS256"
           ]
         }
       },
@@ -1480,7 +1844,7 @@
   ],
   "authenticationFlows": [
     {
-      "id": "90e8fc8a-0295-48e1-b7cc-bfb2c242189d",
+      "id": "96c511d2-54e6-48ac-afcf-64abf7fb6605",
       "alias": "Account verification options",
       "description": "Method with which to verity the existing account",
       "providerId": "basic-flow",
@@ -1506,7 +1870,7 @@
       ]
     },
     {
-      "id": "e1dfe7db-12b7-4801-b6b3-02351648d91b",
+      "id": "acaef63f-d3a6-4476-833d-51daded78bc8",
       "alias": "Authentication Options",
       "description": "Authentication options.",
       "providerId": "basic-flow",
@@ -1540,7 +1904,7 @@
       ]
     },
     {
-      "id": "a5e3b5fe-1ec9-4434-99fc-d071a143734f",
+      "id": "56f5453a-fbbe-4762-9f54-263d2ecad066",
       "alias": "Browser - Conditional OTP",
       "description": "Flow to determine if the OTP is required for the authentication",
       "providerId": "basic-flow",
@@ -1566,7 +1930,7 @@
       ]
     },
     {
-      "id": "7209c9f2-dffc-4b24-ac41-7dc5edadbf15",
+      "id": "1e98b626-a03f-4d69-a63a-fdf9171ccaee",
       "alias": "Direct Grant - Conditional OTP",
       "description": "Flow to determine if the OTP is required for the authentication",
       "providerId": "basic-flow",
@@ -1592,7 +1956,7 @@
       ]
     },
     {
-      "id": "ac8b3876-a148-485a-b3e5-401c81f510a2",
+      "id": "ee68ed99-e985-48f6-be94-27719c444f4c",
       "alias": "First broker login - Conditional OTP",
       "description": "Flow to determine if the OTP is required for the authentication",
       "providerId": "basic-flow",
@@ -1618,7 +1982,7 @@
       ]
     },
     {
-      "id": "a4426e68-0874-41ce-974a-43fcadeca3ad",
+      "id": "f00d4621-879f-421d-98be-7836baf2f8ae",
       "alias": "Handle Existing Account",
       "description": "Handle what to do if there is existing account with same email/username like authenticated identity provider",
       "providerId": "basic-flow",
@@ -1644,7 +2008,7 @@
       ]
     },
     {
-      "id": "00ae6ca3-4af4-48e3-859a-2a9b14012c05",
+      "id": "1556bbe0-f134-4500-a7c2-eab7b01a8d1e",
       "alias": "Reset - Conditional OTP",
       "description": "Flow to determine if the OTP should be reset or not. Set to REQUIRED to force.",
       "providerId": "basic-flow",
@@ -1670,7 +2034,7 @@
       ]
     },
     {
-      "id": "1edcf32b-34f5-4b7a-9a79-705f8359f7d6",
+      "id": "9f0a76eb-59e9-4f3e-a485-1da94f9968c8",
       "alias": "User creation or linking",
       "description": "Flow for the existing/non-existing user alternatives",
       "providerId": "basic-flow",
@@ -1697,7 +2061,7 @@
       ]
     },
     {
-      "id": "0808f757-1270-4aad-b6e1-179ff4433a56",
+      "id": "987eb8d4-38e9-40a2-a01a-33427237ea20",
       "alias": "Verify Existing Account by Re-authentication",
       "description": "Reauthentication of existing account",
       "providerId": "basic-flow",
@@ -1723,7 +2087,7 @@
       ]
     },
     {
-      "id": "36dd6d81-1593-4495-a070-01d354e3d2e5",
+      "id": "9ccf5734-2d38-4582-8f26-32ff10ebbe26",
       "alias": "browser",
       "description": "browser based authentication",
       "providerId": "basic-flow",
@@ -1765,7 +2129,7 @@
       ]
     },
     {
-      "id": "2d04835b-122d-421e-9b8c-adf845999516",
+      "id": "24feba03-4871-4ce2-8cfe-4c61de5cb82e",
       "alias": "clients",
       "description": "Base authentication for clients",
       "providerId": "client-flow",
@@ -1807,7 +2171,7 @@
       ]
     },
     {
-      "id": "e861393f-d05c-40cc-b85e-d755183bbde6",
+      "id": "0bc0df54-2de6-4ebc-b4f9-76e0ebd53758",
       "alias": "direct grant",
       "description": "OpenID Connect Resource Owner Grant",
       "providerId": "basic-flow",
@@ -1841,7 +2205,7 @@
       ]
     },
     {
-      "id": "e195bf06-5ee8-4c0a-bb86-99537d7d29e9",
+      "id": "d8e3346a-15a0-46e1-baaf-fe07e828b7b0",
       "alias": "docker auth",
       "description": "Used by Docker clients to authenticate against the IDP",
       "providerId": "basic-flow",
@@ -1859,7 +2223,7 @@
       ]
     },
     {
-      "id": "0df1b1cd-69f5-4f79-8a63-5daf78f860d5",
+      "id": "e3c68257-e180-4ccf-b9ed-4cccd46f6903",
       "alias": "first broker login",
       "description": "Actions taken after first broker login with identity provider account, which is not yet linked to any Keycloak account",
       "providerId": "basic-flow",
@@ -1886,7 +2250,7 @@
       ]
     },
     {
-      "id": "13f5473d-cd59-4dd8-82a1-7ab799228fd7",
+      "id": "121c1e51-6d1f-4d2d-a79b-98caa317e763",
       "alias": "forms",
       "description": "Username, password, otp and other auth forms.",
       "providerId": "basic-flow",
@@ -1912,7 +2276,7 @@
       ]
     },
     {
-      "id": "0c20d328-9edd-43d0-bbe6-ead129ba338d",
+      "id": "0da2ba26-8967-4085-b635-46d2c4888ddd",
       "alias": "http challenge",
       "description": "An authentication flow based on challenge-response HTTP Authentication Schemes",
       "providerId": "basic-flow",
@@ -1938,7 +2302,7 @@
       ]
     },
     {
-      "id": "b2700c31-1737-4ebe-8344-b7e58c025a2e",
+      "id": "f8461986-cb8f-4abb-9e01-442b73400947",
       "alias": "registration",
       "description": "registration flow",
       "providerId": "basic-flow",
@@ -1957,7 +2321,7 @@
       ]
     },
     {
-      "id": "9f14b742-dbd5-46b1-8a97-cd36162f564e",
+      "id": "48c695e8-964d-476c-87d9-8cc3655104c1",
       "alias": "registration form",
       "description": "registration form",
       "providerId": "form-flow",
@@ -1999,7 +2363,7 @@
       ]
     },
     {
-      "id": "93308a1d-77a9-4558-8221-b3f119657e4a",
+      "id": "ddadf75d-2901-4e34-99a8-9331364ed978",
       "alias": "reset credentials",
       "description": "Reset credentials for a user if they forgot their password or something",
       "providerId": "basic-flow",
@@ -2041,7 +2405,7 @@
       ]
     },
     {
-      "id": "3fe1186f-b708-4e2b-9302-e068c1c5a2e9",
+      "id": "f3db5145-6b53-45e8-a53b-7f5c11a8f3db",
       "alias": "saml ecp",
       "description": "SAML ECP Profile Authentication Flow",
       "providerId": "basic-flow",
@@ -2061,14 +2425,14 @@
   ],
   "authenticatorConfig": [
     {
-      "id": "99dad227-c001-4f50-b80a-6f87099a4d26",
+      "id": "d346f3ce-c645-45b0-bc4e-4f9aab01ed12",
       "alias": "create unique user config",
       "config": {
         "require.password.update.after.registration": "false"
       }
     },
     {
-      "id": "7a5a18d5-4216-48dd-a045-a3efcdcf1a59",
+      "id": "2e293f6a-f12e-41e1-8480-739f31f151a3",
       "alias": "review profile config",
       "config": {
         "update.profile.on.first.login": "missing"
@@ -2175,9 +2539,10 @@
     "parRequestUriLifespan": "60",
     "clientSessionMaxLifespan": "0",
     "clientOfflineSessionIdleTimeout": "0",
-    "cibaInterval": "5"
+    "cibaInterval": "5",
+    "realmReusableOtpCode": "false"
   },
-  "keycloakVersion": "19.0.3",
+  "keycloakVersion": "20.0.5",
   "userManagedAccessAllowed": false,
   "clientProfiles": {
     "profiles": []

@@ -22,36 +22,34 @@
 
     <groupId>de.bdr.servko</groupId>
     <artifactId>gematik-idp</artifactId>
-    <version>1.2.0</version>
+    <version>1.7.0-SNAPSHOT</version>
     <description>
         Keycloak plugin allowing authentication with the gematik Authenticator and central IDP.
     </description>
 
     <properties>
         <!-- Keycloak Properties -->
-        <keycloak.version>20.0.5</keycloak.version>
+        <keycloak.version>21.1.2</keycloak.version>
 
         <!-- Maven Plugin Versions -->
-        <maven-surefire-plugin.version>3.1.0</maven-surefire-plugin.version>
+        <maven-surefire-plugin.version>3.1.2</maven-surefire-plugin.version>
         <maven-failsafe-plugin.version>2.22.2</maven-failsafe-plugin.version>
         <maven-compiler-plugin.version>3.10.1</maven-compiler-plugin.version>
-        <maven-shade-plugin.version>3.4.1</maven-shade-plugin.version>
-        <wildfly-maven-plugin.version>4.0.0.Final</wildfly-maven-plugin.version>
-        <dependency-check-maven.version>8.2.1</dependency-check-maven.version>
+        <maven-shade-plugin.version>3.5.0</maven-shade-plugin.version>
+        <wildfly-maven-plugin.version>4.2.0.Final</wildfly-maven-plugin.version>
+        <dependency-check-maven.version>8.4.0</dependency-check-maven.version>
         <jacoco-maven.version>0.8.10</jacoco-maven.version>
 
         <!-- Misc Plugin Versions -->
-        <kotlin.version>1.8.21</kotlin.version>
+        <kotlin.version>1.9.10</kotlin.version>
         <jose4j.version>0.9.3</jose4j.version>
-        <snakeyaml.version>2.0</snakeyaml.version>
-        <kerby-asn1.version>2.0.3</kerby-asn1.version>
-        <sshd-common.version>2.9.2</sshd-common.version>
+        <snakeyaml.version>2.2</snakeyaml.version>
 
         <!-- Test Plugin Versions -->
         <junit-platform-surefire-provider.version>1.3.2</junit-platform-surefire-provider.version>
-        <junit5-plugin.version>5.9.3</junit5-plugin.version>
+        <junit5-plugin.version>5.10.0</junit5-plugin.version>
         <mockito-plugin.version>5.2.0</mockito-plugin.version>
-        <mockito-kotlin.version>4.1.0</mockito-kotlin.version>
+        <mockito-kotlin.version>5.1.0</mockito-kotlin.version>
         <assertj-plugin.version>3.24.2</assertj-plugin.version>
 
         <!-- Sonar Properties -->
@@ -59,9 +57,11 @@
         <dependency.check.report.dir>target/dependency-check</dependency.check.report.dir>
         <sonar.dependencyCheck.jsonReportPath>${dependency.check.report.dir}/dependency-check-report.json</sonar.dependencyCheck.jsonReportPath>
         <sonar.dependencyCheck.htmlReportPath>${dependency.check.report.dir}/dependency-check-report.html</sonar.dependencyCheck.htmlReportPath>
-        <sonar.coverage.jacoco.xmlReportPaths>target/site/jacoco/jacoco.xml</sonar.coverage.jacoco.xmlReportPaths>
+        <sonar.coverage.jacoco.xmlReportPaths>target/site/jacoco/jacoco.exec</sonar.coverage.jacoco.xmlReportPaths>
+
         <maven.compiler.source>11</maven.compiler.source>
         <maven.compiler.target>11</maven.compiler.target>
+
         <!-- With these two variables, you can store your own Nist data mirrors. If these are empty, the default sources are used. -->
         <dependencyCheck.cveUrlModified></dependencyCheck.cveUrlModified>
         <dependencyCheck.cveUrlBase></dependencyCheck.cveUrlBase>
@@ -100,12 +100,6 @@
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-model-infinispan</artifactId>
-            <scope>provided</scope>
-            <version>${keycloak.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.keycloak</groupId>
             <artifactId>keycloak-model-map</artifactId>
             <scope>provided</scope>
             <version>${keycloak.version}</version>
@@ -122,24 +116,13 @@
             </exclusions>
         </dependency>
 
-        <!-- Fixes CVE-2022-25857 -->
+        <!-- Fixes CVE-2022-1471(9.8) -->
         <dependency>
             <groupId>org.yaml</groupId>
             <artifactId>snakeyaml</artifactId>
             <version>${snakeyaml.version}</version>
         </dependency>
-        <!-- Fixes CVE-2023-25613 -->
-        <dependency>
-            <groupId>org.apache.kerby</groupId>
-            <artifactId>kerby-asn1</artifactId>
-            <version>${kerby-asn1.version}</version>
-        </dependency>
-        <!-- Fixes CVE-2022-45047 contained in the Infinispan cache dependencies -->
-        <dependency>
-            <groupId>org.apache.sshd</groupId>
-            <artifactId>sshd-common</artifactId>
-            <version>${sshd-common.version}</version>
-        </dependency>
+
 
         <dependency>
             <groupId>org.jetbrains.kotlin</groupId>
@@ -187,7 +170,7 @@
         <plugins>
             <plugin>
                 <artifactId>maven-deploy-plugin</artifactId>
-                <version>3.0.0</version>
+                <version>3.1.1</version>
                 <executions>
                     <execution>
                         <id>default-deploy</id>

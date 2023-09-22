@@ -19,14 +19,15 @@
 package de.bdr.servko.keycloak.gematik.idp
 
 import de.bdr.servko.keycloak.gematik.idp.model.GematikIDPConfig
+import de.bdr.servko.keycloak.gematik.idp.service.GematikIdpOpenIDConfigurationService
+import de.bdr.servko.keycloak.gematik.idp.util.RestClient
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.entry
 import org.junit.jupiter.api.Test
 import org.keycloak.common.crypto.CryptoIntegration
 import org.keycloak.models.KeycloakContext
 import org.keycloak.models.KeycloakSession
-import org.mockito.kotlin.doReturn
-import org.mockito.kotlin.mock
+import org.mockito.kotlin.*
 import java.time.Clock
 import java.time.Instant
 import java.time.ZoneId
@@ -48,6 +49,8 @@ internal class GematikIDPFactoryTest {
         javaClass.classLoader.getResourceAsStream("openid-config.txt")?.bufferedReader()?.readText() ?: "error"
     private val clock: Clock = Clock.fixed(Instant.ofEpochMilli(1667981784000), ZoneId.of("UTC"))
 
+    private val rest = mock<RestClient> {}
+
     private val objectUnderTest = GematikIDPFactory()
 
     @Test
@@ -55,12 +58,10 @@ internal class GematikIDPFactoryTest {
         CryptoIntegration.init(javaClass.classLoader)
         objectUnderTest.postInit(null)
 
-        objectUnderTest.createAndUpdateConfig(session, config, clock) {
-            object : GematikIDPService(it) {
-                override fun doGet(idpUrl: String, userAgent: String): String {
-                    return mockedOpenidConfig
-                }
+        whenever(rest.doGet(any(), any())).thenReturn(mockedOpenidConfig)
 
+        objectUnderTest.createAndUpdateConfig(session, config, clock) {
+            object : GematikIdpOpenIDConfigurationService(rest) {
                 override fun skipAllValidators(): Boolean = true
             }
         }
@@ -73,33 +74,25 @@ internal class GematikIDPFactoryTest {
         CryptoIntegration.init(javaClass.classLoader)
         objectUnderTest.postInit(null)
 
-        var count = 0
-        var userAgentResult = ""
+        whenever(rest.doGet(any(), eq(userAgent))).thenReturn(mockedOpenidConfig)
 
-        val serviceFactory: (KeycloakSession) -> GematikIDPService = {
-            object : GematikIDPService(it) {
-                override fun doGet(idpUrl: String, userAgent: String): String {
-                    count++
-                    userAgentResult = userAgent
-                    return mockedOpenidConfig
-                }
-
+        val serviceFactory: (KeycloakSession) -> GematikIdpOpenIDConfigurationService = {
+            object : GematikIdpOpenIDConfigurationService(rest) {
                 override fun skipAllValidators(): Boolean = true
             }
         }
 
         objectUnderTest.createAndUpdateConfig(session, config, clock, serviceFactory)
-        assertThat(count).isEqualTo(1)
-        assertThat(userAgentResult).isEqualTo(userAgent)
+        verify(rest, times(1)).doGet(any(), eq(userAgent))
         objectUnderTest.createAndUpdateConfig(session, config, clock, serviceFactory)
-        assertThat(count).isEqualTo(1)
+        verify(rest, times(1)).doGet(any(), eq(userAgent))
 
         assertThat(config.openidConfig).isEqualTo(TestUtils.discoveryDocument)
 
         //we are in the future +24h and document is expired
         val clock = Clock.fixed(Instant.ofEpochMilli(1667983621000), ZoneId.of("UTC"))
         objectUnderTest.createAndUpdateConfig(session, config, clock, serviceFactory)
-        assertThat(count).isEqualTo(2)
+        verify(rest, times(2)).doGet(any(), eq(userAgent))
     }
 
     @Test

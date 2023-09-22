@@ -2,7 +2,8 @@
 
 Supported both by the `authenticator://` (**Gematik Authenticator** version above 3.1) and `https://localhost:39000` (
 **Gematik Authenticator** version below 3.1) endpoints configurable via **Authenticator Url's**, while **Use new
-Authentication Flow** is set to **OFF**.
+Authentication Flow** is set to **OFF** and``Authentication Flow`` set to
+``Authentication with a multiple Gematik-Authenticator requests.``.
 
 ## Authentication using the `authenticator://` Authenticator Url
 
@@ -21,7 +22,7 @@ an exception in the plugin backend.
 
 ## Flow Diagram
 
-![Flow](/docs/flow_old.png)
+![Flow](/docs/img/flow_old.png)
 
 1. User initiated login
 2. User selects the `Login with HBA`, which triggers the gematik-idp
@@ -59,5 +60,5 @@ an exception in the plugin backend.
 23. Second deeplink to fetch [SMCB data](/docs/smcb-id-token.json), scope changed to Institutions_ID
     - same flow as 11 - 22 is executed
 24. Keycloak updates the user, based on IDP-mapper with the stored HBA/SMCB data
-25. Keycloak calls initial redirect_url,
+25. Keycloak calls initial redirect_url
 26. Return the user to the initial application

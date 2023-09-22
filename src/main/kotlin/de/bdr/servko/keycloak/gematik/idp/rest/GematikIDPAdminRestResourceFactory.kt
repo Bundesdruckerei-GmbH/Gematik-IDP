@@ -17,7 +17,8 @@
 
 package de.bdr.servko.keycloak.gematik.idp.rest
 
-import de.bdr.servko.keycloak.gematik.idp.GematikIDPService
+import de.bdr.servko.keycloak.gematik.idp.service.GematikIdpOpenIDConfigurationService
+import de.bdr.servko.keycloak.gematik.idp.util.RestClient
 import org.keycloak.Config
 import org.keycloak.models.KeycloakSession
 import org.keycloak.models.KeycloakSessionFactory
@@ -42,7 +43,7 @@ class GematikIDPAdminRestResourceFactory : AdminRealmResourceProvider, AdminReal
         realm: RealmModel,
         auth: AdminPermissionEvaluator,
         adminEvent: AdminEventBuilder
-    ) = GematikIDPAdminRestResource(auth, GematikIDPService(session))
+    ) = GematikIDPAdminRestResource(auth, GematikIdpOpenIDConfigurationService(RestClient(session)))
 
     override fun init(config: Config.Scope) {
         // do nothing
