@@ -1,6 +1,6 @@
-@startuml ogr
+@startuml GematikIDP
 
-participant OGR_APP order 0
+participant APP order 0
 participant Browser order 1
 participant UserAccount order 2
 participant Authenticator order 3
@@ -8,7 +8,7 @@ participant Gematik_IDP order 4
 
 autonumber
 
-OGR_APP -> Browser: Initiate login via <keycloak-url>/.../openid-connect/auth?<font color=purple><b>redirect_uri</font>=...
+APP -> Browser: Initiate login via <keycloak-url>/.../openid-connect/auth?<font color=purple><b>redirect_uri</font>=...
 Browser -> Browser: User select "Login with SMCB"
 Browser -> UserAccount: GET <keycloak-url>/broker/<idp-id>/login
 UserAccount -> Gematik_IDP: GET <idp_url>/.well-known/openid-configuration
@@ -62,6 +62,6 @@ next_step_url=<keycloak-url>/.../<idp-id>/authenticatorNextStep\n
 Browser -> UserAccount: Requesting next_step_url=<keycloak-url>/.../<idp-id>/authenticatorNextStep\n
 UserAccount -> UserAccount: Update user with SMCB data based on IDP mapper
 UserAccount -> Browser: Redirect 302 <font color=purple><b>redirect_uri</font>
-Browser -> OGR_APP: 302 <font color=purple><b>redirect_uri</font>
+Browser -> APP: 302 <font color=purple><b>redirect_uri</font>
 
 @enduml
