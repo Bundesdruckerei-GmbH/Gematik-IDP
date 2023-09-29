@@ -1,11 +1,12 @@
 # New Authentication Flow
 
 Supported only in Gematik Authenticator version above 4.0 via the `authenticator://` Authenticator Url's, while 
-**Use new Authentication Flow** is set to **ON**.
+**Use new Authentication Flow** is set to **ON** and``Authentication Flow`` set to 
+``Authentication with a multiple Gematik-Authenticator requests.``
 
 ## Flow Diagram
 
-![Flow](/docs/flow_new.png)
+![Flow](/docs/img/flow_new.png)
 
 1. User initiated login
 2. User selects the `Login with HBA`, which triggers the gematik-idp
@@ -44,5 +45,5 @@ Supported only in Gematik Authenticator version above 4.0 via the `authenticator
 24. Second deeplink to fetch [SMCB data](/docs/smcb-id-token.json), scope changed to Institutions_ID
     - same flow as 11 - 22 is executed
 25. Keycloak updates the user, based on IDP-mapper with the stored HBA/SMCB data
-26. Keycloak calls initial redirect_url,
+26. Keycloak calls initial redirect_url
 27. Return the user to the initial application

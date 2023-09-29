@@ -17,16 +17,18 @@
 
 package de.bdr.servko.keycloak.gematik.idp.rest
 
-import de.bdr.servko.keycloak.gematik.idp.GematikIDPService
+import de.bdr.servko.keycloak.gematik.idp.service.GematikIdpOpenIDConfigurationService
 import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator
 import javax.ws.rs.GET
 import javax.ws.rs.Path
+import javax.ws.rs.Produces
 import javax.ws.rs.QueryParam
+import javax.ws.rs.core.MediaType
 import javax.ws.rs.core.Response
 
 class GematikIDPAdminRestResource(
     private val auth: AdminPermissionEvaluator,
-    private val service: GematikIDPService,
+    private val service: GematikIdpOpenIDConfigurationService,
 ) {
     companion object {
         const val OPENID_CONFIGURATION_PATH = "/openid-configuration"
@@ -37,6 +39,7 @@ class GematikIDPAdminRestResource(
      */
     @GET
     @Path(OPENID_CONFIGURATION_PATH)
+    @Produces(MediaType.APPLICATION_JSON)
     fun openidConfiguration(@QueryParam("url") url: String, @QueryParam("user-agent") userAgent: String): Response {
         // note: fine-grained admin permissions (see UsersResource#createUser) not supported for this endpoint
         auth.realm().requireManageIdentityProviders()

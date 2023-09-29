@@ -20,6 +20,7 @@ package de.bdr.servko.keycloak.gematik.idp
 
 import de.bdr.servko.keycloak.gematik.idp.model.GematikIDPConfig
 import de.bdr.servko.keycloak.gematik.idp.model.GematikIDPState
+import de.bdr.servko.keycloak.gematik.idp.rest.GematikIDPLegacyResource
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.keycloak.broker.provider.AuthenticationRequest
@@ -104,6 +105,6 @@ internal class GematikIDPTest {
         val eventBuilder = mock<EventBuilder>()
 
         assertThat(objectUnderTest.callback(realm, authenticationCallback, eventBuilder))
-            .isInstanceOf(GematikIDPEndpoint::class.java)
+            .isInstanceOf(GematikIDPLegacyResource::class.java)
     }
 }

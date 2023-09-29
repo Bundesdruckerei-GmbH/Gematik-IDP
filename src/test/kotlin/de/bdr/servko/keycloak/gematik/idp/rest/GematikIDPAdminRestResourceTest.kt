@@ -18,8 +18,8 @@
 
 package de.bdr.servko.keycloak.gematik.idp.rest
 
-import de.bdr.servko.keycloak.gematik.idp.GematikIDPService
 import de.bdr.servko.keycloak.gematik.idp.TestUtils
+import de.bdr.servko.keycloak.gematik.idp.service.GematikIdpOpenIDConfigurationService
 import org.jose4j.jwt.JwtClaims
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
@@ -35,7 +35,7 @@ class GematikIDPAdminRestResourceTest {
     private val realmPermissionEvaluator = mock<RealmPermissionEvaluator> {}
     private val realmAuth = mock<AdminPermissionEvaluator> { on { realm() } doReturn realmPermissionEvaluator }
 
-    private val service = mock<GematikIDPService> {}
+    private val service = mock<GematikIdpOpenIDConfigurationService> {}
 
     private var underTest: GematikIDPAdminRestResource = GematikIDPAdminRestResource(realmAuth, service)
 

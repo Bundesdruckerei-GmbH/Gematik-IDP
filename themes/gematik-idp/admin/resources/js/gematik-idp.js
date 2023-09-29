@@ -23,64 +23,73 @@
  */
 
 module.controller(
-  'RealmIdentityProviderCtrlGematikIdp',
-  function (
-    $controller,
-    $scope,
-    $filter,
-    $upload,
-    $http,
-    $route,
-    realm,
-    instance,
-    providerFactory,
-    IdentityProvider,
-    serverInfo,
-    authFlows,
-    $location,
-    Notifications,
-    Dialog
-  ) {
-    angular.extend(
-      this,
-      $controller('RealmIdentityProviderCtrl', {
-        $scope: $scope,
-        $filter: $filter,
-        $upload: $upload,
-        $http: $http,
-        $route: $route,
-        realm: realm,
-        instance: instance,
-        providerFactory: providerFactory,
-        IdentityProvider: IdentityProvider,
-        serverInfo: serverInfo,
-        authFlows: authFlows,
-        $location: $location,
-        Notifications: Notifications,
-        Dialog: Dialog,
-      })
-    );
+    'RealmIdentityProviderCtrlGematikIdp',
+    function (
+        $controller,
+        $scope,
+        $filter,
+        $upload,
+        $http,
+        $route,
+        realm,
+        instance,
+        providerFactory,
+        IdentityProvider,
+        serverInfo,
+        authFlows,
+        $location,
+        Notifications,
+        Dialog
+    ) {
+        angular.extend(
+            this,
+            $controller('RealmIdentityProviderCtrl', {
+                $scope: $scope,
+                $filter: $filter,
+                $upload: $upload,
+                $http: $http,
+                $route: $route,
+                realm: realm,
+                instance: instance,
+                providerFactory: providerFactory,
+                IdentityProvider: IdentityProvider,
+                serverInfo: serverInfo,
+                authFlows: authFlows,
+                $location: $location,
+                Notifications: Notifications,
+                Dialog: Dialog,
+            })
+        );
 
-    if ($scope.identityProvider.providerId === 'gematik-idp') {
-      $scope.gematikIdpConfig = null;
+        if ($scope.identityProvider.providerId === 'gematik-idp') {
+            $scope.gematikIdpConfig = null;
+            $scope.isAuthenticationFlowLegacy =
+                !$scope.identityProvider.config.authenticationFlow ||
+                $scope.identityProvider.config.authenticationFlow === "LEGACY";
 
-      $scope.closeIdpConfig = () => {
-        $scope.gematikIdpConfig = null;
-      };
+            $scope.closeIdpConfig = () => {
+                $scope.gematikIdpConfig = null;
+            };
 
-      $scope.getIdpConfig = async () => {
-        if (!$scope.gematikIdpConfig) {
-          const { data } = await $http.get(
-            `${authUrl}/admin/realms/${realm.id}/adm-gematik-idp/openid-configuration`+
-                `?url=${encodeURIComponent($scope.identityProvider.config.openidConfigUrl)}` +
-                `&user-agent=${encodeURIComponent($scope.identityProvider.config.idpUserAgent)}`
-          );
-          $scope.gematikIdpConfig = data;
-          $scope.$apply();
-        } else {
-          $scope.closeIdpConfig();
+            $scope.getIdpConfig = async () => {
+                if (!$scope.gematikIdpConfig) {
+                    const {data} = await $http.get(
+                        `${authUrl}/admin/realms/${realm.id}/adm-gematik-idp/openid-configuration` +
+                        `?url=${encodeURIComponent($scope.identityProvider.config.openidConfigUrl)}` +
+                        `&user-agent=${encodeURIComponent($scope.identityProvider.config.idpUserAgent)}`
+                    );
+                    $scope.gematikIdpConfig = data;
+                    $scope.$apply();
+                } else {
+                    $scope.closeIdpConfig();
+                }
+            };
+
+            $scope.toggleNewAuthenticationFlow = () => {
+                $scope.isAuthenticationFlowLegacy =
+                    $scope.identityProvider.config.authenticationFlow === undefined ||
+                    $scope.identityProvider.config.authenticationFlow === "LEGACY";
+            }
         }
-      };
     }
-  }
 );

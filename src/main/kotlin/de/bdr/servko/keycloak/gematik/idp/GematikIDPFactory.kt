@@ -13,7 +13,6 @@
  *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
- *
  */
 
 package de.bdr.servko.keycloak.gematik.idp
@@ -21,6 +20,8 @@ package de.bdr.servko.keycloak.gematik.idp
 import de.bdr.servko.keycloak.gematik.idp.extension.BrainpoolCurves
 import de.bdr.servko.keycloak.gematik.idp.model.GematikDiscoveryDocument
 import de.bdr.servko.keycloak.gematik.idp.model.GematikIDPConfig
+import de.bdr.servko.keycloak.gematik.idp.service.GematikIdpOpenIDConfigurationService
+import de.bdr.servko.keycloak.gematik.idp.util.RestClient
 import org.keycloak.broker.provider.AbstractIdentityProviderFactory
 import org.keycloak.models.IdentityProviderModel
 import org.keycloak.models.KeycloakSession
@@ -52,7 +53,9 @@ class GematikIDPFactory : AbstractIdentityProviderFactory<GematikIDP>(), ServerI
         session: KeycloakSession,
         config: GematikIDPConfig,
         clock: Clock = Clock.systemUTC(),
-        serviceFactory: (KeycloakSession) -> GematikIDPService = { GematikIDPService(it) }
+        serviceFactory: (KeycloakSession) -> GematikIdpOpenIDConfigurationService = { GematikIdpOpenIDConfigurationService(
+            RestClient(it)
+        ) }
     ): GematikIDP {
         val openidConfiguration = discoveryDocumentCache.compute(config.getOpenidConfigUrl()) { url, document ->
             if (document == null || document.expiration < clock.millis()) {

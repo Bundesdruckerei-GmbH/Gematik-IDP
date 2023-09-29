@@ -26,7 +26,7 @@ function pollAuthenticationStatus({ statusUrl, pollInterval = 1000 }) {
       if (
         json.currentStep === "RECEIVED_HBA_DATA" ||
         json.currentStep === "RECEIVED_SMCB_DATA" ||
-        json.currentStep === "IDP_ERROR"
+        json.currentStep === "ERROR"
       ) {
         clearTimeout(authenticationStatusIntVal);
         location.assign(json.nextStepUrl);

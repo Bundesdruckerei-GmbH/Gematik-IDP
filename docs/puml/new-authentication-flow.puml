@@ -1,0 +1,90 @@
+@startuml GematikIDP
+
+participant APP order 0
+participant Browser order 1
+participant UserAccount order 2
+participant Authenticator order 3
+participant Gematik_IDP order 4
+
+autonumber
+
+APP -> Browser: Initiate login via <keycloak-url>/.../openid-connect/auth?<font color=purple><b>redirect_uri</font>=...
+Browser -> Browser: User select "Login with HBA"
+Browser -> UserAccount: GET <keycloak-url>/broker/<idp-id>/login
+UserAccount -> Gematik_IDP: GET <idp_url>/.well-known/openid-configuration
+Gematik_IDP -> UserAccount: 200 discovery document as JWS
+UserAccount -> UserAccount: Verify discovery document and extract\n\
+<font color=blue><b>authorization_url</font>, <font color=green><b>token_url</font> and certificate urls
+UserAccount -> Browser: Redirect 303 <keycloak-url>/broker/<idp-id>/endpoint/startAuth
+Browser -> UserAccount: GET <keycloak-url>.../broker/<idp-id>/endpoint/startAuth
+UserAccount -> UserAccount: Generate <font color=brown><b>code_verifier</font> and store it in the users authentication session.
+
+group Fetch HBA data (scope=<b>Person_ID</b>) from Authenticator:
+UserAccount -> UserAccount: Sets authentication <font color=darkorange><b>status</font> to\n\
+<font color=brown><b>REQUESTED_HBA_DATA</font> in user session\n
+Browser -> Authenticator: Opens authenticator://?challenge_path=<font color=blue><b>authorization_url</font>\n\
+?redirect_url=<keycloak-url>/.../<idp-id>/endpoint/result\n\
+&code_challenge=<font color=brown><b>code_verifier</font>&scope=openid Person_ID
+Authenticator <-> Gematik_IDP: doing internal stuff
+
+Browser -> UserAccount: Repeatedly requests status_url=<keycloak-url>/.../<idp-id>/status\n
+UserAccount -> Browser: Answers with 201 and Status REQUESTED_HBA_DATA until Authentication finishes\n
+
+Authenticator -> UserAccount: POST redirect_url=<keycloak-url>/.../<idp-id>/endpoint/result\n\
+?code=...&ssotoken=...&state
+UserAccount -> Authenticator: Redirect 302 <keycloak-url>/.../<idp-id>/endpoint/result\n\
+?code=...&ssotoken=...&state
+note left
+The Authenticator App sends the result to our Keycloak.
+The Keycloak finishes the authentication by communicating
+with the Gematik-cIDP. 
+end note
+Authenticator -> UserAccount: Redirect 302 <keycloak-url>/.../<idp-id>/endpoint/result\n\
+?code=...&ssotoken=...&state
+note left
+The authentication session is retrieved via the root session ID
+in the encoded state.
+end note
+UserAccount -> Gematik_IDP: GET uri_puk_idp_enc
+Gematik_IDP -> UserAccount: return certificate
+UserAccount -> UserAccount: Generate <font color=darkorange><b>key_verifier</font> with <font color=brown><b>code_verifier</font>\n\
+and certificate
+UserAccount -> Gematik_IDP: POST <font color=green><b>token_url</font>?client_id=...&code=...\n\
+&key_verifier=<font color=darkorange><b>key_verifier</font>\n\
+&redirect_url=<keycloak-url>/.../<idp-id>/endpoint/result
+Gematik_IDP -> UserAccount: encrypted token containing access_token and id_token
+UserAccount -> UserAccount: decrypt id_token, verify with JWKS and store it
+UserAccount -> UserAccount: Sets authentication <font color=darkorange><b>status</font> to\n\
+<font color=brown><b>RECEIVED_HBA_DATA</font> in user session\n
+end
+
+Browser -> UserAccount: Repeatedly requesting status_url=<keycloak-url>/.../<idp-id>/status\n
+UserAccount -> Browser: Answers with 200, Status RECEIVED_HBA_DATA and a link to the \n\
+next_step_url=<keycloak-url>/.../<idp-id>/authenticatorNextStep\n
+Browser -> UserAccount: Requesting next_step_url=<keycloak-url>/.../<idp-id>/authenticatorNextStep\n
+UserAccount -> Browser: Redirect with 302 to next authentication step\n
+
+group Fetch SMCB data (scope=<b>Institutions_ID</b>) from Authenticator:
+UserAccount -> Browser: Redirect 302 authenticator://?challenge_path=<font color=blue><b>authorization_url</font>\n\
+?redirect_url=<keycloak-url>/.../<idp-id>/endpoint/result\n\
+&code_challenge=<font color=brown><b>code_verifier</font>&scope=openid <b>Institutions_ID</b>
+UserAccount -> UserAccount: Sets authentication <font color=darkorange><b>status</font> to\n\
+<font color=brown><b>REQUESTED_SMCB_DATA</font> in user session\n
+Browser -> Authenticator: Opens authenticator://?challenge_path=<font color=blue><b>authorization_url</font>\n\
+?redirect_url=<keycloak-url>/.../<idp-id>/endpoint/result\n
+Browser -> UserAccount: Repeatedly requests status_url=<keycloak-url>/.../<idp-id>/status\n
+UserAccount -> Browser: Answers with 201 and Status REQUESTED_SMCB_DATA until Authentication finishes\n
+note over Browser, Gematik_IDP: The rest is as described above
+UserAccount -> UserAccount: Sets authentication <font color=darkorange><b>status</font> to\n\
+<font color=brown><b>RECEIVED_SMCB_DATA</font> in user session\n
+end
+
+Browser -> UserAccount: Repeatedly requesting status_url=<keycloak-url>/.../<idp-id>/status\n
+UserAccount -> Browser: Answers with 200, Status RECEIVED_SMCB_DATA and a link to the \n\
+next_step_url=<keycloak-url>/.../<idp-id>/authenticatorNextStep\n
+Browser -> UserAccount: Requesting next_step_url=<keycloak-url>/.../<idp-id>/authenticatorNextStep\n
+UserAccount -> UserAccount: Update user with HBA/SMCB data based on IDP mapper
+UserAccount -> Browser: Redirect 302 <font color=purple><b>redirect_uri</font>
+Browser -> APP: 302 <font color=purple><b>redirect_uri</font>
+
+@enduml
