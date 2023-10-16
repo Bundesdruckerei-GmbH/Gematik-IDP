@@ -1,5 +1,10 @@
 # Release Notes
 
+## Release 1.7.1
+
+* Deleted unused classes
+* Dependency updates
+
 ## Release 1.7.0
 
 * Integration of version Gematik Authenticator version 4.6.0

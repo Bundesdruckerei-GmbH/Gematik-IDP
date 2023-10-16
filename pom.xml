@@ -22,7 +22,7 @@
 
     <groupId>de.bdr.servko</groupId>
     <artifactId>gematik-idp</artifactId>
-    <version>1.8.0-SNAPSHOT</version>
+    <version>1.7.1-SNAPSHOT</version>
     <description>
         Keycloak plugin allowing authentication with the gematik Authenticator and central IDP.
     </description>
@@ -35,7 +35,7 @@
         <maven-surefire-plugin.version>3.1.2</maven-surefire-plugin.version>
         <maven-failsafe-plugin.version>2.22.2</maven-failsafe-plugin.version>
         <maven-compiler-plugin.version>3.10.1</maven-compiler-plugin.version>
-        <maven-shade-plugin.version>3.5.0</maven-shade-plugin.version>
+        <maven-shade-plugin.version>3.5.1</maven-shade-plugin.version>
         <wildfly-maven-plugin.version>4.2.0.Final</wildfly-maven-plugin.version>
         <dependency-check-maven.version>8.4.0</dependency-check-maven.version>
         <jacoco-maven.version>0.8.10</jacoco-maven.version>
