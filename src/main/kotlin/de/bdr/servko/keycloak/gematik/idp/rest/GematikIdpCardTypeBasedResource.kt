@@ -23,6 +23,13 @@ import de.bdr.servko.keycloak.gematik.idp.util.ErrorUtils
 import de.bdr.servko.keycloak.gematik.idp.util.GematikIDPUtil
 import de.bdr.servko.keycloak.gematik.idp.util.GematikIdpLiterals
 import de.bdr.servko.keycloak.gematik.idp.util.VersionFromUserAgentReader
+import jakarta.ws.rs.GET
+import jakarta.ws.rs.HeaderParam
+import jakarta.ws.rs.Path
+import jakarta.ws.rs.QueryParam
+import jakarta.ws.rs.core.HttpHeaders
+import jakarta.ws.rs.core.Response
+import jakarta.ws.rs.core.UriBuilder
 import org.keycloak.OAuth2Constants
 import org.keycloak.common.util.Base64Url
 import org.keycloak.common.util.SecretGenerator
@@ -30,13 +37,6 @@ import org.keycloak.protocol.oidc.OIDCLoginProtocol
 import org.keycloak.protocol.oidc.utils.PkceUtils
 import org.keycloak.sessions.AuthenticationSessionModel
 import java.net.URI
-import javax.ws.rs.GET
-import javax.ws.rs.HeaderParam
-import javax.ws.rs.Path
-import javax.ws.rs.QueryParam
-import javax.ws.rs.core.HttpHeaders
-import javax.ws.rs.core.Response
-import javax.ws.rs.core.UriBuilder
 
 abstract class GematikIdpCardTypeBasedResource: GematikIDPResource() {
     abstract val certificateService: GematikIdpCertificateService
@@ -202,8 +202,6 @@ abstract class GematikIdpCardTypeBasedResource: GematikIDPResource() {
 
         return uriBuilder.build()
     }
-
-    private fun handleAuthenticatorProtocol(): UriBuilder = UriBuilder.fromPath("//").scheme("authenticator")
 
     private fun generateChallengePath(
         redirectUri: URI,

@@ -21,6 +21,8 @@ package de.bdr.servko.keycloak.gematik.idp
 import de.bdr.servko.keycloak.gematik.idp.model.GematikIDPConfig
 import de.bdr.servko.keycloak.gematik.idp.model.GematikIDPState
 import de.bdr.servko.keycloak.gematik.idp.rest.GematikIDPLegacyResource
+import jakarta.ws.rs.core.Response
+import jakarta.ws.rs.core.UriBuilder
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.keycloak.broker.provider.AuthenticationRequest
@@ -37,8 +39,6 @@ import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
 import java.net.URI
 import java.util.*
-import javax.ws.rs.core.Response
-import javax.ws.rs.core.UriBuilder
 
 internal class GematikIDPTest {
     private val realmName = "test-realm"

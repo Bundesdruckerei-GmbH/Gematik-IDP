@@ -25,6 +25,8 @@ import de.bdr.servko.keycloak.gematik.idp.model.GematikIDPState
 import de.bdr.servko.keycloak.gematik.idp.service.GematikIDPService
 import de.bdr.servko.keycloak.gematik.idp.token.TestTokenUtil
 import de.bdr.servko.keycloak.gematik.idp.util.RestClient
+import jakarta.ws.rs.core.Response
+import jakarta.ws.rs.core.UriBuilder
 import org.assertj.core.api.Assertions
 import org.keycloak.OAuth2Constants
 import org.keycloak.broker.provider.IdentityProvider
@@ -36,8 +38,6 @@ import org.keycloak.sessions.RootAuthenticationSessionModel
 import org.mockito.ArgumentMatchers
 import org.mockito.kotlin.*
 import java.net.URI
-import javax.ws.rs.core.Response
-import javax.ws.rs.core.UriBuilder
 
 abstract class GematikIDPEndpointBaseTest {
     companion object {
@@ -106,13 +106,11 @@ abstract class GematikIDPEndpointBaseTest {
         defaultScope = "openid"
         setOpenidConfigUrl("http://localhost:8000/")
         updateOpenidConfig(TestUtils.discoveryDocument)
-        setAuthenticatorUrl("http://localhost:8000/")
         setAuthenticatorAuthorizationUrl(TestUtils.discoveryDocument.authorizationEndpoint)
         setTimeoutMs("20000")
         setIdpTimeoutMs("10000")
         setIdpUserAgent("Servko/1.0.0 Servko/Client")
         setMultipleIdentityMode(true)
-        setNewAuthenticationFlow(true)
     }
 
     fun mockDoPostToGetHbaToken() {

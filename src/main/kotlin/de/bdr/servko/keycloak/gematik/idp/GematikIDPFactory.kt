@@ -21,16 +21,19 @@ import de.bdr.servko.keycloak.gematik.idp.extension.BrainpoolCurves
 import de.bdr.servko.keycloak.gematik.idp.model.GematikDiscoveryDocument
 import de.bdr.servko.keycloak.gematik.idp.model.GematikIDPConfig
 import de.bdr.servko.keycloak.gematik.idp.service.GematikIdpOpenIDConfigurationService
-import de.bdr.servko.keycloak.gematik.idp.util.RestClient
+import de.bdr.servko.keycloak.gematik.idp.util.*
+import jakarta.annotation.Generated
 import org.keycloak.broker.provider.AbstractIdentityProviderFactory
 import org.keycloak.models.IdentityProviderModel
 import org.keycloak.models.KeycloakSession
 import org.keycloak.models.KeycloakSessionFactory
+import org.keycloak.provider.ProviderConfigProperty
+import org.keycloak.provider.ProviderConfigurationBuilder
 import org.keycloak.provider.ServerInfoAwareProviderFactory
+import java.io.InputStream
 import java.time.Clock
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
-import javax.annotation.Generated
 
 class GematikIDPFactory : AbstractIdentityProviderFactory<GematikIDP>(), ServerInfoAwareProviderFactory {
     companion object {
@@ -49,13 +52,19 @@ class GematikIDPFactory : AbstractIdentityProviderFactory<GematikIDP>(), ServerI
     override fun create(session: KeycloakSession, model: IdentityProviderModel): GematikIDP =
         createAndUpdateConfig(session, GematikIDPConfig(model))
 
+    override fun parseConfig(session: KeycloakSession?, inputStream: InputStream?): MutableMap<String, String> {
+        return super.parseConfig(session, inputStream)
+    }
+
     fun createAndUpdateConfig(
         session: KeycloakSession,
         config: GematikIDPConfig,
         clock: Clock = Clock.systemUTC(),
-        serviceFactory: (KeycloakSession) -> GematikIdpOpenIDConfigurationService = { GematikIdpOpenIDConfigurationService(
-            RestClient(it)
-        ) }
+        serviceFactory: (KeycloakSession) -> GematikIdpOpenIDConfigurationService = {
+            GematikIdpOpenIDConfigurationService(
+                RestClient(it)
+            )
+        },
     ): GematikIDP {
         val openidConfiguration = discoveryDocumentCache.compute(config.getOpenidConfigUrl()) { url, document ->
             if (document == null || document.expiration < clock.millis()) {
@@ -82,4 +91,14 @@ class GematikIDPFactory : AbstractIdentityProviderFactory<GematikIDP>(), ServerI
                 mapOf("Version" to prop.getProperty("version", "unknown"))
             } ?: mapOf("Version" to "unknown")
 
+    override fun getConfigProperties(): MutableList<ProviderConfigProperty> =
+        ProviderConfigurationBuilder.create()
+            .authenticationFlow()
+            .authenticatorAuthorizationUrl()
+            .timeoutMs()
+            .openidConfigUrl()
+            .idpTimeoutMs()
+            .idpUserAgent()
+            .multipleIdentityMode()
+            .build()
 }

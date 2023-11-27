@@ -18,8 +18,8 @@
 package de.bdr.servko.keycloak.gematik.idp.util
 
 import de.bdr.servko.keycloak.gematik.idp.model.GematikIDPStep
+import jakarta.ws.rs.core.Response
 import org.keycloak.sessions.AuthenticationSessionModel
-import javax.ws.rs.core.Response
 
 class ErrorUtils {
     companion object {

@@ -25,6 +25,7 @@ import de.bdr.servko.keycloak.gematik.idp.model.ContextData
 import de.bdr.servko.keycloak.gematik.idp.model.GematikIDPStatusResponse
 import de.bdr.servko.keycloak.gematik.idp.model.GematikIDPStep
 import de.bdr.servko.keycloak.gematik.idp.service.GematikIdpCertificateService
+import jakarta.ws.rs.core.Response
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -41,7 +42,6 @@ import org.keycloak.protocol.oidc.OIDCLoginProtocol
 import org.mockito.ArgumentMatchers
 import org.mockito.kotlin.*
 import java.net.URI
-import javax.ws.rs.core.Response
 
 internal class GematikIDPMultiResourceTest : GematikIDPEndpointBaseTest() {
     private val formsMock = mock<LoginFormsProvider> {

@@ -24,27 +24,18 @@ import org.keycloak.models.IdentityProviderModel
 class GematikIDPConfig(model: IdentityProviderModel? = null) : OIDCIdentityProviderConfig(model) {
 
     companion object {
-        private const val AUTHENTICATOR_URL = "authenticatorUrl"
         private const val AUTHENTICATOR_AUTHORIZATION_URL = "authenticatorAuthorizationUrl"
         private const val OPENID_CONFIG_URL = "openidConfigUrl"
         private const val TIMEOUT_MS = "timeoutMs"
         private const val IDP_TIMEOUT_MS = "idpTimeoutMs"
         private const val IDP_USER_AGENT = "idpUserAgent"
         private const val MULTIPLE_IDENTITY_MODE = "multipleIdentityMode"
-        private const val NEW_AUTHENTICATION_FLOW = "newAuthenticationFlow"
         private const val AUTHENTICATION_FLOW = "authenticationFlow"
     }
 
-    fun setAuthenticatorUrl(url: String) = config.put(AUTHENTICATOR_URL, url)
-    fun getAuthenticatorUrl(): String = config.getValue(AUTHENTICATOR_URL)
-
     fun setAuthenticatorAuthorizationUrl(url: String) = config.put(AUTHENTICATOR_AUTHORIZATION_URL, url)
-    fun getAuthenticatorAuthorizationUrl() =
-        if (!config.getValue(AUTHENTICATOR_AUTHORIZATION_URL).isNullOrBlank())
-            config.getValue(AUTHENTICATOR_AUTHORIZATION_URL)
-        else
-            authorizationUrl
-
+    fun getAuthenticatorAuthorizationUrl(): String =
+        config[AUTHENTICATOR_AUTHORIZATION_URL]?.takeIf { it.isNotBlank() } ?: authorizationUrl
 
     fun setOpenidConfigUrl(url: String) = config.put(OPENID_CONFIG_URL, url)
     fun getOpenidConfigUrl(): String = config.getValue(OPENID_CONFIG_URL)
@@ -71,16 +62,11 @@ class GematikIDPConfig(model: IdentityProviderModel? = null) : OIDCIdentityProvi
 
     fun getMultipleIdentityMode() = config[MULTIPLE_IDENTITY_MODE]?.toBoolean() == true
 
-    fun setNewAuthenticationFlow(newAuthenticationFlow: Boolean) =
-        config.put(NEW_AUTHENTICATION_FLOW, newAuthenticationFlow.toString())
-
-    fun getNewAuthenticationFlow() = config[NEW_AUTHENTICATION_FLOW]?.toBoolean() == true
-
     fun setAuthenticationFlow(authenticationFlow: AuthenticationFlowType) =
         config.put(AUTHENTICATION_FLOW, authenticationFlow.toString())
 
     fun getAuthenticationFlow(): AuthenticationFlowType {
-        return AuthenticationFlowType.values().find { it.name == config[AUTHENTICATION_FLOW]}
+        return AuthenticationFlowType.entries.find { it.name == config[AUTHENTICATION_FLOW] }
             ?: AuthenticationFlowType.LEGACY
     }
 

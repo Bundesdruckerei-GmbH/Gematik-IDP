@@ -23,6 +23,8 @@ import de.bdr.servko.keycloak.gematik.idp.model.GematikIDPState
 import de.bdr.servko.keycloak.gematik.idp.rest.GematikIDPResource
 import de.bdr.servko.keycloak.gematik.idp.util.GematikIDPUtil
 import de.bdr.servko.keycloak.gematik.idp.util.GematikIdpLiterals
+import jakarta.annotation.Generated
+import jakarta.ws.rs.core.Response
 import org.keycloak.broker.provider.AbstractIdentityProvider
 import org.keycloak.broker.provider.AuthenticationRequest
 import org.keycloak.broker.provider.IdentityProvider
@@ -30,8 +32,6 @@ import org.keycloak.events.EventBuilder
 import org.keycloak.models.FederatedIdentityModel
 import org.keycloak.models.KeycloakSession
 import org.keycloak.models.RealmModel
-import javax.annotation.Generated
-import javax.ws.rs.core.Response
 
 class GematikIDP(session: KeycloakSession, config: GematikIDPConfig) :
     AbstractIdentityProvider<GematikIDPConfig>(session, config) {

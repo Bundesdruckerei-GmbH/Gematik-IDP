@@ -1,5 +1,14 @@
 # Release Notes
 
+## Release 2.0.0
+* Update to Keycloak 22
+* JavaX updated to Jakarta
+* Updated to Java 17
+* Added preliminary configuration UI for the new admin console 
+* Removed legacy authentication flow
+* Removed authenticator URL setting. ``authenticator://`` is now used as standard
+* Removed client assertion signing alg setting in the frontend, since Brainpool is always used for token the validation
+
 ## Release 1.7.1
 
 * Deleted unused classes
