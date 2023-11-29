@@ -18,11 +18,18 @@
 package de.bdr.servko.keycloak.gematik.idp.rest
 
 import de.bdr.servko.keycloak.gematik.idp.GematikIDP
-import de.bdr.servko.keycloak.gematik.idp.model.*
+import de.bdr.servko.keycloak.gematik.idp.model.AuthenticationFlowType
+import de.bdr.servko.keycloak.gematik.idp.model.GematikIDPConfig
+import de.bdr.servko.keycloak.gematik.idp.model.GematikIDPState
 import de.bdr.servko.keycloak.gematik.idp.service.GematikIDPService
 import de.bdr.servko.keycloak.gematik.idp.service.GematikIdpCertificateService
 import de.bdr.servko.keycloak.gematik.idp.util.GematikIDPUtil
 import de.bdr.servko.keycloak.gematik.idp.util.GematikIdpLiterals
+import jakarta.ws.rs.GET
+import jakarta.ws.rs.Path
+import jakarta.ws.rs.QueryParam
+import jakarta.ws.rs.core.Response
+import jakarta.ws.rs.core.UriBuilder
 import org.jboss.logging.Logger
 import org.keycloak.OAuth2Constants
 import org.keycloak.broker.provider.BrokeredIdentityContext
@@ -35,10 +42,6 @@ import org.keycloak.models.RealmModel
 import org.keycloak.protocol.oidc.utils.PkceUtils
 import org.keycloak.sessions.AuthenticationSessionModel
 import java.net.URI
-import javax.ws.rs.GET
-import javax.ws.rs.Path
-import javax.ws.rs.QueryParam
-import javax.ws.rs.core.Response
 
 abstract class GematikIDPResource {
     abstract val realm: RealmModel
@@ -75,16 +78,19 @@ abstract class GematikIDPResource {
                         realm, callback, session, gematikIDP, config, service, loginFormsProvider, certificateService
                     )
                 }
+
                 AuthenticationFlowType.HBA -> {
                     GematikIDPHbaResource(
                         realm, callback, session, gematikIDP, config, service, loginFormsProvider, certificateService
                     )
                 }
+
                 AuthenticationFlowType.SMCB -> {
                     GematikIDPSmcbResource(
                         realm, callback, session, gematikIDP, config, service, loginFormsProvider, certificateService
                     )
                 }
+
                 else -> {
                     GematikIDPLegacyResource(
                         realm, callback, session, gematikIDP, config, service, loginFormsProvider, certificateService
@@ -134,7 +140,6 @@ abstract class GematikIDPResource {
     /**
      * Generates the Authenticator url.
      * redirectUri is our Keycloak instance /auth/realms/<realm>/broker/gematik-cidp/endpoint/result
-     * [de.bdr.servko.keycloak.gematik.idp.rest.GematikIDPLegacyEndpoint.resultPost]
      * challengePath is the central IDP
      */
     abstract fun generateAuthenticatorUrl(encodedState: String, codeVerifier: String, cardType: String): URI
@@ -192,12 +197,10 @@ abstract class GematikIDPResource {
             .setAttribute("timeoutUrl", timeoutUrl)
             .setAttribute("timeoutMs", config.getTimeoutMs())
 
-        if (config.getNewAuthenticationFlow() || config.getAuthenticationFlow() != AuthenticationFlowType.LEGACY) {
-            val statusUrl =
-                GematikIDPUtil.getEndpointUri(session, realm, brokerState, config, GematikIdpLiterals.AUTHENTICATION_STATUS)
+        val statusUrl =
+            GematikIDPUtil.getEndpointUri(session, realm, brokerState, config, GematikIdpLiterals.AUTHENTICATION_STATUS)
 
-            loginFormsProvider.setAttribute("statusUrl", statusUrl)
-        }
+        loginFormsProvider.setAttribute("statusUrl", statusUrl)
 
         return loginFormsProvider.createForm("gematik-idp.ftl")
     }
@@ -205,7 +208,7 @@ abstract class GematikIDPResource {
     fun handleIdpErrorWhenCalledFromBrowser(
         error: String?,
         errorDetails: String?,
-        errorUri: String?
+        errorUri: String?,
     ): Response {
         logger.error("Authenticator returned error: $error | error-details: $errorDetails | error-uri $errorUri")
         return forms.setError("authenticator.errorIdp", errorDetails?.take(20) ?: "Unknown")
@@ -221,12 +224,14 @@ abstract class GematikIDPResource {
     fun handleInternalErrorWhenCalledFromBrowser(
         error: String?,
         errorDetails: String?,
-        statusCode: Response.Status
+        statusCode: Response.Status,
     ): Response {
         logger.error("Internal error while authenticating: $error | error-details: $errorDetails")
         return forms.setError("authenticator.errorIdp", error?.take(20) ?: "Unknown")
             .createErrorPage(statusCode)
     }
+
+    fun handleAuthenticatorProtocol(): UriBuilder = UriBuilder.fromPath("//").scheme("authenticator")
 
     fun initIdentityContext(
         telematikId: String,
@@ -249,4 +254,5 @@ abstract class GematikIDPResource {
             telematikId
         }
     }
+
 }

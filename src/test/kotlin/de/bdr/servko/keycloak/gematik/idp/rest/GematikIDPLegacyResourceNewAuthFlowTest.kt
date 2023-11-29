@@ -25,6 +25,7 @@ import de.bdr.servko.keycloak.gematik.idp.model.ContextData
 import de.bdr.servko.keycloak.gematik.idp.model.GematikIDPStatusResponse
 import de.bdr.servko.keycloak.gematik.idp.model.GematikIDPStep
 import de.bdr.servko.keycloak.gematik.idp.service.GematikIdpCertificateService
+import jakarta.ws.rs.core.Response
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -37,7 +38,6 @@ import org.keycloak.protocol.oidc.OIDCLoginProtocol
 import org.mockito.ArgumentMatchers.anyString
 import org.mockito.kotlin.*
 import java.net.URI
-import javax.ws.rs.core.Response
 
 internal class GematikIDPLegacyResourceNewAuthFlowTest : GematikIDPEndpointBaseTest() {
     private val formsMock = mock<LoginFormsProvider> {
@@ -80,7 +80,6 @@ internal class GematikIDPLegacyResourceNewAuthFlowTest : GematikIDPEndpointBaseT
         whenever(sessionMock.authenticationSessions()).thenReturn(authenticationSession)
         whenever(authenticationSession.getRootAuthenticationSession(realmMock, ROOT_SESSION_ID))
             .thenReturn(rootAuthenticationSession)
-        config.setNewAuthenticationFlow(true)
     }
 
     @Test
@@ -489,10 +488,8 @@ internal class GematikIDPLegacyResourceNewAuthFlowTest : GematikIDPEndpointBaseT
     }
 
     private fun assertAuthenticatorUrl(authenticatorUrl: URI, scope: String = "openid Person_ID") {
-        assertThat(authenticatorUrl)
-            .hasHost("localhost")
-            .hasPort(8000)
-            .hasPath("/")
+        assertThat(authenticatorUrl).hasNoHost()
+        assertThat(authenticatorUrl.toString()).startsWith("authenticator://")
         assertThat(authenticatorUrl.toString()).contains("callback=direct")
         val queryParams = authenticatorUrl.query.split("=", "&", limit = 2)
         assertThat(queryParams).hasSize(2)

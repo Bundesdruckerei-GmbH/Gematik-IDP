@@ -26,6 +26,11 @@ import de.bdr.servko.keycloak.gematik.idp.util.ErrorUtils
 import de.bdr.servko.keycloak.gematik.idp.util.GematikIDPUtil
 import de.bdr.servko.keycloak.gematik.idp.util.GematikIdpLiterals
 import de.bdr.servko.keycloak.gematik.idp.util.VersionFromUserAgentReader
+import jakarta.ws.rs.*
+import jakarta.ws.rs.core.HttpHeaders
+import jakarta.ws.rs.core.MediaType
+import jakarta.ws.rs.core.Response
+import jakarta.ws.rs.core.UriBuilder
 import org.jboss.logging.Logger
 import org.jose4j.jwt.consumer.JwtContext
 import org.keycloak.OAuth2Constants
@@ -40,11 +45,6 @@ import org.keycloak.protocol.oidc.utils.PkceUtils
 import org.keycloak.sessions.AuthenticationSessionModel
 import org.keycloak.util.JsonSerialization
 import java.net.URI
-import javax.ws.rs.*
-import javax.ws.rs.core.HttpHeaders
-import javax.ws.rs.core.MediaType
-import javax.ws.rs.core.Response
-import javax.ws.rs.core.UriBuilder
 
 class GematikIDPLegacyResource(
     override val realm: RealmModel,
@@ -57,7 +57,7 @@ class GematikIDPLegacyResource(
     private val certificateService: GematikIdpCertificateService,
     override val initialStepName: String = GematikIDPStep.REQUESTED_HBA_DATA.name,
     override val initialCardType: String = GematikIdpLiterals.SCOPE_HBA,
-): GematikIDPResource() {
+) : GematikIDPResource() {
     override val logger: Logger = Logger.getLogger(this::class.java)
 
     /**
@@ -172,7 +172,7 @@ class GematikIDPLegacyResource(
         @QueryParam(GematikIdpLiterals.ERROR) error: String?,
         @QueryParam(GematikIdpLiterals.ERROR_DETAILS) errorDetails: String?,
         @QueryParam(GematikIdpLiterals.ERROR_URI) errorUri: String?,
-        @HeaderParam(HttpHeaders.USER_AGENT) userAgent: String?
+        @HeaderParam(HttpHeaders.USER_AGENT) userAgent: String?,
     ): Response {
         val version = VersionFromUserAgentReader.readVersionFrom(userAgent)
         GematikIDPUtil.addAuthenticatorVersionToMdc(version)
@@ -217,36 +217,7 @@ class GematikIDPLegacyResource(
             }
         }
 
-        if (!config.getNewAuthenticationFlow()) {
-            return resultLegacy(encodedState, codeVerifier, step, claimsMap, authSession)
-        }
-
         return Response.ok().type(MediaType.APPLICATION_JSON_TYPE).build()
-    }
-
-    /**
-     * Legacy functionality of the legacy authentication flow
-     */
-    private fun resultLegacy(
-        encodedState: String,
-        codeVerifier: String,
-        step: GematikIDPStep,
-        claims: Map<String, Any>,
-        authSession: AuthenticationSessionModel,
-    ): Response {
-        return when (step) {
-            GematikIDPStep.RECEIVED_HBA_DATA -> {
-                return handleHBAData(encodedState, codeVerifier, authSession)
-            }
-
-            GematikIDPStep.RECEIVED_SMCB_DATA -> {
-                return handleSMCBData(authSession, claims)
-            }
-
-            else -> {
-                callback.error("invalid step $step")
-            }
-        }
     }
 
     private fun handleSMCBData(
@@ -258,12 +229,14 @@ class GematikIDPLegacyResource(
 
         val telematikId = hbaData[ContextData.CONTEXT_HBA_TELEMATIK_ID.claim.value] as String
 
-        return callback.authenticated(initIdentityContext(
-            telematikId = telematikId,
-            authSession = authSession,
-            hbaData = hbaData,
-            smcbData = claims
-        ))
+        return callback.authenticated(
+            initIdentityContext(
+                telematikId = telematikId,
+                authSession = authSession,
+                hbaData = hbaData,
+                smcbData = claims
+            )
+        )
     }
 
     private fun handleHBAData(
@@ -278,7 +251,6 @@ class GematikIDPLegacyResource(
     /**
      * Generate the Authenticator url.
      * redirectUri is our Keycloak instance /auth/realms/<realm>/broker/gematik-cidp/endpoint/result
-     * [de.bdr.servko.keycloak.gematik.idp.rest.GematikIDPLegacyEndpoint.resultPost]
      * challengePath is the central IDP
      */
     override fun generateAuthenticatorUrl(encodedState: String, codeVerifier: String, cardType: String): URI {
@@ -295,23 +267,14 @@ class GematikIDPLegacyResource(
             codeVerifier,
             cardType
         )
-        val uriBuilder = handleAuthenticatorProtocol(config.getAuthenticatorUrl())
+        val uriBuilder = handleAuthenticatorProtocol()
             .queryParam(GematikIdpLiterals.CHALLENGE_PATH, challengePath)
-        if (config.getNewAuthenticationFlow()) {
-            uriBuilder.queryParam(GematikIdpLiterals.CALLBACK, GematikAuthenticatorCallbackType.DIRECT.simpleName())
-        }
+
+        uriBuilder.queryParam(GematikIdpLiterals.CALLBACK, GematikAuthenticatorCallbackType.DIRECT.simpleName())
 
         return uriBuilder
             .build()
     }
-
-    private fun handleAuthenticatorProtocol(url: String): UriBuilder =
-        if (url.startsWith("authenticator")) {
-            UriBuilder.fromPath("//")
-                .scheme("authenticator")
-        } else {
-            UriBuilder.fromUri(url)
-        }
 
     private fun generateChallengePath(
         redirectUri: URI,
@@ -325,7 +288,7 @@ class GematikIDPLegacyResource(
         .queryParam(OAuth2Constants.STATE, encodedState)
         .queryParam(
             OAuth2Constants.SCOPE,
-            GematikIDPResource.escapeScope("${config.defaultScope.trim()} $additionalScope")
+            escapeScope("${config.defaultScope.trim()} $additionalScope")
         )
         .queryParam(OAuth2Constants.CODE_CHALLENGE, PkceUtils.generateS256CodeChallenge(codeVerifier))
         .queryParam(OAuth2Constants.CODE_CHALLENGE_METHOD, OAuth2Constants.PKCE_METHOD_S256)

@@ -27,6 +27,8 @@ import de.bdr.servko.keycloak.gematik.idp.service.GematikIdpCertificateService
 import de.bdr.servko.keycloak.gematik.idp.util.ErrorUtils
 import de.bdr.servko.keycloak.gematik.idp.util.GematikIDPUtil
 import de.bdr.servko.keycloak.gematik.idp.util.GematikIdpLiterals
+import jakarta.ws.rs.core.MediaType
+import jakarta.ws.rs.core.Response
 import org.jboss.logging.Logger
 import org.keycloak.broker.provider.IdentityProvider
 import org.keycloak.forms.login.LoginFormsProvider
@@ -34,8 +36,6 @@ import org.keycloak.models.KeycloakSession
 import org.keycloak.models.RealmModel
 import org.keycloak.sessions.AuthenticationSessionModel
 import org.keycloak.util.JsonSerialization
-import javax.ws.rs.core.MediaType
-import javax.ws.rs.core.Response
 
 class GematikIDPSmcbResource(
     override val realm: RealmModel,

@@ -13,7 +13,7 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-FROM quay.io/keycloak/keycloak:20.0.5 as builder
+FROM quay.io/keycloak/keycloak:22.0.5 AS builder
 
 WORKDIR /opt/keycloak
 # for demonstration purposes only, please make sure to use proper certificates in production instead
@@ -29,10 +29,6 @@ ENV KC_METRICS_ENABLED=true
 
 # Configure a database vendor
 ENV KC_DB postgres
-ENV KC_SPI_THEME_DEFAULT keycloak
-ENV KC_SPI_THEME_ADMIN keycloak
-ENV KC_FEATURES "admin"
-ENV KC_FEATURES_DISABLED "admin2"
 ENV KC_HTTP_RELATIVE_PATH /auth
 
 ENTRYPOINT ["/opt/keycloak/bin/kc.sh start"]

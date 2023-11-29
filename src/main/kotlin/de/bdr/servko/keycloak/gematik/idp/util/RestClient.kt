@@ -19,10 +19,10 @@ package de.bdr.servko.keycloak.gematik.idp.util
 
 import com.fasterxml.jackson.databind.JsonNode
 import de.bdr.servko.keycloak.gematik.idp.exception.IdpUnavailableException
+import jakarta.ws.rs.core.HttpHeaders
 import org.jboss.logging.Logger
 import org.keycloak.broker.provider.util.SimpleHttp
 import org.keycloak.models.KeycloakSession
-import javax.ws.rs.core.HttpHeaders
 
 open class RestClient(private val session: KeycloakSession) {
     private val logger = Logger.getLogger(this::class.java)
