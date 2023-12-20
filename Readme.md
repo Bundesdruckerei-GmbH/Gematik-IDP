@@ -12,12 +12,12 @@ moved from JavaX to Jakarta, which is why this version is incompatible with othe
 
 1. Run `mvn clean install` in this directory.
 2. After completion, install the `gematik-idp` jar from the target folder into your Keycloak instance by copying it into
-   your Docker container under `/opt/keycloak/providers/` and rebuilding
+   your Docker container under `/opt/keycloak/providers/` and rebuild
    the [Quarkus environment](https://www.keycloak.org/server/containers).
 3. Add the new Identity Provider `gematik-idp` following the official
    guide [Integrating identity providers](https://www.keycloak.org/docs/latest/server_admin/index.html#_identity_broker).
    Specific configuration properties are listed below.
-4. Set the login theme in your realm, where you added the Identity Provider, to gematik-idp for the full support of
+4. Set the login theme in your realm, where you added the Identity Provider, to _gematik-idp_ for full support of
    all features. You can also add the content from `./themes/gematik-idp` to you custom theme if necessary.
 
 ## Local Deployment
@@ -57,8 +57,8 @@ identity provider can be configured per realm, since that one always gets the al
 be shared between identity providers.
 
 If you need to have multiple Gematik-IDP identity provider for your realm or want to define a custom display name,
-please consider importing them via a partial realm import. A discussion regarding this problem ist currently being done
-in the Keycloak-Github:
+please consider to import them via partial realm import. A discussion regarding this problem ist currently being done
+in the Keycloak repository at github:
 
 * https://github.com/keycloak/keycloak/pull/24266#issuecomment-1793439822
 
