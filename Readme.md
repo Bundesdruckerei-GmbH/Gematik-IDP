@@ -11,14 +11,14 @@ moved from JavaX to Jakarta, which is why this version is incompatible with othe
 ## Installation
 
 1. Run `mvn clean install` in this directory.
-2. Run ``npm install`` and ``npm run build:gematik-idp`` in this directory.
-3. After completion, install `gematik-idp-1.0.0-SNAPSHOT.jar` into your Keycloak instance by copying it into your Docker
-   container under `/opt/keycloak/providers/` and rebuilding
+2. After completion, install the `gematik-idp` jar from the target folder into your Keycloak instance by copying it into
+   your Docker container under `/opt/keycloak/providers/` and rebuild
    the [Quarkus environment](https://www.keycloak.org/server/containers).
-4. Set the admin theme in your master realm to gematik-idp for the full support of all features.
-5. Add the new Identity Provider `gematik-idp` following the official
-   guide [Integrating identity providers](https://www.keycloak.org/docs/latest/server_admin/index.html#_identity_broker)
-   . Specific configuration properties are listed below.
+3. Add the new Identity Provider `gematik-idp` following the official
+   guide [Integrating identity providers](https://www.keycloak.org/docs/latest/server_admin/index.html#_identity_broker).
+   Specific configuration properties are listed below.
+4. Set the login theme in your realm, where you added the Identity Provider, to _gematik-idp_ for full support of
+   all features. You can also add the content from `./themes/gematik-idp` to you custom theme if necessary.
 
 ## Local Deployment
 
@@ -57,9 +57,10 @@ identity provider can be configured per realm, since that one always gets the al
 be shared between identity providers.
 
 If you need to have multiple Gematik-IDP identity provider for your realm or want to define a custom display name,
-please consider importing them via a partial realm import. A discussion regarding this problem ist currently being done
-in the Keycloak-Github:
- * https://github.com/keycloak/keycloak/pull/24266#issuecomment-1793439822
+please consider to import them via partial realm import. A discussion regarding this problem ist currently being done
+in the Keycloak repository at github:
+
+* https://github.com/keycloak/keycloak/pull/24266#issuecomment-1793439822
 
 ## Theme
 
@@ -92,12 +93,12 @@ illegal state cannot be reached.
    maps to the newly created role
 3. Go to "Authentication > Flows" and select your registration authentication flow from the dropdown. Click "Add flow"
    and add a new generic flow
-    1. Check the "CONDITIONAL" radio button next to the new entry
-    2. Add executions for "Condition - User Role" and "Deny Access" as children to this flow via the "Actions" menu
-    3. Check the radio button "REQUIRED" next to both added executions
-    4. Configure the "Condition - User Role" execution to check for the newly create role from step 1
-    5. Configure the "Deny Access" execution to show the error message. You're able to localized messages by using a
-       message property key here.
+   1. Check the "CONDITIONAL" radio button next to the new entry
+   2. Add executions for "Condition - User Role" and "Deny Access" as children to this flow via the "Actions" menu
+   3. Check the radio button "REQUIRED" next to both added executions
+   4. Configure the "Condition - User Role" execution to check for the newly create role from step 1
+   5. Configure the "Deny Access" execution to show the error message. You're able to localized messages by using a
+      message property key here.
 4. Move the newly added flow up to the top of the list.
 
 Now the OTC Registration flow will check, if the user that tries to go through this flow has the newly created role and
@@ -113,10 +114,10 @@ Some browsers based on Chromium (e.g. Chrome, Edge, etc.) block the second reque
 interaction was done between the requests. To prevent this from happening, a modal is shown which the user has to
 acknowledge before the Gemaik-Authenticator is opened.
 
-## Old Authentication Flow
+## Authentication Flow
 
-A description of the old authentication flow can be found [here](old-auth-flow.md).
-
-## New Authentication Flow
-
-A description of the new authentication flow can be found [here](new-auth-flow.md).
+A description of the different authentication flows can be found in the following files:
+- [Authentication flow for HBA and SMC-B with multiple requests to the Gematik-Authenticator](new-auth-flow.md)
+- [Authentication flow for HBA and SMC-B with a single requests to the Gematik-Authenticator](multi-auth-flow.md)
+- [Authentication flow for HBA with a single requests to the Gematik-Authenticator](hba-auth-flow.md)
+- [Authentication flow for SMC-B with a single requests to the Gematik-Authenticator](smcb-auth-flow.md)
