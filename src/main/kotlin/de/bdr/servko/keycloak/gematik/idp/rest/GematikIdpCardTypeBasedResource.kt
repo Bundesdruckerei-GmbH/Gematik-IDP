@@ -113,7 +113,7 @@ abstract class GematikIdpCardTypeBasedResource: GematikIDPResource() {
                 val errorDetails = authSession.getAuthNote(GematikIdpLiterals.ERROR_DETAILS)
                 val errorUri = authSession.getAuthNote(GematikIdpLiterals.ERROR_URI)
 
-                handleIdpErrorWhenCalledFromBrowser(error, errorDetails, errorUri)
+                handleErrorWhenCalledFromBrowser(error, errorDetails, errorUri)
             }
 
             flowLastStep -> {
@@ -122,7 +122,7 @@ abstract class GematikIdpCardTypeBasedResource: GematikIDPResource() {
 
             else -> {
                 handleInternalErrorWhenCalledFromBrowser(
-                    "non_final_step",
+                    AuthenticatorErrorTypes.NON_FINAL_STEP,
                     "Authentication is still in progress. Current step is $step. Please try again later.",
                     Response.Status.PRECONDITION_REQUIRED
                 )
@@ -150,7 +150,7 @@ abstract class GematikIdpCardTypeBasedResource: GematikIDPResource() {
         GematikIDPUtil.addAuthenticatorVersionToMdc(version)
 
         if (code == null && encodedState == null) {
-            return handleIdpErrorWhenCalledFromBrowser(error, errorDetails, errorUri)
+            return handleErrorWhenCalledFromBrowser(error, errorDetails, errorUri)
         }
 
         val authSession: AuthenticationSessionModel = try {

@@ -11,3 +11,6 @@ http-client.private.env.json
 **/dist
 **/yarn-error.log
 **/.DS_Store
+
+# maven jvm config files that may contain the key store password
+.mvn/jvm.config

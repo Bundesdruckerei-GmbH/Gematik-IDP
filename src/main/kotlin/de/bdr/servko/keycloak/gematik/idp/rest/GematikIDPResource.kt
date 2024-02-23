@@ -19,6 +19,7 @@ package de.bdr.servko.keycloak.gematik.idp.rest
 
 import de.bdr.servko.keycloak.gematik.idp.GematikIDP
 import de.bdr.servko.keycloak.gematik.idp.model.AuthenticationFlowType
+import de.bdr.servko.keycloak.gematik.idp.model.AuthenticatorErrorTypes
 import de.bdr.servko.keycloak.gematik.idp.model.GematikIDPConfig
 import de.bdr.servko.keycloak.gematik.idp.model.GematikIDPState
 import de.bdr.servko.keycloak.gematik.idp.service.GematikIDPService
@@ -205,29 +206,29 @@ abstract class GematikIDPResource {
         return loginFormsProvider.createForm("gematik-idp.ftl")
     }
 
-    fun handleIdpErrorWhenCalledFromBrowser(
+    fun handleErrorWhenCalledFromBrowser(
         error: String?,
         errorDetails: String?,
         errorUri: String?,
     ): Response {
         logger.error("Authenticator returned error: $error | error-details: $errorDetails | error-uri $errorUri")
-        return forms.setError("authenticator.errorIdp", errorDetails?.take(20) ?: "Unknown")
+        return forms.setError(AuthenticatorErrorTypes.valueOf(error).error, errorDetails ?: "Unknown")
             .createErrorPage(Response.Status.BAD_REQUEST)
     }
 
     fun getIncompleteIdpDataResponse() = handleInternalErrorWhenCalledFromBrowser(
-        "incomplete_idp_data",
+        AuthenticatorErrorTypes.INCOMPLETE_IDP_DATA,
         "Tried to finalize login without complete authentication",
         Response.Status.BAD_REQUEST
     )
 
     fun handleInternalErrorWhenCalledFromBrowser(
-        error: String?,
+        error: AuthenticatorErrorTypes?,
         errorDetails: String?,
         statusCode: Response.Status,
     ): Response {
         logger.error("Internal error while authenticating: $error | error-details: $errorDetails")
-        return forms.setError("authenticator.errorIdp", error?.take(20) ?: "Unknown")
+        return forms.setError(error?.error ?: AuthenticatorErrorTypes.ERROR_IDP.error, errorDetails ?: "Unknown")
             .createErrorPage(statusCode)
     }
 

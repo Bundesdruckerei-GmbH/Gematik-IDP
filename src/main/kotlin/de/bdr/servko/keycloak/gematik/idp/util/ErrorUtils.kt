@@ -17,6 +17,7 @@
 
 package de.bdr.servko.keycloak.gematik.idp.util
 
+import de.bdr.servko.keycloak.gematik.idp.model.AuthenticatorErrorTypes
 import de.bdr.servko.keycloak.gematik.idp.model.GematikIDPStep
 import jakarta.ws.rs.core.Response
 import org.keycloak.sessions.AuthenticationSessionModel
@@ -41,7 +42,7 @@ class ErrorUtils {
             authSession: AuthenticationSessionModel,
             cardType: String,
         ): Response {
-            authSession.setAuthNote(GematikIdpLiterals.ERROR, "unsupported_card_type")
+            authSession.setAuthNote(GematikIdpLiterals.ERROR, AuthenticatorErrorTypes.UNSUPPORTED_CARD_TYPE.error)
             authSession.setAuthNote(
                 GematikIdpLiterals.ERROR_DETAILS,
                 "Received ${cardType.uppercase()} data, which is not configured for this flow."
@@ -53,7 +54,7 @@ class ErrorUtils {
         }
 
         fun saveUnsupportedAuthenticatorVersion(authSession: AuthenticationSessionModel): Response {
-            authSession.setAuthNote(GematikIdpLiterals.ERROR, "unsupported_authenticator_version")
+            authSession.setAuthNote(GematikIdpLiterals.ERROR, AuthenticatorErrorTypes.UNSUPPORTED_AUTHENTICATOR_VERSION.error)
             authSession.setAuthNote(
                 GematikIdpLiterals.ERROR_DETAILS,
                 "Authenticator version unsupported. Please update your Authenticator."

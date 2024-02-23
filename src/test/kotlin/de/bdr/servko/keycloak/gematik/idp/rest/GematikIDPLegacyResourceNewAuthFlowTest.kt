@@ -351,7 +351,7 @@ internal class GematikIDPLegacyResourceNewAuthFlowTest : GematikIDPEndpointBaseT
     @Test
     fun `nextStep - Final step, but no HBA or SMCB data saved in auth session`() {
         // arrange
-        val error = "incomplete_idp_data"
+        val error = "Tried to finalize login without complete authentication"
 
         whenever(authSessionMock.getAuthNote("HBA_DATA")).thenReturn(null)
         whenever(authSessionMock.getAuthNote("SMCB_DATA")).thenReturn(null)
@@ -370,7 +370,7 @@ internal class GematikIDPLegacyResourceNewAuthFlowTest : GematikIDPEndpointBaseT
         assertThat(result.statusInfo).isEqualTo(Response.Status.BAD_REQUEST)
 
         verify(formsMock)
-            .setError(eq("authenticator.errorIdp"), eq(error))
+            .setError(eq("authenticator.incompleteIdpData"), eq(error))
     }
 
     @Test
