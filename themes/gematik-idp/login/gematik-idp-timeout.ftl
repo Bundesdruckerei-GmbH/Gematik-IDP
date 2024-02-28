@@ -16,7 +16,6 @@
   -->
 
 <#import "template.ftl" as layout>
-<#import "macros.ftl" as macros>
 
 <@layout.registrationLayout bodyClass="authenticator-timeout-page"; section>
     <#if section = "header">
@@ -29,12 +28,9 @@
 
             <#if client?? && client.baseUrl?has_content>
                 <div class="pf-l-grid__item pf-m-12-col">
-                    <@macros.LinkButton 
-                        url=client.baseUrl 
-                        label=msg("toHomePage") 
-                        className=['pf-m-primary'] 
-                        linkProperties=['id="backToApplication"'] 
-                    />
+                    <a class="pf-c-button pf-m-primary close" href="${client.baseUrl }" id="backToApplication">
+                        ${kcSanitize(msg("toHomePage"))?no_esc}
+                    </a>
                 </div>
             </#if>
     </#if>

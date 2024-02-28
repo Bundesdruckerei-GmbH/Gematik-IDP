@@ -194,7 +194,7 @@ internal class GematikIDPMultiResourceTest : GematikIDPEndpointBaseTest() {
     )
     fun `nextStep - Non-final step results in error`(step: GematikIDPStep) {
         // arrange
-        val error = "non_final_step"
+        val error = "Authentication is still in progress. Current step is $step. Please try again later."
 
         whenever(formsMock.createErrorPage(Response.Status.PRECONDITION_REQUIRED)).thenReturn(
             Response.status(Response.Status.PRECONDITION_REQUIRED).build())
@@ -209,13 +209,13 @@ internal class GematikIDPMultiResourceTest : GematikIDPEndpointBaseTest() {
         assertThat(result.statusInfo).isEqualTo(Response.Status.PRECONDITION_REQUIRED)
 
         verify(formsMock)
-            .setError(eq("authenticator.errorIdp"), eq(error))
+            .setError(eq("authenticator.nonFinalStep"), eq(error))
     }
 
     @Test
     fun `nextStep - Final step, but no SMCB or HBA data saved in auth session`() {
         // arrange
-        val error = "incomplete_idp_data"
+        val error = "Tried to finalize login without complete authentication"
 
         whenever(authSessionMock.getAuthNote("HBA_DATA")).thenReturn(null)
         whenever(authSessionMock.getAuthNote("SMCB_DATA")).thenReturn(null)
@@ -234,7 +234,7 @@ internal class GematikIDPMultiResourceTest : GematikIDPEndpointBaseTest() {
         assertThat(result.statusInfo).isEqualTo(Response.Status.BAD_REQUEST)
 
         verify(formsMock)
-            .setError(eq("authenticator.errorIdp"), eq(error))
+            .setError(eq("authenticator.incompleteIdpData"), eq(error))
     }
 
     @Test
@@ -327,7 +327,7 @@ internal class GematikIDPMultiResourceTest : GematikIDPEndpointBaseTest() {
         whenever(authSessionMock.getAuthNote("GEMATIK_IDP_STEP")).thenReturn(GematikIDPStep.REQUESTED_HBA_DATA.name)
         whenever(authSessionMock.getAuthNote("CODE_VERIFIER")).thenReturn(hbaKeyVerifier)
 
-        val error = "unsupported_authenticator_version"
+        val error = "authenticator.unsupportedAuthenticatorVersion"
         val errorDetails = "Authenticator version unsupported. Please update your Authenticator."
         val errorUri = null
 

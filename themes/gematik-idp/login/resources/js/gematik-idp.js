@@ -16,9 +16,15 @@
  *
  */
 
-function pollAuthenticationStatus({ statusUrl, pollInterval = 1000 }) {
+function pollAuthenticationStatus({
+  statusUrl,
+  timeoutUrl,
+  timeout = 60000,
+  pollInterval = 1000,
+}) {
   if (statusUrl) {
     let authenticationStatusIntVal = null;
+    let timeoutRedirectTimer = null;
 
     authenticationStatusIntVal = setInterval(async () => {
       const response = await fetch(statusUrl);
@@ -29,16 +35,16 @@ function pollAuthenticationStatus({ statusUrl, pollInterval = 1000 }) {
         json.currentStep === "ERROR"
       ) {
         clearTimeout(authenticationStatusIntVal);
+        clearTimeout(timeoutRedirectTimer);
         location.assign(json.nextStepUrl);
       }
     }, pollInterval);
-  }
-}
 
-function redirectAfterTimout({ timeoutUrl, timeout }) {
-  if (timeoutUrl && timeout) {
-    setTimeout(() => {
-      location.assign(timeoutUrl);
+    timeoutRedirectTimer = setTimeout(() => {
+      clearTimeout(authenticationStatusIntVal);
+      if (timeoutUrl) {
+        location.assign(timeoutUrl);
+      }
     }, timeout);
   }
 }
@@ -47,10 +53,10 @@ window.addEventListener("DOMContentLoaded", () => {
   const modal = document.querySelector(".gematik-idp-modal");
   if (modal) {
     document
-        .querySelector(".gematik-idp-modal .close")
-        .addEventListener("click", function () {
-          modal.style.display = "none";
-        });
+      .querySelector(".gematik-idp-modal .close")
+      .addEventListener("click", function () {
+        modal.style.display = "none";
+      });
   }
 
   try {
@@ -58,7 +64,6 @@ window.addEventListener("DOMContentLoaded", () => {
       document.getElementById("gematikIdpConfiguration").textContent
     );
 
-    pollAuthenticationStatus({ statusUrl });
-    redirectAfterTimout({ timeoutUrl, timeout });
+    pollAuthenticationStatus({ statusUrl, timeoutUrl, timeout });
   } catch (e) {}
 });

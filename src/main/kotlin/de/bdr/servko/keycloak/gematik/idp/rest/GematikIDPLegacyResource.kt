@@ -134,7 +134,7 @@ class GematikIDPLegacyResource(
                 val errorDetails = authSession.getAuthNote(GematikIdpLiterals.ERROR_DETAILS)
                 val errorUri = authSession.getAuthNote(GematikIdpLiterals.ERROR_URI)
 
-                handleIdpErrorWhenCalledFromBrowser(error, errorDetails, errorUri)
+                handleErrorWhenCalledFromBrowser(error, errorDetails, errorUri)
             }
 
             else -> {
@@ -177,7 +177,7 @@ class GematikIDPLegacyResource(
         val version = VersionFromUserAgentReader.readVersionFrom(userAgent)
         GematikIDPUtil.addAuthenticatorVersionToMdc(version)
         if (code == null && encodedState == null) {
-            return handleIdpErrorWhenCalledFromBrowser(error, errorDetails, errorUri)
+            return handleErrorWhenCalledFromBrowser(error, errorDetails, errorUri)
         }
 
         val authSession: AuthenticationSessionModel = try {

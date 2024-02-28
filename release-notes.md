@@ -1,4 +1,18 @@
 # Release Notes
+## Release 2.4.0
+* Dependency updates
+
+## Release 2.3.0
+* Reworked error handling
+* Dependency updates
+
+## Release 2.2.0
+* Dependency updates
+
+## Release 2.1.0
+* Documentation updated
+* Fixed an issue, where a timeout of the HBA/SMC-B wasn't correctly handled in the frontend
+* Version updates
 
 ## Release 2.0.0
 * Update to Keycloak 22
@@ -8,6 +22,7 @@
 * Removed legacy authentication flow
 * Removed authenticator URL setting. ``authenticator://`` is now used as standard
 * Removed client assertion signing alg setting in the frontend, since Brainpool is always used for token the validation
+* Fixed an issue, where an empty authenticatorAuthorizationUrl lead to a NoSuchElementException while trying to authenticate
 
 ## Release 1.7.1
 
