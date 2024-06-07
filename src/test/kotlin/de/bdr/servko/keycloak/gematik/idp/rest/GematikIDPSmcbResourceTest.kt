@@ -19,8 +19,8 @@ package de.bdr.servko.keycloak.gematik.idp.rest
 
 import de.bdr.servko.keycloak.gematik.idp.GematikIDP
 import de.bdr.servko.keycloak.gematik.idp.TestUtils
-import de.bdr.servko.keycloak.gematik.idp.exception.SessionNotFoundException
 import de.bdr.servko.keycloak.gematik.idp.extension.BrainpoolCurves
+import de.bdr.servko.keycloak.gematik.idp.model.AuthenticatorErrorTypes
 import de.bdr.servko.keycloak.gematik.idp.model.ContextData
 import de.bdr.servko.keycloak.gematik.idp.model.GematikIDPStatusResponse
 import de.bdr.servko.keycloak.gematik.idp.model.GematikIDPStep
@@ -36,7 +36,6 @@ import org.keycloak.OAuth2Constants
 import org.keycloak.broker.provider.BrokeredIdentityContext
 import org.keycloak.common.crypto.CryptoIntegration
 import org.keycloak.common.util.Base64
-import org.keycloak.forms.login.LoginFormsProvider
 import org.keycloak.forms.login.freemarker.model.ClientBean
 import org.keycloak.protocol.oidc.OIDCLoginProtocol
 import org.mockito.ArgumentMatchers
@@ -44,11 +43,6 @@ import org.mockito.kotlin.*
 import java.net.URI
 
 internal class GematikIDPSmcbResourceTest : GematikIDPEndpointBaseTest() {
-    private val formsMock = mock<LoginFormsProvider> {
-        on { setError(ArgumentMatchers.anyString(), any()) } doReturn it
-        on { setAttribute(ArgumentMatchers.anyString(), any()) } doReturn it
-        on { createForm(ArgumentMatchers.anyString()) } doReturn Response.ok().build()
-    }
 
     private var isHba = true
 
@@ -80,8 +74,10 @@ internal class GematikIDPSmcbResourceTest : GematikIDPEndpointBaseTest() {
 
     @Test
     fun `timeout - returns correct form response`() {
+        // act
         underTest.timeout(state)
 
+        // assert
         val capture = argumentCaptor<ClientBean>()
         verify(formsMock).setAttribute(eq("client"), capture.capture())
         val clientBean = capture.firstValue
@@ -99,8 +95,10 @@ internal class GematikIDPSmcbResourceTest : GematikIDPEndpointBaseTest() {
 
     @Test
     fun `startAuth - returns correct form response`() {
+        // act
         assertThat(underTest.startAuth(state).statusInfo).isEqualTo(Response.Status.OK)
 
+        // assert
         val authenticatorUrlCaptor = argumentCaptor<URI>()
 
         verify(formsMock).setAttribute(eq("authenticatorUrl"), authenticatorUrlCaptor.capture())
@@ -301,21 +299,28 @@ internal class GematikIDPSmcbResourceTest : GematikIDPEndpointBaseTest() {
     }
 
     @Test
-    fun `result - no auth session found - error callback`() {
+    fun `result - function call with authenticator consent error`() {
         // arrange
-        val message = "AuthenticationSessionModel not found for state $state"
-        whenever(service.resolveAuthSessionFromEncodedState(realmMock, state)).thenThrow(
-                SessionNotFoundException(
-                    message
-                )
-            )
-        whenever(callbackMock.error(any())).thenReturn(mock())
+        val error = "access_denied"
+        val errorDetails = "User declined consent"
 
         // act
-        underTest.result(CODE, state)
+        val result = underTest.result(CODE, state, null, error, errorDetails)
 
         // assert
-        verify(callbackMock).error("Failed to resolve auth session: $message")
+        assertThat(result.statusInfo).isEqualTo(Response.Status.NO_CONTENT)
+        verify(authSessionMock).setAuthNote("error", AuthenticatorErrorTypes.CONSENT_DECLINED.error)
+        verify(authSessionMock)
+            .setAuthNote("error_details", "User declined consent. Please start again and give your consent.")
+        verify(authSessionMock).setAuthNote("error_uri", null)
+        verify(authSessionMock).setAuthNote("GEMATIK_IDP_STEP", GematikIDPStep.ERROR.name)
+    }
+
+    @Test
+    fun `result - no auth session found - error callback`() {
+        testResolveAuthSessionFailure {
+            underTest.result(CODE, state)
+        }
     }
 
     @Test

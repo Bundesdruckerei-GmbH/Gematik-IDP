@@ -64,5 +64,17 @@ class ErrorUtils {
 
             return Response.noContent().build()
         }
+
+        fun saveConsentDeclined(authSession: AuthenticationSessionModel): Response {
+            authSession.setAuthNote(GematikIdpLiterals.ERROR, AuthenticatorErrorTypes.CONSENT_DECLINED.error)
+            authSession.setAuthNote(
+                GematikIdpLiterals.ERROR_DETAILS,
+                "User declined consent. Please start again and give your consent."
+            )
+            authSession.setAuthNote(GematikIdpLiterals.GEMATIK_IDP_STEP, GematikIDPStep.ERROR.name)
+            authSession.setAuthNote(GematikIdpLiterals.ERROR_URI, null)
+
+            return Response.noContent().build()
+        }
     }
 }

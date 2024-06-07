@@ -17,3 +17,5 @@
 
 de.bdr.servko.keycloak.gematik.idp.mapper.HbaUserAttributeMapper
 de.bdr.servko.keycloak.gematik.idp.mapper.SmcbUserAttributeMapper
+de.bdr.servko.keycloak.gematik.idp.mapper.HbaConsentAttributeMapper
+de.bdr.servko.keycloak.gematik.idp.mapper.SmcbConsentAttributeMapper

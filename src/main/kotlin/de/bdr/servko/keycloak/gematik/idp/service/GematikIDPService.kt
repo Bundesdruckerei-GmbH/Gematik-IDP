@@ -52,7 +52,7 @@ open class GematikIDPService(private val session: KeycloakSession) {
 
         val rootAuthSession = session.authenticationSessions().getRootAuthenticationSession(realm, state.rootSessionId)
 
-        return rootAuthSession.getAuthenticationSession(client, state.tabId) ?: throw authSessionNotFound(encodedState)
+        return rootAuthSession?.getAuthenticationSession(client, state.tabId) ?: throw authSessionNotFound(encodedState)
     }
 
     private fun authSessionNotFound(encodedState: String?): SessionNotFoundException {

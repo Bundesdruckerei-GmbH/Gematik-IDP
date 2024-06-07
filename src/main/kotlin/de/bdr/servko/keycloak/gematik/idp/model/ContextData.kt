@@ -29,6 +29,13 @@ enum class GematikClaim(val value: String) {
     ORGANIZATION_NAME("organizationName")
 }
 
+enum class AuthenticatorClaim(val cardType: CardType, val scope: String) {
+    HBA_CONSENT_CREATED_DATE(CardType.HBA, "hba_consent_created_date"),
+    HBA_CONSENT_LAST_UPDATED_DATE(CardType.HBA, "hba_consent_last_updated_date"),
+    SMCB_CONSENT_CREATED_DATE(CardType.SMCB, "smcb_consent_created_date"),
+    SMCB_CONSENT_LAST_UPDATED_DATE(CardType.SMCB, "smcb_consent_last_updated_date")
+}
+
 enum class ContextData(val cardType: CardType, val claim: GematikClaim) {
     CONTEXT_HBA_TELEMATIK_ID(CardType.HBA, GematikClaim.TELEMATIK_ID),
     CONTEXT_HBA_PROFESSION_OID(CardType.HBA, GematikClaim.PROFESSION_OID),
