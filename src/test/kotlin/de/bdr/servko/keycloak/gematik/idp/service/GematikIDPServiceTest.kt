@@ -82,7 +82,20 @@ internal class GematikIDPServiceTest {
     }
 
     @Test
-    fun authSessionNotFound() {
+    fun authSessionNotFound_RootSessionNotFound() {
+        // arrange
+        whenever(sessionMock.authenticationSessions()).thenReturn(authSessionProvider)
+        whenever(authSessionProvider.getRootAuthenticationSession(realmMock, rootSessionId)).thenReturn(null)
+        whenever(realmMock.getClientByClientId(clientId)).thenReturn(clientMock)
+
+        // act + assert
+        assertThatThrownBy {
+            underTest.resolveAuthSessionFromEncodedState(realmMock, state)
+        }.isInstanceOf(SessionNotFoundException::class.java)
+    }
+
+    @Test
+    fun authSessionNotFound_SessionNotFound() {
         // arrange
         whenever(sessionMock.authenticationSessions()).thenReturn(authSessionProvider)
         whenever(authSessionProvider.getRootAuthenticationSession(realmMock, rootSessionId)).thenReturn(rootAuthSessionMock)

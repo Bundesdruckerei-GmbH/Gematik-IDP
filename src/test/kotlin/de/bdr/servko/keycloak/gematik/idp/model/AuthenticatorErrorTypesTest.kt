@@ -14,13 +14,15 @@ class AuthenticatorErrorTypesTest {
         @JvmStatic
         private fun provideErrorMappings(): Stream<Arguments> {
             return Stream.of(
+                Arguments.of(AuthenticatorErrorTypes.LOGIN_TIMEOUT, "loginTimeout"),
                 Arguments.of(AuthenticatorErrorTypes.NON_FINAL_STEP, "authenticator.nonFinalStep"),
                 Arguments.of(AuthenticatorErrorTypes.INCOMPLETE_IDP_DATA, "authenticator.incompleteIdpData"),
                 Arguments.of(AuthenticatorErrorTypes.UNSUPPORTED_CARD_TYPE, "authenticator.unsupportedCardType"),
                 Arguments.of(
                     AuthenticatorErrorTypes.UNSUPPORTED_AUTHENTICATOR_VERSION,
                     "authenticator.unsupportedAuthenticatorVersion"
-                )
+                ),
+                Arguments.of(AuthenticatorErrorTypes.CONSENT_DECLINED, "authenticator.consentDeclined"),
             )
         }
     }
@@ -38,7 +40,7 @@ class AuthenticatorErrorTypesTest {
         "nonFinalStep",
         "authenticatorIncompleteIdpData",
         "auth.unsupportedCardType",
-        "authenticator.unknownAuthenticatorVersion"
+        "authenticator.unknownAuthenticatorVersion",
     ])
     fun `valueOf - Input is unknown error message key - Maps to generic idp error type`(error: String?) {
         // arrange + act + assert

@@ -18,10 +18,8 @@
 package de.bdr.servko.keycloak.gematik.idp.rest
 
 import de.bdr.servko.keycloak.gematik.idp.GematikIDP
-import de.bdr.servko.keycloak.gematik.idp.model.AuthenticationFlowType
-import de.bdr.servko.keycloak.gematik.idp.model.AuthenticatorErrorTypes
-import de.bdr.servko.keycloak.gematik.idp.model.GematikIDPConfig
-import de.bdr.servko.keycloak.gematik.idp.model.GematikIDPState
+import de.bdr.servko.keycloak.gematik.idp.exception.SessionNotFoundException
+import de.bdr.servko.keycloak.gematik.idp.model.*
 import de.bdr.servko.keycloak.gematik.idp.service.GematikIDPService
 import de.bdr.servko.keycloak.gematik.idp.service.GematikIdpCertificateService
 import de.bdr.servko.keycloak.gematik.idp.util.GematikIDPUtil
@@ -153,6 +151,8 @@ abstract class GematikIDPResource {
     fun startAuth(@QueryParam(OAuth2Constants.STATE) encodedState: String): Response {
         val authSession: AuthenticationSessionModel = try {
             service.resolveAuthSessionFromEncodedState(realm, encodedState)
+        } catch (snfe: SessionNotFoundException) {
+            return handleSessionTimeout(snfe)
         } catch (e: Exception) {
             return callback.error("Failed to resolve auth session: ${e.message}")
         }
@@ -173,6 +173,8 @@ abstract class GematikIDPResource {
     fun timeout(@QueryParam(OAuth2Constants.STATE) encodedState: String): Response {
         val authSession: AuthenticationSessionModel = try {
             service.resolveAuthSessionFromEncodedState(realm, encodedState)
+        } catch (snfe: SessionNotFoundException) {
+            return handleSessionTimeout(snfe)
         } catch (e: Exception) {
             return callback.error("Failed to resolve auth session: ${e.message}")
         }
@@ -232,6 +234,12 @@ abstract class GematikIDPResource {
             .createErrorPage(statusCode)
     }
 
+    fun handleSessionTimeout(e: SessionNotFoundException): Response {
+        logger.error(e.message)
+        return forms.setError(AuthenticatorErrorTypes.LOGIN_TIMEOUT.error, e.message)
+            .createErrorPage(Response.Status.BAD_REQUEST)
+    }
+
     fun handleAuthenticatorProtocol(): UriBuilder = UriBuilder.fromPath("//").scheme("authenticator")
 
     fun initIdentityContext(
@@ -247,6 +255,13 @@ abstract class GematikIDPResource {
         modelUsername = telematikId
         GematikIDPUtil.storeDataInContext(contextData = contextData, hbaData = hbaData, smcbData = smcbData)
     }
+
+    fun respondWithStatusRedirect(currentStep: String, authenticatorNextStepUrl: URI): Response =
+        Response.ok().entity(
+            GematikIDPStatusResponse(
+                currentStep, authenticatorNextStepUrl
+            )
+        ).build()
 
     private fun determineIdentityProviderID(telematikId: String): String {
         return if (config.getMultipleIdentityMode()) {

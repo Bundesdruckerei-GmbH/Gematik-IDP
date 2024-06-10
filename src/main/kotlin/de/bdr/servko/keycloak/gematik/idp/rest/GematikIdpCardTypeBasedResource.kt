@@ -17,6 +17,7 @@
 
 package de.bdr.servko.keycloak.gematik.idp.rest
 
+import de.bdr.servko.keycloak.gematik.idp.exception.SessionNotFoundException
 import de.bdr.servko.keycloak.gematik.idp.model.*
 import de.bdr.servko.keycloak.gematik.idp.service.GematikIdpCertificateService
 import de.bdr.servko.keycloak.gematik.idp.util.ErrorUtils
@@ -59,12 +60,6 @@ abstract class GematikIdpCardTypeBasedResource: GematikIDPResource() {
     override fun status(
         @QueryParam(OAuth2Constants.STATE) encodedState: String,
     ): Response {
-        val authSession: AuthenticationSessionModel = try {
-            service.resolveAuthSessionFromEncodedState(realm, encodedState)
-        } catch (e: Exception) {
-            return callback.error("Failed to resolve auth session: ${e.message}")
-        }
-
         val authenticatorNextStepUrl = GematikIDPUtil.getEndpointUri(
             session,
             realm,
@@ -73,13 +68,17 @@ abstract class GematikIdpCardTypeBasedResource: GematikIDPResource() {
             GematikIdpLiterals.AUTHENTICATOR_NEXT_STEP
         )
 
+        val authSession: AuthenticationSessionModel = try {
+            service.resolveAuthSessionFromEncodedState(realm, encodedState)
+        } catch (snfe: SessionNotFoundException) {
+            return respondWithStatusRedirect(GematikIDPStep.ERROR.name, authenticatorNextStepUrl)
+        } catch (e: Exception) {
+            return callback.error("Failed to resolve auth session: ${e.message}")
+        }
+
         return when (val step = GematikIDPUtil.getGematikIdpStepFrom(authSession)) {
             flowLastStep, GematikIDPStep.ERROR -> {
-                Response.ok().entity(
-                    GematikIDPStatusResponse(
-                        step.name, authenticatorNextStepUrl
-                    )
-                ).build()
+                respondWithStatusRedirect(step.name, authenticatorNextStepUrl)
             }
 
             else -> {
@@ -103,7 +102,9 @@ abstract class GematikIdpCardTypeBasedResource: GematikIDPResource() {
     ): Response {
         val authSession: AuthenticationSessionModel = try {
             service.resolveAuthSessionFromEncodedState(realm, encodedState)
-        } catch (e: Exception) {
+        } catch (snfe: SessionNotFoundException) {
+            return handleSessionTimeout(snfe)
+        }  catch (e: Exception) {
             return callback.error("Failed to resolve auth session: ${e.message}")
         }
 
@@ -155,11 +156,16 @@ abstract class GematikIdpCardTypeBasedResource: GematikIDPResource() {
 
         val authSession: AuthenticationSessionModel = try {
             service.resolveAuthSessionFromEncodedState(realm, encodedState!!)
+        } catch (snfe: SessionNotFoundException) {
+            return handleSessionTimeout(snfe)
         } catch (e: Exception) {
             return callback.error("Failed to resolve auth session: ${e.message}")
         }
 
         if (error != null || errorDetails != null || errorUri != null) {
+            if (error == GematikIdpLiterals.CONSENT_DECLINED_ERROR && errorDetails == GematikIdpLiterals.CONSENT_DECLINED_ERROR_DETAIL) {
+                return ErrorUtils.saveConsentDeclined(authSession)
+            }
             return ErrorUtils.saveIdpErrorInAuthSession(authSession, error, errorDetails, errorUri)
         }
 

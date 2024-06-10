@@ -24,7 +24,7 @@
     <#elseif section = "form">
         <div class="pf-c-backdrop gematik-idp-modal">
             <div class="pf-l-bullseye">
-                <div class="pf-c-modal-box" role="dialog" aria-modal="true" aria-labelledby="modal-login-info-title"
+                <div class="pf-c-modal-box pf-m-md" role="dialog" aria-modal="true" aria-labelledby="modal-login-info-title"
                      aria-describedby="modal-login-info-description">
                     <header class="pf-c-modal-box__header">
                         <h1 class="pf-c-modal-box__title" id="modal-login-info-title">${msg("confirmOpenAuthenticatorModalHint")}</h1>

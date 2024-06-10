@@ -66,8 +66,10 @@ in the Keycloak-Github:
 
 ## Theme
 
-A base login theme is provided under `/themes` and named `gematik-idp`. This theme contains only the necessary files
-for this plugin and can be adapted according to your requirements.
+The template and javascript files are supplied as part of the compiled jar and are available under 
+`/src/main/resources/theme-resources`. To use the script it has to be added to the `theme.properties` file as scripts: 
+`scripts=js/gematik-idp.js`. Sample theme configuration can be found under `/themes/gematik-idp`. For more information 
+about extending your own themes please read the [Deploying Themes](https://www.keycloak.org/docs/latest/server_development/index.html#deploying-themes) section in the Keycloak documentation.
 
 Please make sure to use your standard browser without an incognito window, when using the `authenticator://`
 Authenticator Url
@@ -114,7 +116,7 @@ for the SMCB data.
 
 Some browsers based on Chromium (e.g. Chrome, Edge, etc.) block the second request with an error message when no user
 interaction was done between the requests. To prevent this from happening, a modal is shown which the user has to
-acknowledge before the Gemaik-Authenticator is opened.
+acknowledge before the Gematik-Authenticator is opened.
 
 ## Authentication Flow
 

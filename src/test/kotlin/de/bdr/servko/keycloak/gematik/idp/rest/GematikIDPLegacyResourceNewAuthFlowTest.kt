@@ -33,20 +33,12 @@ import org.keycloak.OAuth2Constants
 import org.keycloak.broker.provider.BrokeredIdentityContext
 import org.keycloak.common.crypto.CryptoIntegration
 import org.keycloak.common.util.Base64
-import org.keycloak.forms.login.LoginFormsProvider
 import org.keycloak.protocol.oidc.OIDCLoginProtocol
 import org.mockito.ArgumentMatchers.anyString
 import org.mockito.kotlin.*
 import java.net.URI
 
 internal class GematikIDPLegacyResourceNewAuthFlowTest : GematikIDPEndpointBaseTest() {
-    private val formsMock = mock<LoginFormsProvider> {
-        on { setError(anyString(), any()) } doReturn it
-        on { setAttribute(anyString(), any()) } doReturn it
-        on { createForm(anyString()) } doReturn Response.ok().build()
-        on { createErrorPage(any()) } doReturn Response.status(Response.Status.BAD_REQUEST).build()
-    }
-
     private val idp = GematikIDP(sessionMock, config)
 
     private var isHba = true

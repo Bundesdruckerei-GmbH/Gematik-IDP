@@ -43,5 +43,8 @@ class GematikIdpLiterals {
         const val ERROR = "error"
         const val ERROR_DETAILS = "error_details"
         const val ERROR_URI = "error_uri"
+
+        const val CONSENT_DECLINED_ERROR = "access_denied"
+        const val CONSENT_DECLINED_ERROR_DETAIL = "User declined consent"
     }
 }

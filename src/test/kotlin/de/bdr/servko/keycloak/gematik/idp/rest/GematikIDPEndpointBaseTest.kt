@@ -30,6 +30,7 @@ import jakarta.ws.rs.core.UriBuilder
 import org.assertj.core.api.Assertions
 import org.keycloak.OAuth2Constants
 import org.keycloak.broker.provider.IdentityProvider
+import org.keycloak.forms.login.LoginFormsProvider
 import org.keycloak.models.*
 import org.keycloak.protocol.oidc.utils.PkceUtils
 import org.keycloak.sessions.AuthenticationSessionModel
@@ -100,6 +101,13 @@ abstract class GematikIDPEndpointBaseTest {
     val rootAuthenticationSession = mock<RootAuthenticationSessionModel> {
     }
 
+    val formsMock = mock<LoginFormsProvider> {
+        on { setError(ArgumentMatchers.anyString(), any()) } doReturn it
+        on { setAttribute(ArgumentMatchers.anyString(), any()) } doReturn it
+        on { createForm(ArgumentMatchers.anyString()) } doReturn Response.ok().build()
+        on { createErrorPage(any()) } doReturn Response.status(Response.Status.BAD_REQUEST).build()
+    }
+
     val config: GematikIDPConfig = GematikIDPConfig().apply {
         alias = IDP_ALIAS
         clientId = GEMATIK_CLIENT_ID
@@ -141,6 +149,7 @@ abstract class GematikIDPEndpointBaseTest {
     }
 
     fun testResolveAuthSessionFailure(test: () -> Response) {
+        // arrange
         val message = "client not found or disabled"
         whenever(service.resolveAuthSessionFromEncodedState(realmMock, state))
             .thenThrow(SessionNotFoundException(message))
@@ -148,12 +157,11 @@ abstract class GematikIDPEndpointBaseTest {
             Response.status(Response.Status.INTERNAL_SERVER_ERROR).build()
         )
 
-        Assertions.assertThat(test().statusInfo).isEqualTo(Response.Status.INTERNAL_SERVER_ERROR)
+        // act
+        Assertions.assertThat(test().statusInfo).isEqualTo(Response.Status.BAD_REQUEST)
 
-        val errorCaptor = argumentCaptor<String>()
-        verify(callbackMock).error(errorCaptor.capture())
-        Assertions.assertThat(errorCaptor.firstValue)
-            .isEqualTo("Failed to resolve auth session: client not found or disabled")
+        // assert
+        verify(formsMock).setError(eq("loginTimeout"), eq(message))
     }
 
     fun assertNextStepUrl(statusUrl: URI) {

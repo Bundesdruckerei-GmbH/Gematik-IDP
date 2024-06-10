@@ -54,8 +54,10 @@ open class RestClient(private val session: KeycloakSession) {
         if (response.status >= 500) {
             logger.warn("IDP $idpUrl returned status code ${response.status} with body ${response.asString()}")
             throw IdpUnavailableException("IDP $idpUrl returned status code ${response.status} with body ${response.asString()}")
+        } else if (response.status >= 400) {
+            logger.warn("IDP $idpUrl returned status code ${response.status} with body ${response.asString()}")
         } else {
-            logger.info("$method $idpUrl response ${response.status} with body ${response.asString()}")
+            logger.info("$method $idpUrl response ${response.status}")
         }
     }
 }
