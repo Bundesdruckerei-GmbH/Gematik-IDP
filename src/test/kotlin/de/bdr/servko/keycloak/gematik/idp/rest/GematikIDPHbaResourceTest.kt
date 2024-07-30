@@ -86,6 +86,13 @@ internal class GematikIDPHbaResourceTest : GematikIDPEndpointBaseTest() {
     }
 
     @Test
+    fun `timeout - resolveAuthSession not found`() {
+        testResolveAuthSessionNotFoundFailure {
+            underTest.timeout(state)
+        }
+    }
+
+    @Test
     fun `timeout - resolveAuthSession fails`() {
         testResolveAuthSessionFailure {
             underTest.timeout(state)
@@ -153,6 +160,36 @@ internal class GematikIDPHbaResourceTest : GematikIDPEndpointBaseTest() {
         assertThat(result.statusInfo).isEqualTo(Response.Status.OK)
         assertThat((result.entity as GematikIDPStatusResponse).currentStep).isEqualTo(step.name)
         assertNextStepUrl((result.entity as GematikIDPStatusResponse).nextStepUrl!!)
+    }
+
+    @Test
+    fun `status - Current step is null - error`() {
+        // arrange
+        whenever(authSessionMock.getAuthNote("HBA_DATA")).thenReturn(null)
+        whenever(authSessionMock.getAuthNote("SMCB_DATA")).thenReturn(null)
+        whenever(authSessionMock.getAuthNote("GEMATIK_IDP_STEP")).thenReturn(null)
+
+        // act
+        val result = underTest.status(state)
+
+        // assert
+        assertThat(result.statusInfo).isEqualTo(Response.Status.OK)
+        assertThat((result.entity as GematikIDPStatusResponse).currentStep).isEqualTo(GematikIDPStep.ERROR.name)
+        assertNextStepUrl((result.entity as GematikIDPStatusResponse).nextStepUrl!!)
+    }
+
+    @Test
+    fun `status - resolveAuthSession not found`() {
+        testResolveAuthSessionNotFoundStatusEndpointFailure {
+            underTest.status(state)
+        }
+    }
+
+    @Test
+    fun `status - resolveAuthSession fails`() {
+        testResolveAuthSessionFailure {
+            underTest.status(state)
+        }
     }
 
     @Test
@@ -271,7 +308,28 @@ internal class GematikIDPHbaResourceTest : GematikIDPEndpointBaseTest() {
     }
 
     @Test
-    fun `result resolveAuthSession fails`() {
+    fun `nextStep - resolveAuthSession not found`() {
+        testResolveAuthSessionNotFoundFailure {
+            underTest.nextStep(state)
+        }
+    }
+
+    @Test
+    fun `nextStep - resolveAuthSession fails`() {
+        testResolveAuthSessionFailure {
+            underTest.nextStep(state)
+        }
+    }
+
+    @Test
+    fun `result resolveAuthSession not found`() {
+        testResolveAuthSessionNotFoundFailure {
+            underTest.result("", state)
+        }
+    }
+
+    @Test
+    fun `result - resolveAuthSession fails`() {
         testResolveAuthSessionFailure {
             underTest.result("", state)
         }
@@ -313,13 +371,6 @@ internal class GematikIDPHbaResourceTest : GematikIDPEndpointBaseTest() {
         verify(authSessionMock).setAuthNote("GEMATIK_IDP_STEP", GematikIDPStep.ERROR.name)
     }
 
-    @Test
-    fun `result - no auth session found - error callback`() {
-        testResolveAuthSessionFailure {
-            underTest.result(CODE, state)
-        }
-    }
-
     @ParameterizedTest
     @NullAndEmptySource
     fun `result - no or empty card type - corresponding error is set`(cardType: String?) {
@@ -355,6 +406,14 @@ internal class GematikIDPHbaResourceTest : GematikIDPEndpointBaseTest() {
         verify(authSessionMock).setAuthNote("error_details", errorDetails)
         verify(authSessionMock).setAuthNote("error_uri", errorUri)
         verify(authSessionMock).setAuthNote("GEMATIK_IDP_STEP", GematikIDPStep.ERROR.name)
+    }
+
+    @ParameterizedTest
+    @NullAndEmptySource
+    fun `result - no or empty code and state - corresponding error is set`(code: String?) {
+        testAssertCodeAndStateNullOrEmpty {
+            underTest.result(code, code)
+        }
     }
 
     @Test

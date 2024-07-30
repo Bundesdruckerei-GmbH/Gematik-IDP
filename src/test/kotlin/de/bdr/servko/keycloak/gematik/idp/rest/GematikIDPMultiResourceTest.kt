@@ -67,8 +67,8 @@ internal class GematikIDPMultiResourceTest : GematikIDPEndpointBaseTest() {
         BrainpoolCurves.init()
         whenever(sessionMock.authenticationSessions()).thenReturn(authenticationSession)
         whenever(authenticationSession.getRootAuthenticationSession(realmMock, ROOT_SESSION_ID)).thenReturn(
-                rootAuthenticationSession
-            )
+            rootAuthenticationSession
+        )
     }
 
     @Test
@@ -81,6 +81,13 @@ internal class GematikIDPMultiResourceTest : GematikIDPEndpointBaseTest() {
         assertThat(clientBean.clientId).isEqualTo(CLIENT_ID)
 
         verify(formsMock).createForm("gematik-idp-timeout.ftl")
+    }
+
+    @Test
+    fun `timeout - resolveAuthSession not found`() {
+        testResolveAuthSessionNotFoundFailure {
+            underTest.timeout(state)
+        }
     }
 
     @Test
@@ -155,6 +162,20 @@ internal class GematikIDPMultiResourceTest : GematikIDPEndpointBaseTest() {
     }
 
     @Test
+    fun `status - resolveAuthSession not found`() {
+        testResolveAuthSessionNotFoundStatusEndpointFailure {
+            underTest.status(state)
+        }
+    }
+
+    @Test
+    fun `status - resolveAuthSession fails`() {
+        testResolveAuthSessionFailure {
+            underTest.status(state)
+        }
+    }
+
+    @Test
     fun `nextStep - idp error saved in auth session`() {
         // arrange
         val error = "invalid_scope"
@@ -162,7 +183,8 @@ internal class GematikIDPMultiResourceTest : GematikIDPEndpointBaseTest() {
         val errorUri = "https://wiki.gematik.de/pages/viewpage.action?pageId=466488828"
 
         whenever(formsMock.createErrorPage(Response.Status.BAD_REQUEST)).thenReturn(
-            Response.status(Response.Status.BAD_REQUEST).build())
+            Response.status(Response.Status.BAD_REQUEST).build()
+        )
 
         whenever(authSessionMock.getAuthNote("error")).thenReturn(error)
         whenever(authSessionMock.getAuthNote("error_details")).thenReturn(errorDetails)
@@ -192,7 +214,8 @@ internal class GematikIDPMultiResourceTest : GematikIDPEndpointBaseTest() {
         val error = "Authentication is still in progress. Current step is $step. Please try again later."
 
         whenever(formsMock.createErrorPage(Response.Status.PRECONDITION_REQUIRED)).thenReturn(
-            Response.status(Response.Status.PRECONDITION_REQUIRED).build())
+            Response.status(Response.Status.PRECONDITION_REQUIRED).build()
+        )
 
         whenever(authSessionMock.getAuthNote("GEMATIK_IDP_STEP"))
             .thenReturn(step.name)
@@ -220,7 +243,8 @@ internal class GematikIDPMultiResourceTest : GematikIDPEndpointBaseTest() {
         whenever(callbackMock.authenticated(any())).thenReturn(Response.ok().build())
 
         whenever(formsMock.createErrorPage(Response.Status.BAD_REQUEST)).thenReturn(
-            Response.status(Response.Status.BAD_REQUEST).build())
+            Response.status(Response.Status.BAD_REQUEST).build()
+        )
 
         // act
         val result = underTest.nextStep(state)
@@ -271,7 +295,28 @@ internal class GematikIDPMultiResourceTest : GematikIDPEndpointBaseTest() {
     }
 
     @Test
-    fun `result resolveAuthSession fails`() {
+    fun `nextStep - resolveAuthSession not found`() {
+        testResolveAuthSessionNotFoundFailure {
+            underTest.nextStep(state)
+        }
+    }
+
+    @Test
+    fun `nextStep - resolveAuthSession fails`() {
+        testResolveAuthSessionFailure {
+            underTest.nextStep(state)
+        }
+    }
+
+    @Test
+    fun `result - resolveAuthSession not found`() {
+        testResolveAuthSessionNotFoundFailure {
+            underTest.result("", state)
+        }
+    }
+
+    @Test
+    fun `result - resolveAuthSession fails`() {
         testResolveAuthSessionFailure {
             underTest.result("", state)
         }
@@ -315,7 +360,7 @@ internal class GematikIDPMultiResourceTest : GematikIDPEndpointBaseTest() {
 
     @Test
     fun `result - no auth session found - error callback`() {
-        testResolveAuthSessionFailure {
+        testResolveAuthSessionNotFoundFailure {
             underTest.result(CODE, state)
         }
     }
@@ -355,6 +400,14 @@ internal class GematikIDPMultiResourceTest : GematikIDPEndpointBaseTest() {
         verify(authSessionMock).setAuthNote("error_details", errorDetails)
         verify(authSessionMock).setAuthNote("error_uri", errorUri)
         verify(authSessionMock).setAuthNote("GEMATIK_IDP_STEP", GematikIDPStep.ERROR.name)
+    }
+
+    @ParameterizedTest
+    @NullAndEmptySource
+    fun `result - no or empty code and state - corresponding error is set`(code: String?) {
+        testAssertCodeAndStateNullOrEmpty {
+            underTest.result(code, code)
+        }
     }
 
     @Test
@@ -397,7 +450,8 @@ internal class GematikIDPMultiResourceTest : GematikIDPEndpointBaseTest() {
         mockDoPostToGetSmcbToken()
 
         // act
-        val result = underTest.result(CODE,
+        val result = underTest.result(
+            CODE,
             state,
             "SMC-B",
             null,

@@ -19,15 +19,17 @@ package de.bdr.servko.keycloak.gematik.idp.rest
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import de.bdr.servko.keycloak.gematik.idp.TestUtils
+import de.bdr.servko.keycloak.gematik.idp.exception.ClientException
 import de.bdr.servko.keycloak.gematik.idp.exception.SessionNotFoundException
 import de.bdr.servko.keycloak.gematik.idp.model.GematikIDPConfig
 import de.bdr.servko.keycloak.gematik.idp.model.GematikIDPState
+import de.bdr.servko.keycloak.gematik.idp.model.GematikIDPStatusResponse
 import de.bdr.servko.keycloak.gematik.idp.service.GematikIDPService
 import de.bdr.servko.keycloak.gematik.idp.token.TestTokenUtil
 import de.bdr.servko.keycloak.gematik.idp.util.RestClient
 import jakarta.ws.rs.core.Response
 import jakarta.ws.rs.core.UriBuilder
-import org.assertj.core.api.Assertions
+import org.assertj.core.api.Assertions.assertThat
 import org.keycloak.OAuth2Constants
 import org.keycloak.broker.provider.IdentityProvider
 import org.keycloak.forms.login.LoginFormsProvider
@@ -148,7 +150,7 @@ abstract class GematikIDPEndpointBaseTest {
         whenever(rest.doGet(TestUtils.discoveryDocument.jwksUri, config.getIdpUserAgent())).thenReturn(jwksMock)
     }
 
-    fun testResolveAuthSessionFailure(test: () -> Response) {
+    fun testResolveAuthSessionNotFoundFailure(test: () -> Response) {
         // arrange
         val message = "client not found or disabled"
         whenever(service.resolveAuthSessionFromEncodedState(realmMock, state))
@@ -158,14 +160,53 @@ abstract class GematikIDPEndpointBaseTest {
         )
 
         // act
-        Assertions.assertThat(test().statusInfo).isEqualTo(Response.Status.BAD_REQUEST)
+        assertThat(test().statusInfo).isEqualTo(Response.Status.BAD_REQUEST)
 
         // assert
         verify(formsMock).setError(eq("loginTimeout"), eq(message))
     }
 
+    fun testResolveAuthSessionNotFoundStatusEndpointFailure(test: () -> Response) {
+        // arrange
+        val message = "client not found or disabled"
+        whenever(service.resolveAuthSessionFromEncodedState(realmMock, state))
+            .thenThrow(SessionNotFoundException(message))
+
+        // act
+        val response = test()
+
+        // assert
+        assertThat(response.statusInfo).isEqualTo(Response.Status.OK)
+        val idpStatusResponse = response.entity as GematikIDPStatusResponse
+        assertThat(idpStatusResponse.currentStep).isEqualTo("ERROR")
+        assertNextStepUrl(idpStatusResponse.nextStepUrl!!)
+    }
+
+    fun testResolveAuthSessionFailure(test: () -> Response) {
+        // arrange
+        val message = "client not found or disabled"
+        whenever(service.resolveAuthSessionFromEncodedState(realmMock, state))
+            .thenAnswer { _ -> throw ClientException(message) }
+        whenever(callbackMock.error(ArgumentMatchers.anyString())).thenReturn(
+            Response.status(Response.Status.INTERNAL_SERVER_ERROR).build()
+        )
+
+        // act & assert
+        assertThat(test().statusInfo).isEqualTo(Response.Status.INTERNAL_SERVER_ERROR)
+    }
+
+    fun testAssertCodeAndStateNullOrEmpty(test: () -> Response) {
+        // act
+        val result = test()
+
+        // assert
+        assertThat(result.statusInfo).isEqualTo(Response.Status.BAD_REQUEST)
+        verify(formsMock).setError("authenticator.errorIdp", "Unknown")
+        verify(formsMock).createErrorPage(Response.Status.BAD_REQUEST)
+    }
+
     fun assertNextStepUrl(statusUrl: URI) {
-        Assertions.assertThat(statusUrl)
+        assertThat(statusUrl)
             .hasHost("localhost")
             .hasPort(8080)
             .hasPath("/realms/test-realm/broker/gematik-idp/endpoint/nextStep")
@@ -176,6 +217,6 @@ abstract class GematikIDPEndpointBaseTest {
             }
         }
 
-        Assertions.assertThat(statusUriParams[OAuth2Constants.STATE]).isEqualTo(state)
+        assertThat(statusUriParams[OAuth2Constants.STATE]).isEqualTo(state)
     }
 }

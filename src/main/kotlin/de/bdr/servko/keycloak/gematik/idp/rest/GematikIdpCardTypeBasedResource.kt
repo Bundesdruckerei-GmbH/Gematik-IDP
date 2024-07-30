@@ -110,9 +110,9 @@ abstract class GematikIdpCardTypeBasedResource: GematikIDPResource() {
 
         return when (val step = GematikIDPUtil.getGematikIdpStepFrom(authSession)) {
             GematikIDPStep.ERROR -> {
-                val error = authSession.getAuthNote(GematikIdpLiterals.ERROR)
-                val errorDetails = authSession.getAuthNote(GematikIdpLiterals.ERROR_DETAILS)
-                val errorUri = authSession.getAuthNote(GematikIdpLiterals.ERROR_URI)
+                val error: String? = authSession.getAuthNote(GematikIdpLiterals.ERROR)
+                val errorDetails: String? = authSession.getAuthNote(GematikIdpLiterals.ERROR_DETAILS)
+                val errorUri: String? = authSession.getAuthNote(GematikIdpLiterals.ERROR_URI)
 
                 handleErrorWhenCalledFromBrowser(error, errorDetails, errorUri)
             }
@@ -150,7 +150,7 @@ abstract class GematikIdpCardTypeBasedResource: GematikIDPResource() {
         val version = VersionFromUserAgentReader.readVersionFrom(userAgent)
         GematikIDPUtil.addAuthenticatorVersionToMdc(version)
 
-        if (code == null && encodedState == null) {
+        if (code.isNullOrEmpty() && encodedState.isNullOrEmpty()) {
             return handleErrorWhenCalledFromBrowser(error, errorDetails, errorUri)
         }
 
@@ -231,7 +231,8 @@ abstract class GematikIdpCardTypeBasedResource: GematikIDPResource() {
         code: String,
         cardType: String,
     ): MutableMap<String, Any>? {
-        val codeVerifier = authSession.getAuthNote(GematikIdpLiterals.CODE_VERIFIER)
+        val codeVerifier: String = authSession.getAuthNote(GematikIdpLiterals.CODE_VERIFIER)
+            ?: return null
         val idToken = certificateService.fetchIdToken(codeVerifier, code)
 
         val claimsMap = idToken.jwtClaims.claimsMap

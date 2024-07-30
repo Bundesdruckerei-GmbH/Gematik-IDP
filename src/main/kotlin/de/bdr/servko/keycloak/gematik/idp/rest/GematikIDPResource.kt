@@ -213,7 +213,7 @@ abstract class GematikIDPResource {
         errorDetails: String?,
         errorUri: String?,
     ): Response {
-        logger.error("Authenticator returned error: $error | error-details: $errorDetails | error-uri $errorUri")
+        logger.warn("Authenticator returned error: $error | error-details: $errorDetails | error-uri $errorUri")
         return forms.setError(AuthenticatorErrorTypes.valueOf(error).error, errorDetails ?: "Unknown")
             .createErrorPage(Response.Status.BAD_REQUEST)
     }
@@ -235,7 +235,6 @@ abstract class GematikIDPResource {
     }
 
     fun handleSessionTimeout(e: SessionNotFoundException): Response {
-        logger.error(e.message)
         return forms.setError(AuthenticatorErrorTypes.LOGIN_TIMEOUT.error, e.message)
             .createErrorPage(Response.Status.BAD_REQUEST)
     }

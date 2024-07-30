@@ -37,26 +37,25 @@ import java.net.URI
 
 class GematikIDPUtil {
     companion object {
-        fun getGematikIdpStepFrom(authSession: AuthenticationSessionModel): GematikIDPStep {
-            return authSession.getAuthNote(GematikIdpLiterals.GEMATIK_IDP_STEP).let {
+        fun getGematikIdpStepFrom(authSession: AuthenticationSessionModel): GematikIDPStep =
+            authSession.getAuthNote(GematikIdpLiterals.GEMATIK_IDP_STEP)?.let {
                 GematikIDPStep.valueOf(it)
-            }
-        }
+            } ?: GematikIDPStep.ERROR
 
         fun getCertificateDataFromAuthNote(
             authSession: AuthenticationSessionModel,
             authNote: String,
-        ): Map<String, Any>? {
-            //we set the IDP DATA as claims map, so we know the types
-            val note = authSession.getAuthNote(authNote)
-            @Suppress("UNCHECKED_CAST")
-            return if (note != null)
-                JsonSerialization.readValue(note, Map::class.java) as Map<String, Any>
-            else
-                null
-        }
+        ): Map<String, Any>? =
+            authSession.getAuthNote(authNote)?.let {
+                //we set the IDP DATA as claims map, so we know the types
+                @Suppress("UNCHECKED_CAST")
+                JsonSerialization.readValue(it, Map::class.java) as Map<String, Any>?
+            }
 
-        fun setAuthenticatorVersionInAuthSession(version: AuthenticatorVersion, authSession: AuthenticationSessionModel) {
+        fun setAuthenticatorVersionInAuthSession(
+            version: AuthenticatorVersion,
+            authSession: AuthenticationSessionModel,
+        ) {
             if (!version.isNullOrEmpty()) {
                 authSession.setAuthNote(GematikIdpLiterals.AUTHENTICATOR_VERSION, version.toString())
             }
@@ -97,7 +96,7 @@ class GematikIDPUtil {
             hbaData: Map<String, Any>? = null,
             smcbData: Map<String, Any>? = null,
         ) {
-            ContextData.values().forEach { ctx ->
+            ContextData.entries.forEach { ctx ->
                 contextData[ctx.name] = when (ctx.cardType) {
                     CardType.HBA -> hbaData?.get(ctx.claim.value) ?: "UNKNOWN"
                     CardType.SMCB -> smcbData?.get(ctx.claim.value) ?: "UNKNOWN"
