@@ -22,8 +22,8 @@ import de.bdr.servko.keycloak.gematik.idp.model.AuthenticationFlowType
 import de.bdr.servko.keycloak.gematik.idp.model.GematikIDPConfig
 import de.bdr.servko.keycloak.gematik.idp.service.GematikIdpOpenIDConfigurationService
 import de.bdr.servko.keycloak.gematik.idp.util.RestClient
-import org.assertj.core.api.Assertions.assertThat
-import org.assertj.core.api.Assertions.entry
+import org.assertj.core.api.Assertions.*
+import org.jose4j.lang.JoseException
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.keycloak.common.crypto.CryptoIntegration
@@ -31,6 +31,7 @@ import org.keycloak.models.KeycloakContext
 import org.keycloak.models.KeycloakSession
 import org.keycloak.provider.ProviderConfigProperty
 import org.mockito.kotlin.*
+import java.net.UnknownHostException
 import java.time.Clock
 import java.time.Instant
 import java.time.ZoneId
@@ -54,6 +55,12 @@ internal class GematikIDPFactoryTest {
 
     private val rest = mock<RestClient> {}
 
+    private val serviceFactory: (KeycloakSession) -> GematikIdpOpenIDConfigurationService = {
+        object : GematikIdpOpenIDConfigurationService(rest) {
+            override fun skipAllValidators(): Boolean = true
+        }
+    }
+
     private val underTest = GematikIDPFactory()
 
     @Test
@@ -63,11 +70,7 @@ internal class GematikIDPFactoryTest {
 
         whenever(rest.doGet(any(), any())).thenReturn(mockedOpenidConfig)
 
-        underTest.createAndUpdateConfig(session, config, clock) {
-            object : GematikIdpOpenIDConfigurationService(rest) {
-                override fun skipAllValidators(): Boolean = true
-            }
-        }
+        underTest.createAndUpdateConfig(session, config, clock, serviceFactory)
 
         assertThat(config.openidConfig).isEqualTo(TestUtils.discoveryDocument)
     }
@@ -78,12 +81,6 @@ internal class GematikIDPFactoryTest {
         underTest.postInit(null)
 
         whenever(rest.doGet(any(), eq(userAgent))).thenReturn(mockedOpenidConfig)
-
-        val serviceFactory: (KeycloakSession) -> GematikIdpOpenIDConfigurationService = {
-            object : GematikIdpOpenIDConfigurationService(rest) {
-                override fun skipAllValidators(): Boolean = true
-            }
-        }
 
         underTest.createAndUpdateConfig(session, config, clock, serviceFactory)
         verify(rest, times(1)).doGet(any(), eq(userAgent))
@@ -96,6 +93,57 @@ internal class GematikIDPFactoryTest {
         val clock = Clock.fixed(Instant.ofEpochMilli(1667983621000), ZoneId.of("UTC"))
         underTest.createAndUpdateConfig(session, config, clock, serviceFactory)
         verify(rest, times(2)).doGet(any(), eq(userAgent))
+    }
+
+    @Test
+    fun `createAndUpdateConfig - throws UnknownHostException - success`() {
+        // arrange
+        CryptoIntegration.init(javaClass.classLoader)
+        underTest.postInit(null)
+
+        whenever(rest.doGet(any(), eq(userAgent))).thenAnswer { _ ->
+            throw UnknownHostException()
+        }
+
+        // act
+        val result = underTest.createAndUpdateConfig(session, config, clock, serviceFactory)
+
+        // assert
+        assertThat(result).isNotNull
+        assertThat(result.config).isEqualTo(config)
+    }
+
+    @Test
+    fun `createAndUpdateConfig - throws JoseException- success`() {
+        // arrange
+        CryptoIntegration.init(javaClass.classLoader)
+        underTest.postInit(null)
+
+        whenever(rest.doGet(any(), eq(userAgent))).thenAnswer { _ ->
+            throw JoseException("msg")
+        }
+
+        // act
+        val result = underTest.createAndUpdateConfig(session, config, clock, serviceFactory)
+
+        // assert
+        assertThat(result).isNotNull
+        assertThat(result.config).isEqualTo(config)
+    }
+
+    @Test
+    fun `createAndUpdateConfig - throws unknown exception - failure`() {
+        // arrange
+        CryptoIntegration.init(javaClass.classLoader)
+        underTest.postInit(null)
+
+        whenever(rest.doGet(any(), eq(userAgent))).thenThrow(RuntimeException("msg"))
+
+        // act & assert
+        assertThatThrownBy {
+            underTest.createAndUpdateConfig(session, config, clock, serviceFactory)
+        }.isInstanceOf(RuntimeException::class.java)
+            .hasMessage("msg")
     }
 
     @Test

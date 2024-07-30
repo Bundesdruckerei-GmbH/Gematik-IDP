@@ -34,6 +34,8 @@ internal class HbaConsentAttributeMapperTest {
     private val realm: RealmModel = mock()
 
     private val context  = spy(BrokeredIdentityContext("id"))
+    private val consentCreatedDateAttribute = AbstractGematikAuthenticatorConsentAttributeMapper.CONFIG_AUTHENTICATOR_CREATED_DATE_ATTRIBUTE
+    private val consentLastUpdatedDateAttribute = AbstractGematikAuthenticatorConsentAttributeMapper.CONFIG_AUTHENTICATOR_LAST_UPDATED_DATE_ATTRIBUTE
     private val mapperModel = IdentityProviderMapperModel().apply {
         config = mapOf(
             AbstractGematikAuthenticatorConsentAttributeMapper.CONFIG_AUTHENTICATOR_CREATED_DATE_ATTRIBUTE to
@@ -43,8 +45,6 @@ internal class HbaConsentAttributeMapperTest {
         )
     }
 
-    private val consentCreatedDateAttribute = AbstractGematikAuthenticatorConsentAttributeMapper.CONFIG_AUTHENTICATOR_CREATED_DATE_ATTRIBUTE
-    private val consentLastUpdatedDateAttribute = AbstractGematikAuthenticatorConsentAttributeMapper.CONFIG_AUTHENTICATOR_LAST_UPDATED_DATE_ATTRIBUTE
     private val createdDateAttribute = AuthenticatorClaim.HBA_CONSENT_CREATED_DATE.scope
     private val lastUpdatedDateAttribute = AuthenticatorClaim.HBA_CONSENT_LAST_UPDATED_DATE.scope
 

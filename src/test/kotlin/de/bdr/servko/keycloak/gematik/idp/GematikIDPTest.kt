@@ -30,7 +30,10 @@ import org.keycloak.broker.provider.IdentityProvider
 import org.keycloak.broker.provider.util.IdentityBrokerState
 import org.keycloak.events.EventBuilder
 import org.keycloak.forms.login.LoginFormsProvider
-import org.keycloak.models.*
+import org.keycloak.models.KeycloakContext
+import org.keycloak.models.KeycloakSession
+import org.keycloak.models.KeycloakUriInfo
+import org.keycloak.models.RealmModel
 import org.keycloak.sessions.AuthenticationSessionModel
 import org.keycloak.sessions.AuthenticationSessionProvider
 import org.keycloak.sessions.RootAuthenticationSessionModel
@@ -54,13 +57,9 @@ internal class GematikIDPTest {
     private val realm = mock<RealmModel> {
         on { name } doReturn realmName
     }
-    private val clientMock = mock<ClientModel> {
-        on { isEnabled } doReturn true
-    }
 
     private val rootAuthSessionMock: RootAuthenticationSessionModel = mock<RootAuthenticationSessionModel> {
         on { id } doReturn rootSessionId
-        on { getAuthenticationSession(clientMock, tabId) } doReturn authSession
     }
     private val authSession = mock<AuthenticationSessionModel> {
         on { realm } doReturn realm

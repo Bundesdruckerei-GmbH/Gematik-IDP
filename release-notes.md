@@ -1,5 +1,17 @@
 # Release Notes
 
+## Release 2.11.0
+
+* Fixed an issue, where a wrongly configured Gematik-IDP url causes an error in Keycloak, which prevented the loading of
+  the Gematik-IDP configuration page
+* Improved nullability handling of `authenticationSession.getAuthNote(...)` method results
+* Add maven profile to exclude theme-resources
+
+## Release 2.10.0
+
+* Update Kotlin to v2.0.0
+* Dependency updates
+
 ## Release 2.9.0
 
 * Update to Keycloak 24.0.5

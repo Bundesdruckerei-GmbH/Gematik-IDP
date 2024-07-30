@@ -23,6 +23,8 @@ import de.bdr.servko.keycloak.gematik.idp.model.GematikIDPConfig
 import de.bdr.servko.keycloak.gematik.idp.service.GematikIdpOpenIDConfigurationService
 import de.bdr.servko.keycloak.gematik.idp.util.*
 import jakarta.annotation.Generated
+import org.jboss.logging.Logger
+import org.jose4j.lang.JoseException
 import org.keycloak.broker.provider.AbstractIdentityProviderFactory
 import org.keycloak.models.IdentityProviderModel
 import org.keycloak.models.KeycloakSession
@@ -31,6 +33,7 @@ import org.keycloak.provider.ProviderConfigProperty
 import org.keycloak.provider.ProviderConfigurationBuilder
 import org.keycloak.provider.ServerInfoAwareProviderFactory
 import java.io.InputStream
+import java.net.UnknownHostException
 import java.time.Clock
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
@@ -40,6 +43,7 @@ class GematikIDPFactory : AbstractIdentityProviderFactory<GematikIDP>(), ServerI
         const val PROVIDER_ID = "gematik-idp"
     }
 
+    private val logger = Logger.getLogger(this::class.java)
     private val discoveryDocumentCache = ConcurrentHashMap<String, GematikDiscoveryDocument>()
     override fun getId(): String = PROVIDER_ID
     override fun getName(): String = "Gematik IDP"
@@ -66,18 +70,20 @@ class GematikIDPFactory : AbstractIdentityProviderFactory<GematikIDP>(), ServerI
             )
         },
     ): GematikIDP {
-        val openidConfiguration = discoveryDocumentCache.compute(config.getOpenidConfigUrl()) { url, document ->
+        discoveryDocumentCache.compute(config.getOpenidConfigUrl()) { url, document ->
             if (document == null || document.expiration < clock.millis()) {
-                GematikDiscoveryDocument(serviceFactory(session).getOpenIDConfiguration(url, config.getIdpUserAgent()))
+                fetchGematikDiscoveryDocument(serviceFactory, session, url, config)
             } else {
                 document
             }
+        }?.let {
+            config.updateOpenidConfig(it)
         }
-        config.updateOpenidConfig(openidConfiguration!!)
         return GematikIDP(session, config)
     }
 
     override fun createConfig(): IdentityProviderModel = GematikIDPConfig()
+
     override fun getOperationalInfo(): Map<String, String> =
         javaClass
             .getResourceAsStream("/META-INF/maven/de.bdr.servko/gematik-idp/pom.properties")
@@ -101,4 +107,24 @@ class GematikIDPFactory : AbstractIdentityProviderFactory<GematikIDP>(), ServerI
             .idpUserAgent()
             .multipleIdentityMode()
             .build()
+
+    private fun fetchGematikDiscoveryDocument(
+        serviceFactory: (KeycloakSession) -> GematikIdpOpenIDConfigurationService,
+        session: KeycloakSession,
+        url: String,
+        config: GematikIDPConfig,
+    ): GematikDiscoveryDocument? =
+        try {
+            GematikDiscoveryDocument(serviceFactory(session).getOpenIDConfiguration(url, config.getIdpUserAgent()))
+        } catch (e: Exception) {
+            when (e) {
+                // catch exception to be able to open configuration page
+                is UnknownHostException, is JoseException -> {
+                    logger.warn("Failed to fetch openid configuration from $url", e)
+                    null
+                }
+
+                else -> throw e
+            }
+        }
 }

@@ -25,10 +25,13 @@ import de.bdr.servko.keycloak.gematik.idp.model.ContextData
 import de.bdr.servko.keycloak.gematik.idp.model.GematikIDPStatusResponse
 import de.bdr.servko.keycloak.gematik.idp.model.GematikIDPStep
 import de.bdr.servko.keycloak.gematik.idp.service.GematikIdpCertificateService
+import de.bdr.servko.keycloak.gematik.idp.util.GematikIdpLiterals
 import jakarta.ws.rs.core.Response
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.NullAndEmptySource
 import org.keycloak.OAuth2Constants
 import org.keycloak.broker.provider.BrokeredIdentityContext
 import org.keycloak.common.crypto.CryptoIntegration
@@ -158,6 +161,25 @@ internal class GematikIDPLegacyResourceNewAuthFlowTest : GematikIDPEndpointBaseT
         assertNextStepUrl((result.entity as GematikIDPStatusResponse).nextStepUrl!!)
     }
 
+    @ParameterizedTest
+    @NullAndEmptySource
+    fun status_GetStatus_HbaRequested_NullOrEmpty(hbaData: String?) {
+        // arrange
+        whenever(authSessionMock.getAuthNote("HBA_DATA")).thenReturn(hbaData)
+        whenever(authSessionMock.getAuthNote("SMCB_DATA")).thenReturn(TestUtils.getJsonSmcbToken())
+        whenever(authSessionMock.getAuthNote("GEMATIK_IDP_STEP"))
+            .thenReturn(GematikIDPStep.REQUESTED_HBA_DATA.name)
+
+        // act
+        val result = underTest.status(state)
+
+        // assert
+        assertThat(result.statusInfo).isEqualTo(Response.Status.ACCEPTED)
+        assertThat((result.entity as GematikIDPStatusResponse).currentStep)
+            .isEqualTo(GematikIDPStep.REQUESTED_HBA_DATA.name)
+        assertThat((result.entity as GematikIDPStatusResponse).nextStepUrl).isNull()
+    }
+
     @Test
     fun status_GetStatusSmcbReceived() {
         // arrange
@@ -174,6 +196,25 @@ internal class GematikIDPLegacyResourceNewAuthFlowTest : GematikIDPEndpointBaseT
         assertThat((result.entity as GematikIDPStatusResponse).currentStep)
             .isEqualTo(GematikIDPStep.RECEIVED_SMCB_DATA.name)
         assertNextStepUrl((result.entity as GematikIDPStatusResponse).nextStepUrl!!)
+    }
+
+    @ParameterizedTest
+    @NullAndEmptySource
+    fun status_GetStatus_SmcbRequested_NullOrEmpty(smcbData: String?) {
+        // arrange
+        whenever(authSessionMock.getAuthNote("HBA_DATA")).thenReturn(TestUtils.getJsonHbaToken())
+        whenever(authSessionMock.getAuthNote("SMCB_DATA")).thenReturn(smcbData)
+        whenever(authSessionMock.getAuthNote("GEMATIK_IDP_STEP"))
+            .thenReturn(GematikIDPStep.REQUESTED_SMCB_DATA.name)
+
+        // act
+        val result = underTest.status(state)
+
+        // assert
+        assertThat(result.statusInfo).isEqualTo(Response.Status.ACCEPTED)
+        assertThat((result.entity as GematikIDPStatusResponse).currentStep)
+            .isEqualTo(GematikIDPStep.REQUESTED_SMCB_DATA.name)
+        assertThat((result.entity as GematikIDPStatusResponse).nextStepUrl).isNull()
     }
 
     @Test
@@ -272,6 +313,7 @@ internal class GematikIDPLegacyResourceNewAuthFlowTest : GematikIDPEndpointBaseT
         whenever(authSessionMock.getAuthNote("error")).thenReturn(error)
         whenever(authSessionMock.getAuthNote("error_details")).thenReturn(errorDetails)
         whenever(authSessionMock.getAuthNote("error_uri")).thenReturn(errorUri)
+        whenever(authSessionMock.getAuthNote("CODE_VERIFIER")).thenReturn(hbaKeyVerifier)
         whenever(authSessionMock.getAuthNote("GEMATIK_IDP_STEP"))
             .thenReturn(GematikIDPStep.ERROR.name)
 
@@ -338,6 +380,20 @@ internal class GematikIDPLegacyResourceNewAuthFlowTest : GematikIDPEndpointBaseT
 
         // assert
         verify(callbackMock).error("Failed to resolve auth session: $message")
+    }
+
+    @Test
+    fun nextStep_NoCodeVerifierFound_ErrorCallback() {
+        // arrange
+        whenever(authSessionMock.getAuthNote(GematikIdpLiterals.CODE_VERIFIER))
+            .thenReturn(null)
+        whenever(callbackMock.error(any())).thenReturn(mock())
+
+        // act
+        underTest.nextStep(state)
+
+        // assert
+        verify(callbackMock).error("Invalid code_verifier. Please restart authentication flow.")
     }
 
     @Test
@@ -462,6 +518,20 @@ internal class GematikIDPLegacyResourceNewAuthFlowTest : GematikIDPEndpointBaseT
 
         // assert
         verify(callbackMock).error("Failed to resolve auth session: $message")
+    }
+
+    @Test
+    fun result_NoCodeVerifierFound_ErrorCallback() {
+        // arrange
+        whenever(authSessionMock.getAuthNote(GematikIdpLiterals.CODE_VERIFIER))
+            .thenReturn(null)
+        whenever(callbackMock.error(any())).thenReturn(mock())
+
+        // act
+        underTest.result(CODE, state)
+
+        // assert
+        verify(callbackMock).error("Invalid code_verifier. Please restart authentication flow.")
     }
 
     private fun assertStatusUrl(statusUrl: URI) {

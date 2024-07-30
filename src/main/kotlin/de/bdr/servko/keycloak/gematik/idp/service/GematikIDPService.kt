@@ -57,7 +57,7 @@ open class GematikIDPService(private val session: KeycloakSession) {
 
     private fun authSessionNotFound(encodedState: String?): SessionNotFoundException {
         val realm = session.context.realm
-        logger.error("AuthenticationSessionModel not found for state $encodedState and realm ${realm.name}")
+        logger.warn("AuthenticationSessionModel not found for state $encodedState and realm ${realm.name}")
         return SessionNotFoundException("AuthenticationSessionModel not found for state $encodedState")
     }
 }

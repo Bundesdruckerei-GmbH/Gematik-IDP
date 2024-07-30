@@ -5,7 +5,7 @@ the gematik central-IDP with the gematik Authenticator application.
 Allows a user to log in with his HBA (Heil-Berufs-Ausweis) card, supplying HBA and SMCB (Elektronischer
 Praxis-/Institutionsausweis) card information. Additionally, HBA- and SMCB-specific IDP mappers are provided.
 
-Please be aware, that this plugin was developed for and tested with Keycloak 22 Quarkus. With version 22, Keycloak
+Please be aware, that this plugin was developed for and tested with Keycloak 24 Quarkus. With version 22, Keycloak
 moved from JavaX to Jakarta, which is why this version is incompatible with other versions of Keycloak.
 
 ## Installation
@@ -21,6 +21,8 @@ moved from JavaX to Jakarta, which is why this version is incompatible with othe
    Specific configuration properties are listed below.
 4. Set the login theme in your realm, where you added the Identity Provider, to gematik-idp for the full support of
    all features. You can also add the content from `./themes/gematik-idp` to you custom theme if necessary.
+    - By default the theme-resources are included in the jar. If you have your own theme, you can exclude the
+      theme-resources with specifying the maven profile `excludeThemeResources`.
 
 ## Local Deployment
 
@@ -66,10 +68,12 @@ in the Keycloak-Github:
 
 ## Theme
 
-The template and javascript files are supplied as part of the compiled jar and are available under 
-`/src/main/resources/theme-resources`. To use the script it has to be added to the `theme.properties` file as scripts: 
-`scripts=js/gematik-idp.js`. Sample theme configuration can be found under `/themes/gematik-idp`. For more information 
-about extending your own themes please read the [Deploying Themes](https://www.keycloak.org/docs/latest/server_development/index.html#deploying-themes) section in the Keycloak documentation.
+The template and javascript files are supplied as part of the compiled jar and are available under
+`/src/main/resources/theme-resources`. To use the script it has to be added to the `theme.properties` file as scripts:
+`scripts=js/gematik-idp.js`. Sample theme configuration can be found under `/themes/gematik-idp`. For more information
+about extending your own themes please read
+the [Deploying Themes](https://www.keycloak.org/docs/latest/server_development/index.html#deploying-themes) section in
+the Keycloak documentation.
 
 Please make sure to use your standard browser without an incognito window, when using the `authenticator://`
 Authenticator Url
