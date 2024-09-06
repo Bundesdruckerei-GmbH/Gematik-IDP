@@ -246,10 +246,9 @@ abstract class GematikIDPResource {
         authSession: AuthenticationSessionModel,
         hbaData: Map<String, Any>? = null,
         smcbData: Map<String, Any>? = null,
-    ) = BrokeredIdentityContext(determineIdentityProviderID(telematikId)).apply {
+    ) = BrokeredIdentityContext(determineIdentityProviderID(telematikId), config).apply {
         authenticationSession = authSession
         idp = gematikIDP
-        idpConfig = config
         username = telematikId
         modelUsername = telematikId
         GematikIDPUtil.storeDataInContext(contextData = contextData, hbaData = hbaData, smcbData = smcbData)

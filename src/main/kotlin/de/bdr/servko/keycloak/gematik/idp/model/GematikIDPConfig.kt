@@ -81,4 +81,8 @@ class GematikIDPConfig(model: IdentityProviderModel? = null) : OIDCIdentityProvi
         }
     }
 
+    override fun isCaseSensitiveOriginalUsername(): Boolean {
+        return true
+    }
+
 }

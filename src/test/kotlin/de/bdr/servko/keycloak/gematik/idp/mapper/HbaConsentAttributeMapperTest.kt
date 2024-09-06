@@ -20,6 +20,7 @@ package de.bdr.servko.keycloak.gematik.idp.mapper
 
 import de.bdr.servko.keycloak.gematik.idp.GematikIDPFactory
 import de.bdr.servko.keycloak.gematik.idp.model.AuthenticatorClaim
+import de.bdr.servko.keycloak.gematik.idp.model.GematikIDPConfig
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.keycloak.broker.provider.BrokeredIdentityContext
@@ -32,8 +33,9 @@ internal class HbaConsentAttributeMapperTest {
 
     private val session: KeycloakSession = mock()
     private val realm: RealmModel = mock()
+    private val config: GematikIDPConfig = mock()
 
-    private val context  = spy(BrokeredIdentityContext("id"))
+    private val context  = spy(BrokeredIdentityContext("id", config))
     private val consentCreatedDateAttribute = AbstractGematikAuthenticatorConsentAttributeMapper.CONFIG_AUTHENTICATOR_CREATED_DATE_ATTRIBUTE
     private val consentLastUpdatedDateAttribute = AbstractGematikAuthenticatorConsentAttributeMapper.CONFIG_AUTHENTICATOR_LAST_UPDATED_DATE_ATTRIBUTE
     private val mapperModel = IdentityProviderMapperModel().apply {

@@ -5,7 +5,7 @@ the gematik central-IDP with the gematik Authenticator application.
 Allows a user to log in with his HBA (Heil-Berufs-Ausweis) card, supplying HBA and SMCB (Elektronischer
 Praxis-/Institutionsausweis) card information. Additionally, HBA- and SMCB-specific IDP mappers are provided.
 
-Please be aware, that this plugin was developed for and tested with Keycloak 24 Quarkus. With version 22, Keycloak
+Please be aware, that this plugin was developed for and tested with Keycloak 24, 25 Quarkus. With version 22, Keycloak
 moved from JavaX to Jakarta, which is why this version is incompatible with other versions of Keycloak.
 
 ## Installation

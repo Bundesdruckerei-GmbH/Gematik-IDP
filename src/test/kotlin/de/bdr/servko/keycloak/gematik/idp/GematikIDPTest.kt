@@ -49,6 +49,7 @@ internal class GematikIDPTest {
     private val rootSessionId = "root-session"
     private val clientId = "gematik_client"
     private val tabId = "tabId"
+    private val clientData = "clientData"
     private val state = GematikIDPState(rootSessionId, clientId, tabId).encode()
 
     private val config: GematikIDPConfig = GematikIDPConfig().apply {
@@ -72,7 +73,7 @@ internal class GematikIDPTest {
         on { authenticationSession } doReturn authSession
         on { state } doReturn
                 IdentityBrokerState.decoded(
-                    UUID.randomUUID().toString(), null, clientId, tabId
+                    UUID.randomUUID().toString(), null, clientId, tabId, clientData
                 )
     }
     private val keycloakUriInfo = mock<KeycloakUriInfo> {

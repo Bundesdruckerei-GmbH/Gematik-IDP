@@ -13,7 +13,7 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-FROM quay.io/keycloak/keycloak:24.0.5 AS builder
+FROM quay.io/keycloak/keycloak:25.0.4 AS builder
 
 WORKDIR /opt/keycloak
 # for demonstration purposes only, please make sure to use proper certificates in production instead
