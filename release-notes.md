@@ -3,6 +3,7 @@
 ## Release 3.0.0
 
 * Update Keycloak to 24.0.5
+* Update Java rom 17 to 21
 * Dependency updates
 
 ## Release 2.11.0
