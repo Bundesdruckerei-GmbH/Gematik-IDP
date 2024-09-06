@@ -21,6 +21,7 @@ package de.bdr.servko.keycloak.gematik.idp.mapper
 import de.bdr.servko.keycloak.gematik.idp.GematikIDPFactory
 import de.bdr.servko.keycloak.gematik.idp.model.ContextData
 import de.bdr.servko.keycloak.gematik.idp.model.GematikClaim
+import de.bdr.servko.keycloak.gematik.idp.model.GematikIDPConfig
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -34,6 +35,7 @@ import org.mockito.kotlin.verify
 internal class SmcbUserAttributeMapperTest {
 
     private val session: KeycloakSession = mock()
+    private val config: GematikIDPConfig = mock()
 
     private val realm: RealmModel = mock()
 
@@ -53,7 +55,7 @@ internal class SmcbUserAttributeMapperTest {
                 AbstractGematikIDPUserAttributeMapper.CONFIG_CLAIM_ATTRIBUTE to GematikClaim.TELEMATIK_ID.name
             )
         }
-        context = BrokeredIdentityContext("id").apply {
+        context = BrokeredIdentityContext("id", config).apply {
             contextData[ContextData.CONTEXT_SMCB_TELEMATIK_ID.name] = smcbValue
         }
     }

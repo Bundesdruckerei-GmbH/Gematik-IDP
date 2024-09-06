@@ -17,7 +17,7 @@
 
 package de.bdr.servko.keycloak.gematik.idp.model
 
-import org.assertj.core.api.Assertions
+import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.EnumSource
@@ -27,20 +27,22 @@ import org.keycloak.broker.oidc.OIDCIdentityProviderConfig
 
 internal class GematikIDPConfigTest {
     @Test
-        fun getAuthenticatorAuthorizationUrl_NonEmptyAuthenticatorAuthorizationUrl_ReturnAuthenticatorAuthorizationUrl() {
-        val config= LinkedHashMap<String, String>()
+    fun getAuthenticatorAuthorizationUrl_NonEmptyAuthenticatorAuthorizationUrl_ReturnAuthenticatorAuthorizationUrl() {
+        // arrange
         val authenticatorAuthorizationUrl = "authenticatorAuthorizationUrl"
-        config["authenticatorAuthorizationUrl"] = authenticatorAuthorizationUrl
-        val model = OIDCIdentityProviderConfig()
-        model.config = config
+        val idpConfig = initGematikIDPConfigWith("authenticatorAuthorizationUrl", authenticatorAuthorizationUrl)
 
-        val idpConfig = GematikIDPConfig(model)
+        // act
+        val result = idpConfig.getAuthenticatorAuthorizationUrl()
 
-        Assertions.assertThat(idpConfig.getAuthenticatorAuthorizationUrl()).isEqualTo(authenticatorAuthorizationUrl)
+        // assert
+        assertThat(result).isEqualTo(authenticatorAuthorizationUrl)
     }
+
     @Test
-        fun getAuthenticatorAuthorizationUrl_NoAuthenticatorAuthorizationUrl_ReturnAuthorizationUrl() {
-        val config= LinkedHashMap<String, String?>()
+    fun getAuthenticatorAuthorizationUrl_NoAuthenticatorAuthorizationUrl_ReturnAuthorizationUrl() {
+        // arrange
+        val config = LinkedHashMap<String, String?>()
         val model = OIDCIdentityProviderConfig()
         model.config = config
         val authorizationUrl = "https://localhost:8081/sign_response"
@@ -48,19 +50,27 @@ internal class GematikIDPConfigTest {
 
         val idpConfig = GematikIDPConfig(model)
 
-        Assertions.assertThat(idpConfig.getAuthenticatorAuthorizationUrl()).isEqualTo(authorizationUrl)
+        // act
+        val result = idpConfig.getAuthenticatorAuthorizationUrl()
+
+        // assert
+        assertThat(result).isEqualTo(authorizationUrl)
     }
 
     @ParameterizedTest
     @NullAndEmptySource
-    @ValueSource(strings = [
-        "  ", // 2 whitespace
-        "\t", // single tab
-        "\n", // newline
-        "\r"  // carriage return
-    ])
-    fun getAuthenticatorAuthorizationUrl_EmptyAuthenticatorAuthorizationUrl_ReturnAuthorizationUrl(authenticatorAuthorizationUrl: String?) {
-        val config= LinkedHashMap<String, String?>()
+    @ValueSource(
+        strings = ["  ", // 2 whitespace
+            "\t", // single tab
+            "\n", // newline
+            "\r"  // carriage return
+        ]
+    )
+    fun getAuthenticatorAuthorizationUrl_EmptyAuthenticatorAuthorizationUrl_ReturnAuthorizationUrl(
+        authenticatorAuthorizationUrl: String?,
+    ) {
+        // arrange
+        val config = LinkedHashMap<String, String?>()
         config["authenticatorAuthorizationUrl"] = authenticatorAuthorizationUrl
         val model = OIDCIdentityProviderConfig()
         model.config = config
@@ -69,136 +79,155 @@ internal class GematikIDPConfigTest {
 
         val idpConfig = GematikIDPConfig(model)
 
-        Assertions.assertThat(idpConfig.getAuthenticatorAuthorizationUrl()).isEqualTo(authorizationUrl)
+        // act
+        val result = idpConfig.getAuthenticatorAuthorizationUrl()
+
+        // assert
+        assertThat(result).isEqualTo(authorizationUrl)
     }
 
     @Test
     fun setAuthenticatorAuthorizationUrl() {
-        val config= LinkedHashMap<String, String>()
+        // arrange
         val authenticatorAuthorizationUrl = "authenticatorAuthorizationUrl"
-        config["authenticatorAuthorizationUrl"] = authenticatorAuthorizationUrl
-        val model = OIDCIdentityProviderConfig()
-        model.config = config
+        val idpConfig =
+            initGematikIDPConfigWith("authenticatorAuthorizationUrl", authenticatorAuthorizationUrl + "_old")
 
-        val idpConfig = GematikIDPConfig(model)
         idpConfig.setAuthenticatorAuthorizationUrl(authenticatorAuthorizationUrl)
 
-        Assertions.assertThat(model.config["authenticatorAuthorizationUrl"]).isEqualTo(authenticatorAuthorizationUrl)
+        // act
+        val result = idpConfig.config["authenticatorAuthorizationUrl"]
+
+        // assert
+        assertThat(result).isEqualTo(authenticatorAuthorizationUrl)
     }
 
 
     @Test
     fun setTimeoutMs() {
+        // arrange
         val timeout = "100000"
         val idpConfig = GematikIDPConfig()
         idpConfig.setTimeoutMs(timeout)
 
-        Assertions.assertThat(idpConfig.config["timeoutMs"]).isEqualTo(timeout)
+        // act
+        val result = idpConfig.config["timeoutMs"]
+
+        // assert
+        assertThat(result).isEqualTo(timeout)
     }
 
     @Test
     fun getTimeoutMs() {
-        val config= LinkedHashMap<String, String>()
+        // arrange
         val timeout = 100000
-        config["timeoutMs"] = timeout.toString()
-        val model = OIDCIdentityProviderConfig()
-        model.config = config
+        val idpConfig = initGematikIDPConfigWith("timeoutMs", timeout.toString())
 
-        val idpConfig = GematikIDPConfig(model)
+        // act
+        val result = idpConfig.getTimeoutMs()
 
-        Assertions.assertThat(idpConfig.getTimeoutMs()).isEqualTo(timeout)
+        // assert
+        assertThat(result).isEqualTo(timeout)
     }
 
     @Test
     fun setIdpTimeoutMs() {
+        // arrange
         val idpTimeout = "100000"
-        val idpConfig = GematikIDPConfig()
+        val idpConfig = initGematikIDPConfig()
         idpConfig.setIdpTimeoutMs(idpTimeout)
 
-        Assertions.assertThat(idpConfig.config["idpTimeoutMs"]).isEqualTo(idpTimeout)
+        // act
+        val result = idpConfig.config["idpTimeoutMs"]
+
+        // assert
+        assertThat(result).isEqualTo(idpTimeout)
     }
 
     @Test
     fun getIdpTimeoutMs() {
-        val config= LinkedHashMap<String, String>()
+        // arrange
         val idpTimeout = 100000
-        config["idpTimeoutMs"] = idpTimeout.toString()
-        val model = OIDCIdentityProviderConfig()
-        model.config = config
+        val idpConfig = initGematikIDPConfigWith("idpTimeoutMs", idpTimeout.toString())
 
-        val idpConfig = GematikIDPConfig(model)
+        // act
+        val result = idpConfig.getIdpTimeoutMs()
 
-        Assertions.assertThat(idpConfig.getIdpTimeoutMs()).isEqualTo(idpTimeout)
+        // assert
+        assertThat(result).isEqualTo(idpTimeout)
     }
 
     @Test
     fun getMultipleIdentityMode_true() {
-        val config= LinkedHashMap<String, String>()
+        // arrange
         val multipleIdentityMode = true
-        config["multipleIdentityMode"] = multipleIdentityMode.toString()
-        val model = OIDCIdentityProviderConfig()
-        model.config = config
+        val idpConfig = initGematikIDPConfigWith("multipleIdentityMode", multipleIdentityMode.toString())
 
-        val idpConfig = GematikIDPConfig(model)
+        // act
+        val result = idpConfig.getMultipleIdentityMode()
 
-        Assertions.assertThat(idpConfig.getMultipleIdentityMode()).isEqualTo(multipleIdentityMode)
+        // assert
+        assertThat(result).isEqualTo(multipleIdentityMode)
     }
 
     @Test
     fun getMultipleIdentityMode_false() {
-        val config= LinkedHashMap<String, String>()
+        // arrange
         val multipleIdentityMode = false
-        config["multipleIdentityMode"] = multipleIdentityMode.toString()
-        val model = OIDCIdentityProviderConfig()
-        model.config = config
+        val idpConfig =
+            initGematikIDPConfigWith("multipleIdentityModeauthenticationFlow", multipleIdentityMode.toString())
 
-        val idpConfig = GematikIDPConfig(model)
+        // act
+        val result = idpConfig.getMultipleIdentityMode()
 
-        Assertions.assertThat(idpConfig.getMultipleIdentityMode()).isEqualTo(multipleIdentityMode)
+        // assert
+        assertThat(result).isEqualTo(multipleIdentityMode)
     }
 
     @Test
     fun getMultipleIdentityMode_null() {
-        val config= LinkedHashMap<String, String>()
+        // arrange
         val multipleIdentityMode = null
-        config["multipleIdentityMode"] = multipleIdentityMode.toString()
-        val model = OIDCIdentityProviderConfig()
-        model.config = config
+        val idpConfig = initGematikIDPConfigWith("multipleIdentityMode", multipleIdentityMode.toString())
 
-        val idpConfig = GematikIDPConfig(model)
+        // act
+        val result = idpConfig.getMultipleIdentityMode()
 
-        Assertions.assertThat(idpConfig.getMultipleIdentityMode()).isEqualTo(false)
+        // assert
+        assertThat(result).isEqualTo(false)
     }
 
     @ParameterizedTest
     @ValueSource(booleans = [true, false])
     fun setMultipleIdentityMode(multipleIdentityMode: Boolean) {
-        val config= LinkedHashMap<String, String>()
-        val model = OIDCIdentityProviderConfig()
-        model.config = config
-
-        val idpConfig = GematikIDPConfig(model)
+        // arrange
+        val idpConfig = initGematikIDPConfig()
         idpConfig.setMultipleIdentityMode(multipleIdentityMode)
 
-        Assertions.assertThat(idpConfig.getMultipleIdentityMode()).isEqualTo(multipleIdentityMode)
+        // act
+        val result = idpConfig.getMultipleIdentityMode()
+
+        // assert
+        assertThat(result).isEqualTo(multipleIdentityMode)
     }
 
     @ParameterizedTest
     @EnumSource(value = AuthenticationFlowType::class)
     fun getAuthenticationFlow_enumValue(type: AuthenticationFlowType) {
-        val config= LinkedHashMap<String, String>()
-        config["authenticationFlow"] = type.toString()
-        val model = OIDCIdentityProviderConfig()
-        model.config = config
+        // arrange
+        val idpConfig = initGematikIDPConfigWith("authenticationFlow", type.toString())
 
-        val idpConfig = GematikIDPConfig(model)
+        // act
+        val result = idpConfig.getAuthenticationFlow()
 
-        Assertions.assertThat(idpConfig.getAuthenticationFlow()).isEqualTo(type)
+        // assert
+        assertThat(result).isEqualTo(type)
     }
 
     @Test
     fun getAuthenticationFlow_null() {
-        val config= LinkedHashMap<String, String>()
+        // arrange
+        val config = LinkedHashMap<String, String>()
         val authenticationFlow = null
         config["authenticationFlow"] = authenticationFlow.toString()
         val model = OIDCIdentityProviderConfig()
@@ -206,19 +235,53 @@ internal class GematikIDPConfigTest {
 
         val idpConfig = GematikIDPConfig(model)
 
-        Assertions.assertThat(idpConfig.getAuthenticationFlow()).isEqualTo(AuthenticationFlowType.LEGACY)
+        // act
+        val result = idpConfig.getAuthenticationFlow()
+
+        // assert
+        assertThat(result).isEqualTo(AuthenticationFlowType.LEGACY)
     }
 
     @ParameterizedTest
     @EnumSource(value = AuthenticationFlowType::class)
     fun setAuthenticationFlow(type: AuthenticationFlowType) {
-        val config= LinkedHashMap<String, String>()
+        // arrange
+        val idpConfig = initGematikIDPConfig()
+        idpConfig.setAuthenticationFlow(type)
+
+        // act
+        val result = idpConfig.getAuthenticationFlow()
+
+        // assert
+        assertThat(result).isEqualTo(type)
+    }
+
+    @Test
+    fun `isCaseSensitiveOriginalUsername - Is Called - Always Returns True`() {
+        // arrange
+        val idpConfig = initGematikIDPConfig()
+
+        // act
+        val result = idpConfig.isCaseSensitiveOriginalUsername
+
+        // assert
+        assertThat(result).isTrue()
+    }
+
+    private fun initGematikIDPConfig(): GematikIDPConfig {
+        val config = LinkedHashMap<String, String>()
+        val model = OIDCIdentityProviderConfig()
+        model.config = config
+        return GematikIDPConfig(model)
+    }
+
+    private fun initGematikIDPConfigWith(configKey: String, configValue: String): GematikIDPConfig {
+        val config = LinkedHashMap<String, String>()
+        config[configKey] = configValue
         val model = OIDCIdentityProviderConfig()
         model.config = config
 
         val idpConfig = GematikIDPConfig(model)
-        idpConfig.setAuthenticationFlow(type)
-
-        Assertions.assertThat(idpConfig.getAuthenticationFlow()).isEqualTo(type)
+        return idpConfig
     }
 }

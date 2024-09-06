@@ -32,7 +32,6 @@ import org.keycloak.models.KeycloakSessionFactory
 import org.keycloak.provider.ProviderConfigProperty
 import org.keycloak.provider.ProviderConfigurationBuilder
 import org.keycloak.provider.ServerInfoAwareProviderFactory
-import java.io.InputStream
 import java.net.UnknownHostException
 import java.time.Clock
 import java.util.*
@@ -55,10 +54,6 @@ class GematikIDPFactory : AbstractIdentityProviderFactory<GematikIDP>(), ServerI
     @Generated
     override fun create(session: KeycloakSession, model: IdentityProviderModel): GematikIDP =
         createAndUpdateConfig(session, GematikIDPConfig(model))
-
-    override fun parseConfig(session: KeycloakSession?, inputStream: InputStream?): MutableMap<String, String> {
-        return super.parseConfig(session, inputStream)
-    }
 
     fun createAndUpdateConfig(
         session: KeycloakSession,
