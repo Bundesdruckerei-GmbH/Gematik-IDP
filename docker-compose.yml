@@ -26,8 +26,8 @@ services:
       - "8443:8443"
       - "5005:5005"
     environment:
-      KEYCLOAK_ADMIN: admin
-      KEYCLOAK_ADMIN_PASSWORD: admin
+      KC_BOOTSTRAP_ADMIN_USERNAME: admin
+      KC_BOOTSTRAP_ADMIN_PASSWORD: admin
       KC_DB_URL_HOST: postgres-gematik-idp
       KC_DB_URL_DATABASE: gematik-idp
       KC_DB_USERNAME: gematik-idp
@@ -45,12 +45,12 @@ services:
       JAVA_OPTS: -Xms64m -Xmx512m -XX:MetaspaceSize=96M -XX:MaxMetaspaceSize=256m -Djava.net.preferIPv4Stack=true -Djboss.modules.system.pkgs=org.jboss.byteman -Djava.awt.headless=true -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005
     volumes:
       - ./sample-realm:/opt/keycloak/data/import/
-      - ./target/gematik-idp-3.0.0.jar:/opt/keycloak/providers/gematik-idp-3.0.0.jar
+      - ./target/gematik-idp-3.6.0.jar:/opt/keycloak/providers/gematik-idp-3.6.0.jar
       - ./themes/gematik-idp:/opt/keycloak/themes/gematik-idp
     entrypoint: "/opt/keycloak/bin/kc.sh start-dev --import-realm"
 
   idp-server:
-    image: gematik1/idp-server:29.0.1
+    image: gematik1/idp-server:29.0.4
     container_name: gem-ref-idp-server
     restart: always
     ports:
