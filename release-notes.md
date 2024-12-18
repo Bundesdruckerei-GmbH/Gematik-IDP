@@ -1,8 +1,33 @@
 # Release Notes
 
+## Release 3.6.0
+
+* Update Keycloak to 26.0.7
+
+## Release 3.5.0
+
+* Update Keycloak to 26.0.6
+* Dependency updates
+
+## Release 3.4.0
+
+* Dependency updates
+
+## Release 3.3.0
+
+* Dependency updates
+
+## Release 3.2.0
+
+* Update Keycloak to 25.0.6
+
+## Release 3.1.0
+
+* Update Keycloak to 25.0.5
+
 ## Release 3.0.0
 
-* Update Keycloak to 24.0.5
+* Update Keycloak to 25.0.4
 * Update Java rom 17 to 21
 * Dependency updates
 
