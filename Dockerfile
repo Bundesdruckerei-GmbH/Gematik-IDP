@@ -13,7 +13,7 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-FROM quay.io/keycloak/keycloak:26.0.7 AS builder
+FROM quay.io/keycloak/keycloak:26.2.4 AS builder
 
 WORKDIR /opt/keycloak
 # for demonstration purposes only, please make sure to use proper certificates in production instead
@@ -28,7 +28,7 @@ ENV KC_HEALTH_ENABLED=true
 ENV KC_METRICS_ENABLED=true
 
 # Configure a database vendor
-ENV KC_DB postgres
-ENV KC_HTTP_RELATIVE_PATH /auth
+ENV KC_DB=postgres
+ENV KC_HTTP_RELATIVE_PATH=/auth
 
 ENTRYPOINT ["/opt/keycloak/bin/kc.sh start"]

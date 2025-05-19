@@ -1,5 +1,10 @@
 # Release Notes
 
+## Release 3.7.0
+
+* Update Keycloak to 26.2.4
+* Dependency updates
+
 ## Release 3.6.0
 
 * Update Keycloak to 26.0.7
