@@ -1,4 +1,4 @@
-#  Copyright 2023 Bundesdruckerei GmbH and/or its affiliates
+#  Copyright 2025 Bundesdruckerei GmbH and/or its affiliates
 #  and other contributors.
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
@@ -12,8 +12,6 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
-
-version: "3.7"
 
 services:
   keycloak-gematik-idp:
@@ -45,12 +43,12 @@ services:
       JAVA_OPTS: -Xms64m -Xmx512m -XX:MetaspaceSize=96M -XX:MaxMetaspaceSize=256m -Djava.net.preferIPv4Stack=true -Djboss.modules.system.pkgs=org.jboss.byteman -Djava.awt.headless=true -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005
     volumes:
       - ./sample-realm:/opt/keycloak/data/import/
-      - ./target/gematik-idp-3.7.0.jar:/opt/keycloak/providers/gematik-idp-3.7.0.jar
+      - ./target/gematik-idp-3.15.0-SNAPSHOT.jar:/opt/keycloak/providers/gematik-idp-3.15.0-SNAPSHOT.jar
       - ./themes/gematik-idp:/opt/keycloak/themes/gematik-idp
     entrypoint: "/opt/keycloak/bin/kc.sh start-dev --import-realm"
 
   idp-server:
-    image: gematik1/idp-server:29.2.2
+    image: gematik1/idp-server:29.2.7
     container_name: gem-ref-idp-server
     restart: always
     ports:

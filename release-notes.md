@@ -1,5 +1,9 @@
 # Release Notes
 
+## Release 3.8.0
+
+* Removed confirmation modal before launching Gematik Authenticator app.
+
 ## Release 3.7.0
 
 * Update Keycloak to 26.2.4
