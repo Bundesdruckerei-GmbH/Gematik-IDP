@@ -104,6 +104,7 @@ internal class GematikIDPLegacyResourceNewAuthFlowTest : GematikIDPEndpointBaseT
             URI.create("http://localhost:8080/realms/$REALM_NAME/broker/$IDP_ALIAS/endpoint/status?state=$state")
         )
         verify(formsMock).setAttribute("timeoutMs", 20000)
+        verify(formsMock).setAttribute("authenticatorAutoLaunch", true)
         verify(formsMock).createForm("gematik-idp.ftl")
     }
 
@@ -300,6 +301,7 @@ internal class GematikIDPLegacyResourceNewAuthFlowTest : GematikIDPEndpointBaseT
             URI.create("http://localhost:8080/realms/$REALM_NAME/broker/$IDP_ALIAS/endpoint/timeout?state=$state")
         )
         verify(formsMock).setAttribute("timeoutMs", 20000)
+        verify(formsMock).setAttribute("authenticatorAutoLaunch", true)
         verify(formsMock).createForm("gematik-idp.ftl")
     }
 

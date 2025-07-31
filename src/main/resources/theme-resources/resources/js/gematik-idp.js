@@ -50,11 +50,22 @@ function pollAuthenticationStatus({
 }
 
 window.addEventListener("DOMContentLoaded", () => {
+  const modal = document.querySelector(".gematik-idp-modal");
+  if (modal) {
+    document
+        .querySelector(".gematik-idp-modal .close")
+        .addEventListener("click", function () {
+          modal.style.display = "none";
+        });
+  }
+
   try {
     const { statusUrl, timeoutUrl, timeout } = JSON.parse(
       document.getElementById("gematikIdpConfiguration").textContent
     );
 
     pollAuthenticationStatus({ statusUrl, timeoutUrl, timeout });
-  } catch (e) {}
+  } catch (e) {
+    console.log(`Exception while polling Authentication Status: ${e}`);
+  }
 });

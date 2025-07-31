@@ -119,6 +119,7 @@ internal class GematikIDPHbaResourceTest : GematikIDPEndpointBaseTest() {
             URI.create("http://localhost:8080/realms/$REALM_NAME/broker/$IDP_ALIAS/endpoint/status?state=$state")
         )
         verify(formsMock).setAttribute("timeoutMs", 20000)
+        verify(formsMock).setAttribute("authenticatorAutoLaunch", true)
         verify(formsMock).createForm("gematik-idp.ftl")
         verify(authSessionMock).setAuthNote("GEMATIK_IDP_STEP", "REQUESTED_HBA_DATA")
     }

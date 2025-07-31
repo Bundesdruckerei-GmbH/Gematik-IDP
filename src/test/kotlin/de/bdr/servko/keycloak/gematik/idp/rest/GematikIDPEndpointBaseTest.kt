@@ -121,6 +121,7 @@ abstract class GematikIDPEndpointBaseTest {
         setIdpTimeoutMs("10000")
         setIdpUserAgent("Servko/1.0.0 Servko/Client")
         setMultipleIdentityMode(true)
+        setAuthenticatorAutoLaunch(true)
     }
 
     fun mockDoPostToGetHbaToken() {

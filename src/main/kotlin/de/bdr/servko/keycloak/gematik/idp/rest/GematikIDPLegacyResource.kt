@@ -1,6 +1,6 @@
 /*
- *  Copyright 2023 Bundesdruckerei GmbH and/or its affiliates
- *  and other contributors.
+ * Copyright 2025 Bundesdruckerei GmbH and/or its affiliates
+ * and other contributors.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -8,12 +8,12 @@
  *
  *  http://www.apache.org/licenses/LICENSE-2.0
  *
+ *
  *  Unless required by applicable law or agreed to in writing, software
  *  distributed under the License is distributed on an "AS IS" BASIS,
  *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
- *
  */
 
 package de.bdr.servko.keycloak.gematik.idp.rest
@@ -46,6 +46,7 @@ import org.keycloak.sessions.AuthenticationSessionModel
 import org.keycloak.util.JsonSerialization
 import java.net.URI
 
+@Deprecated("Legacy Gematik authentication is no longer in use and will be removed in a future release.")
 class GematikIDPLegacyResource(
     override val realm: RealmModel,
     override val callback: IdentityProvider.AuthenticationCallback,
