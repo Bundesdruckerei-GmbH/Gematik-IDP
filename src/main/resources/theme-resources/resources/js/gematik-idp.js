@@ -53,10 +53,10 @@ window.addEventListener("DOMContentLoaded", () => {
   const modal = document.querySelector(".gematik-idp-modal");
   if (modal) {
     document
-        .querySelector(".gematik-idp-modal .close")
-        .addEventListener("click", function () {
-          modal.style.display = "none";
-        });
+      .querySelector(".gematik-idp-modal .close")
+      .addEventListener("click", function () {
+        modal.style.display = "none";
+      });
   }
 
   try {
