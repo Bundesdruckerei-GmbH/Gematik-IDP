@@ -1,12 +1,13 @@
 /*
- *  Copyright 2023 Bundesdruckerei GmbH and/or its affiliates
- *  and other contributors.
+ * Copyright 2025 Bundesdruckerei GmbH and/or its affiliates
+ * and other contributors.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
  *  You may obtain a copy of the License at
  *
  *  http://www.apache.org/licenses/LICENSE-2.0
+ *
  *
  *  Unless required by applicable law or agreed to in writing, software
  *  distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,6 +19,7 @@
 package de.bdr.servko.keycloak.gematik.idp.util
 
 import de.bdr.servko.keycloak.gematik.idp.model.AuthenticationFlowType
+import de.bdr.servko.keycloak.gematik.idp.model.GematikIDPConfig
 import org.keycloak.provider.ProviderConfigProperty
 import org.keycloak.provider.ProviderConfigurationBuilder
 
@@ -77,5 +79,12 @@ fun ProviderConfigurationBuilder.multipleIdentityMode(): ProviderConfigurationBu
     .name("multipleIdentityMode")
     .label("Multiple Identities Mode")
     .helpText("If this option is switched on, the current timestamp is appended to the Gematik-IDP-ID, which means that an eHBA can be linked to several users at the same time.")
+    .type(ProviderConfigProperty.BOOLEAN_TYPE)
+    .add()
+
+fun ProviderConfigurationBuilder.authenticatorAutoLaunch(): ProviderConfigurationBuilder = this.property()
+    .name(GematikIDPConfig.AUTHENTICATOR_AUTO_LAUNCH)
+    .label("Authenticator Auto-Launch")
+    .helpText("When enabled, the login page launches the Gematik Authenticator immediately without showing the confirmation modal.")
     .type(ProviderConfigProperty.BOOLEAN_TYPE)
     .add()

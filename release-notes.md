@@ -1,5 +1,14 @@
 # Release Notes
 
+## Release 3.8.0
+
+* Added **optional “Authenticator Auto-Launch”** setting  
+  *When enabled the confirmation modal is bypassed; when disabled the modal remains for backward compatibility.*
+* Update Keycloak to 26.2.5
+* Update Kotlin to 2.2.0
+* Dependency updates
+* Deprecated: The legacy Gematik authentication flow is no longer used and will be removed in a future release.
+
 ## Release 3.7.0
 
 * Update Keycloak to 26.2.4

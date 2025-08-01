@@ -1,5 +1,5 @@
 <!--
-  ~  Copyright 2023 Bundesdruckerei GmbH and/or its affiliates
+  ~  Copyright 2025 Bundesdruckerei GmbH and/or its affiliates
   ~  and other contributors.
   ~
   ~  Licensed under the Apache License, Version 2.0 (the "License");
@@ -21,29 +21,18 @@
         <p class="authenticator-loading-title">
             ${msg("authenticator.startingTitle")}
         </p>
+
     <#elseif section = "form">
-        <div class="pf-c-backdrop gematik-idp-modal">
-            <div class="pf-l-bullseye">
-                <div class="pf-c-modal-box pf-m-md" role="dialog" aria-modal="true" aria-labelledby="modal-login-info-title"
-                     aria-describedby="modal-login-info-description">
-                    <header class="pf-c-modal-box__header">
-                        <h1 class="pf-c-modal-box__title" id="modal-login-info-title">${msg("confirmOpenAuthenticatorModalHint")}</h1>
-                    </header>
-                    <div class="pf-c-modal-box__body" id="modal-login-info-description">
-                        <p>
-                            ${kcSanitize(msg("confirmOpenAuthenticatorModalDescription"))?no_esc}
-                        </p>
-                    </div>
-                    <footer class="pf-c-modal-box__footer">
-                        <a class="pf-c-button pf-m-primary close" href="${authenticatorUrl}" id="openAuthenticator">
-                            ${kcSanitize(msg("confirmOpenAuthenticatorModalButton"))?no_esc}
-                        </a>
-                    </footer>
-                </div>
-            </div>
-        </div>
         <p class="pf-c-content authenticator-loading-message">
             ${msg("authenticator.startingInfo")}
+        </p>
+        <p>
+            <span>
+                ${msg("authenticator.fallbackInfo")}
+            </span>
+            <a href="${authenticatorUrl}" class="pf-m-link pf-m-small" id="fallback-trigger-link">
+                ${msg("authenticator.fallbackButton")}
+            </a>
         </p>
 
         <#compress>
@@ -55,5 +44,32 @@
                 }
             </script>
         </#compress>
+
+        <#if authenticatorAutoLaunch>
+            <#-- Auto-launch path: skip modal, fire the authentication immediately -->
+            <meta http-equiv="refresh" content="1; URL=${authenticatorUrl}">
+        <#else>
+            <#-- Modal -->
+            <div class="pf-c-backdrop gematik-idp-modal">
+                <div class="pf-l-bullseye">
+                    <div class="pf-c-modal-box pf-m-md" role="dialog" aria-modal="true" aria-labelledby="modal-login-info-title"
+                         aria-describedby="modal-login-info-description">
+                        <header class="pf-c-modal-box__header">
+                            <h1 class="pf-c-modal-box__title" id="modal-login-info-title">${msg("confirmOpenAuthenticatorModalHint")}</h1>
+                        </header>
+                        <div class="pf-c-modal-box__body" id="modal-login-info-description">
+                            <p>
+                                ${kcSanitize(msg("confirmOpenAuthenticatorModalDescription"))?no_esc}
+                            </p>
+                        </div>
+                        <footer class="pf-c-modal-box__footer">
+                            <a class="pf-c-button pf-m-primary close" href="${authenticatorUrl}" id="openAuthenticator">
+                                ${kcSanitize(msg("confirmOpenAuthenticatorModalButton"))?no_esc}
+                            </a>
+                        </footer>
+                    </div>
+                </div>
+            </div>
+        </#if>
     </#if>
 </@layout.registrationLayout>

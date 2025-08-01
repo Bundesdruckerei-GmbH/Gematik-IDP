@@ -1,12 +1,13 @@
 /*
- *  Copyright 2023 Bundesdruckerei GmbH and/or its affiliates
- *  and other contributors.
+ * Copyright 2025 Bundesdruckerei GmbH and/or its affiliates
+ * and other contributors.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
  *  You may obtain a copy of the License at
  *
  *  http://www.apache.org/licenses/LICENSE-2.0
+ *
  *
  *  Unless required by applicable law or agreed to in writing, software
  *  distributed under the License is distributed on an "AS IS" BASIS,
@@ -31,6 +32,7 @@ class GematikIDPConfig(model: IdentityProviderModel? = null) : OIDCIdentityProvi
         private const val IDP_USER_AGENT = "idpUserAgent"
         private const val MULTIPLE_IDENTITY_MODE = "multipleIdentityMode"
         private const val AUTHENTICATION_FLOW = "authenticationFlow"
+        const val AUTHENTICATOR_AUTO_LAUNCH = "authenticatorAutoLaunch"
     }
 
     fun setAuthenticatorAuthorizationUrl(url: String) = config.put(AUTHENTICATOR_AUTHORIZATION_URL, url)
@@ -59,8 +61,12 @@ class GematikIDPConfig(model: IdentityProviderModel? = null) : OIDCIdentityProvi
 
     fun setMultipleIdentityMode(multipleIdentityMode: Boolean) =
         config.put(MULTIPLE_IDENTITY_MODE, multipleIdentityMode.toString())
-
     fun getMultipleIdentityMode() = config[MULTIPLE_IDENTITY_MODE]?.toBoolean() == true
+
+    fun setAuthenticatorAutoLaunch(authenticatorAutoLaunch: Boolean) =
+        config.put(AUTHENTICATOR_AUTO_LAUNCH, authenticatorAutoLaunch.toString())
+
+    fun getAuthenticatorAutoLaunch() = config[AUTHENTICATOR_AUTO_LAUNCH]?.toBoolean() == true
 
     fun setAuthenticationFlow(authenticationFlow: AuthenticationFlowType) =
         config.put(AUTHENTICATION_FLOW, authenticationFlow.toString())
