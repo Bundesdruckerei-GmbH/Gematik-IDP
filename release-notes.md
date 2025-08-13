@@ -1,5 +1,12 @@
 # Release Notes
 
+## Release 3.9.0
+
+* Update Keycloak to 26.3.2
+* Resolved [Issue#18 - Validierung des Discovery Dokumentes](https://github.com/Bundesdruckerei-GmbH/Gematik-IDP/issues/18)
+  * see Readme chapter _TSL certificate validation_ for more information
+* Dependency Updates
+
 ## Release 3.8.0
 
 * Added **optional “Authenticator Auto-Launch”** setting  

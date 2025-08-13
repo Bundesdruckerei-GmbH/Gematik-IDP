@@ -34,6 +34,7 @@ import org.keycloak.provider.ProviderConfigProperty
 import org.keycloak.provider.ProviderConfigurationBuilder
 import org.keycloak.provider.ServerInfoAwareProviderFactory
 import java.net.UnknownHostException
+import java.security.cert.CertificateException
 import java.time.Clock
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
@@ -45,6 +46,7 @@ class GematikIDPFactory : AbstractIdentityProviderFactory<GematikIDP>(), ServerI
 
     private val logger = Logger.getLogger(this::class.java)
     private val discoveryDocumentCache = ConcurrentHashMap<String, GematikDiscoveryDocument>()
+
     override fun getId(): String = PROVIDER_ID
     override fun getName(): String = "Gematik IDP"
 
@@ -61,9 +63,7 @@ class GematikIDPFactory : AbstractIdentityProviderFactory<GematikIDP>(), ServerI
         config: GematikIDPConfig,
         clock: Clock = Clock.systemUTC(),
         serviceFactory: (KeycloakSession) -> GematikIdpOpenIDConfigurationService = {
-            GematikIdpOpenIDConfigurationService(
-                RestClient(it)
-            )
+            GematikIdpOpenIDConfigurationService(it)
         },
     ): GematikIDP {
         discoveryDocumentCache.compute(config.getOpenidConfigUrl()) { url, document ->
@@ -87,7 +87,7 @@ class GematikIDPFactory : AbstractIdentityProviderFactory<GematikIDP>(), ServerI
                 val prop = Properties()
                 try {
                     prop.load(it)
-                } catch (e: Exception) {
+                } catch (_: Exception) {
                     //ignore
                 }
                 mapOf("Version" to prop.getProperty("version", "unknown"))
@@ -99,6 +99,7 @@ class GematikIDPFactory : AbstractIdentityProviderFactory<GematikIDP>(), ServerI
             .authenticatorAuthorizationUrl()
             .timeoutMs()
             .openidConfigUrl()
+            .validateOpenIDConfigSigningCertificate()
             .idpTimeoutMs()
             .idpUserAgent()
             .multipleIdentityMode()
@@ -112,11 +113,17 @@ class GematikIDPFactory : AbstractIdentityProviderFactory<GematikIDP>(), ServerI
         config: GematikIDPConfig,
     ): GematikDiscoveryDocument? =
         try {
-            GematikDiscoveryDocument(serviceFactory(session).getOpenIDConfiguration(url, config.getIdpUserAgent()))
+            GematikDiscoveryDocument(
+                serviceFactory(session).getOpenIDConfiguration(
+                    url,
+                    config.getIdpUserAgent(),
+                    config.getValidateOpenIDConfigSigningCertificate()
+                )
+            )
         } catch (e: Exception) {
             when (e) {
                 // catch exception to be able to open configuration page
-                is UnknownHostException, is JoseException -> {
+                is UnknownHostException, is JoseException, is CertificateException -> {
                     logger.warn("Failed to fetch openid configuration from $url", e)
                     null
                 }

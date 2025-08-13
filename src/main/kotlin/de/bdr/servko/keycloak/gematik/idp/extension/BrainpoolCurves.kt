@@ -22,8 +22,6 @@ import org.bouncycastle.jce.spec.ECNamedCurveSpec
 import org.jose4j.jca.ProviderContext
 import org.jose4j.jwa.AlgorithmFactoryFactory
 import org.jose4j.keys.EllipticCurves
-import java.lang.reflect.InvocationTargetException
-import java.lang.reflect.Method
 import java.security.spec.ECParameterSpec
 
 
@@ -75,42 +73,13 @@ object BrainpoolCurves {
 
     private var initialized = false
 
-    private fun addCurve(name: String, spec: ECParameterSpec) {
-        try {
-            val method: Method =
-                EllipticCurves::class.java.getDeclaredMethod(
-                    "addCurve",
-                    String::class.java,
-                    ECParameterSpec::class.java
-                )
-            method.isAccessible = true
-            method.invoke(BrainpoolCurves::class.java, name, spec)
-        } catch (e: InvocationTargetException) {
-            throw Exception(
-                "Error while adding BrainPool-Curves $name to internal Algorithm-Suite repository",
-                e
-            )
-        } catch (e: IllegalAccessException) {
-            throw Exception(
-                "Error while adding BrainPool-Curves $name to internal Algorithm-Suite repository",
-                e
-            )
-        } catch (e: NoSuchMethodException) {
-            throw Exception(
-                "Error while adding BrainPool-Curves $name to internal Algorithm-Suite repository",
-                e
-            )
-        }
-    }
-
-
     fun init() {
         if (initialized) {
             return
         }
-        addCurve(BP_256, EC_PARAMETER_SPEC_BP256R1)
-        addCurve(BP_384, EC_PARAMETER_SPEC_BP384R1)
-        addCurve(BP_512, EC_PARAMETER_SPEC_BP512R1)
+        EllipticCurves.addCurve(BP_256, EC_PARAMETER_SPEC_BP256R1)
+        EllipticCurves.addCurve(BP_384, EC_PARAMETER_SPEC_BP384R1)
+        EllipticCurves.addCurve(BP_512, EC_PARAMETER_SPEC_BP512R1)
 
         AlgorithmFactoryFactory.getInstance().jwsAlgorithmFactory.apply {
             registerAlgorithm(BrainpoolAlgorithmSuites.EcdsaBP256R1UsingSha256())

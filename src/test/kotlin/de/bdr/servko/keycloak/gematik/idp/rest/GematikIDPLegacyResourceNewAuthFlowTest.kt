@@ -243,13 +243,13 @@ internal class GematikIDPLegacyResourceNewAuthFlowTest : GematikIDPEndpointBaseT
         whenever(authSessionMock.getAuthNote("SMCB_DATA")).thenReturn("")
         whenever(authSessionMock.getAuthNote("GEMATIK_IDP_STEP"))
             .thenReturn(GematikIDPStep.RECEIVED_SMCB_DATA.name)
-        whenever(callbackMock.error(any())).thenReturn(mock())
+        whenever(callbackMock.error(eq(config), any())).thenReturn(mock())
 
         // act
         underTest.status(state)
 
         // assert
-        verify(callbackMock).error("Invalid state. Please restart authentication flow.")
+        verify(callbackMock).error(config, "Invalid state. Please restart authentication flow.")
     }
 
     @Test
@@ -258,13 +258,13 @@ internal class GematikIDPLegacyResourceNewAuthFlowTest : GematikIDPEndpointBaseT
         val message = "AuthenticationSessionModel not found for state $state"
         whenever(service.resolveAuthSessionFromEncodedState(realmMock, state))
             .thenThrow(SessionNotFoundException(message))
-        whenever(callbackMock.error(any())).thenReturn(mock())
+        whenever(callbackMock.error(eq(config), any())).thenReturn(mock())
 
         // act
         underTest.status(state)
 
         // assert
-        verify(callbackMock).error("Failed to resolve auth session: $message")
+        verify(callbackMock).error(config, "Failed to resolve auth session: $message")
     }
 
     @Test
@@ -375,13 +375,13 @@ internal class GematikIDPLegacyResourceNewAuthFlowTest : GematikIDPEndpointBaseT
         val message = "AuthenticationSessionModel not found for state $state"
         whenever(service.resolveAuthSessionFromEncodedState(realmMock, state))
             .thenThrow(SessionNotFoundException(message))
-        whenever(callbackMock.error(any())).thenReturn(mock())
+        whenever(callbackMock.error(eq(config), any())).thenReturn(mock())
 
         // act
         underTest.nextStep(state)
 
         // assert
-        verify(callbackMock).error("Failed to resolve auth session: $message")
+        verify(callbackMock).error(config, "Failed to resolve auth session: $message")
     }
 
     @Test
@@ -389,13 +389,13 @@ internal class GematikIDPLegacyResourceNewAuthFlowTest : GematikIDPEndpointBaseT
         // arrange
         whenever(authSessionMock.getAuthNote(GematikIdpLiterals.CODE_VERIFIER))
             .thenReturn(null)
-        whenever(callbackMock.error(any())).thenReturn(mock())
+        whenever(callbackMock.error(eq(config), any())).thenReturn(mock())
 
         // act
         underTest.nextStep(state)
 
         // assert
-        verify(callbackMock).error("Invalid code_verifier. Please restart authentication flow.")
+        verify(callbackMock).error(config, "Invalid code_verifier. Please restart authentication flow.")
     }
 
     @Test
@@ -513,13 +513,13 @@ internal class GematikIDPLegacyResourceNewAuthFlowTest : GematikIDPEndpointBaseT
         val message = "AuthenticationSessionModel not found for state $state"
         whenever(service.resolveAuthSessionFromEncodedState(realmMock, state))
             .thenThrow(SessionNotFoundException(message))
-        whenever(callbackMock.error(any())).thenReturn(mock())
+        whenever(callbackMock.error(eq(config), any())).thenReturn(mock())
 
         // act
         underTest.result(CODE, state)
 
         // assert
-        verify(callbackMock).error("Failed to resolve auth session: $message")
+        verify(callbackMock).error(config, "Failed to resolve auth session: $message")
     }
 
     @Test
@@ -527,13 +527,13 @@ internal class GematikIDPLegacyResourceNewAuthFlowTest : GematikIDPEndpointBaseT
         // arrange
         whenever(authSessionMock.getAuthNote(GematikIdpLiterals.CODE_VERIFIER))
             .thenReturn(null)
-        whenever(callbackMock.error(any())).thenReturn(mock())
+        whenever(callbackMock.error(eq(config), any())).thenReturn(mock())
 
         // act
         underTest.result(CODE, state)
 
         // assert
-        verify(callbackMock).error("Invalid code_verifier. Please restart authentication flow.")
+        verify(callbackMock).error(config, "Invalid code_verifier. Please restart authentication flow.")
     }
 
     private fun assertStatusUrl(statusUrl: URI) {

@@ -73,7 +73,7 @@ class GematikIDPLegacyResource(
         val authSession: AuthenticationSessionModel = try {
             service.resolveAuthSessionFromEncodedState(realm, encodedState)
         } catch (e: Exception) {
-            return callback.error("Failed to resolve auth session: ${e.message}")
+            return callback.error(config, "Failed to resolve auth session: ${e.message}")
         }
 
         val hbaData: String? = authSession.getAuthNote(GematikIdpLiterals.HBA_DATA)
@@ -104,7 +104,7 @@ class GematikIDPLegacyResource(
                 .build()
         }
 
-        return callback.error("Invalid state. Please restart authentication flow.")
+        return callback.error(config, "Invalid state. Please restart authentication flow.")
     }
 
     /**
@@ -119,12 +119,12 @@ class GematikIDPLegacyResource(
         val authSession: AuthenticationSessionModel = try {
             service.resolveAuthSessionFromEncodedState(realm, encodedState)
         } catch (e: Exception) {
-            return callback.error("Failed to resolve auth session: ${e.message}")
+            return callback.error(config, "Failed to resolve auth session: ${e.message}")
         }
 
         val step = GematikIDPUtil.getGematikIdpStepFrom(authSession)
         val codeVerifier: String = authSession.getAuthNote(GematikIdpLiterals.CODE_VERIFIER)
-            ?: return callback.error("Invalid code_verifier. Please restart authentication flow.")
+            ?: return callback.error(config, "Invalid code_verifier. Please restart authentication flow.")
 
         return when (step) {
             GematikIDPStep.RECEIVED_HBA_DATA -> {
@@ -185,7 +185,7 @@ class GematikIDPLegacyResource(
         val authSession: AuthenticationSessionModel = try {
             service.resolveAuthSessionFromEncodedState(realm, encodedState!!)
         } catch (e: Exception) {
-            return callback.error("Failed to resolve auth session: ${e.message}")
+            return callback.error(config, "Failed to resolve auth session: ${e.message}")
         }
 
         GematikIDPUtil.setAuthenticatorVersionInAuthSession(version, authSession)
@@ -195,7 +195,7 @@ class GematikIDPLegacyResource(
         }
 
         val codeVerifier: String = authSession.getAuthNote(GematikIdpLiterals.CODE_VERIFIER)
-            ?: return callback.error("Invalid code_verifier. Please restart authentication flow.")
+            ?: return callback.error(config, "Invalid code_verifier. Please restart authentication flow.")
         val idToken = certificateService.fetchIdToken(codeVerifier, code!!)
         var step = gematikIDPStepSanityCheck(idToken, GematikIDPUtil.getGematikIdpStepFrom(authSession), authSession)
 
@@ -216,7 +216,7 @@ class GematikIDPLegacyResource(
             }
 
             else -> {
-                callback.error("invalid step $step")
+                callback.error(config, "invalid step $step")
             }
         }
 

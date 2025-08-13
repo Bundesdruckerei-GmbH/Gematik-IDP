@@ -156,7 +156,7 @@ abstract class GematikIDPEndpointBaseTest {
         val message = "client not found or disabled"
         whenever(service.resolveAuthSessionFromEncodedState(realmMock, state))
             .thenThrow(SessionNotFoundException(message))
-        whenever(callbackMock.error(ArgumentMatchers.anyString())).thenReturn(
+        whenever(callbackMock.error(eq(config), ArgumentMatchers.anyString())).thenReturn(
             Response.status(Response.Status.INTERNAL_SERVER_ERROR).build()
         )
 
@@ -188,7 +188,7 @@ abstract class GematikIDPEndpointBaseTest {
         val message = "client not found or disabled"
         whenever(service.resolveAuthSessionFromEncodedState(realmMock, state))
             .thenAnswer { _ -> throw ClientException(message) }
-        whenever(callbackMock.error(ArgumentMatchers.anyString())).thenReturn(
+        whenever(callbackMock.error(eq(config), ArgumentMatchers.anyString())).thenReturn(
             Response.status(Response.Status.INTERNAL_SERVER_ERROR).build()
         )
 

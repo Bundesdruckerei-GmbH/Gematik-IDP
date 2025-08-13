@@ -18,7 +18,6 @@
 package de.bdr.servko.keycloak.gematik.idp.rest
 
 import de.bdr.servko.keycloak.gematik.idp.service.GematikIdpOpenIDConfigurationService
-import de.bdr.servko.keycloak.gematik.idp.util.RestClient
 import org.keycloak.Config
 import org.keycloak.models.KeycloakSession
 import org.keycloak.models.KeycloakSessionFactory
@@ -27,7 +26,7 @@ import org.keycloak.provider.ServerInfoAwareProviderFactory
 import org.keycloak.services.resources.admin.AdminEventBuilder
 import org.keycloak.services.resources.admin.ext.AdminRealmResourceProvider
 import org.keycloak.services.resources.admin.ext.AdminRealmResourceProviderFactory
-import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator
+import org.keycloak.services.resources.admin.fgap.AdminPermissionEvaluator
 import java.util.*
 
 class GematikIDPAdminRestResourceFactory : AdminRealmResourceProvider, AdminRealmResourceProviderFactory,
@@ -42,8 +41,8 @@ class GematikIDPAdminRestResourceFactory : AdminRealmResourceProvider, AdminReal
         session: KeycloakSession,
         realm: RealmModel,
         auth: AdminPermissionEvaluator,
-        adminEvent: AdminEventBuilder
-    ) = GematikIDPAdminRestResource(auth, GematikIdpOpenIDConfigurationService(RestClient(session)))
+        adminEvent: AdminEventBuilder,
+    ) = GematikIDPAdminRestResource(auth, GematikIdpOpenIDConfigurationService(session))
 
     override fun init(config: Config.Scope) {
         // do nothing
@@ -64,7 +63,7 @@ class GematikIDPAdminRestResourceFactory : AdminRealmResourceProvider, AdminReal
                 val prop = Properties()
                 try {
                     prop.load(it)
-                } catch (e: Exception) {
+                } catch (_: Exception) {
                     //ignore
                 }
                 mapOf("Version" to prop.getProperty("version", "unknown"))

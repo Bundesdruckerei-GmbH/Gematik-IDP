@@ -18,12 +18,16 @@
 
 package de.bdr.servko.keycloak.gematik.idp
 
+import de.bdr.servko.keycloak.gematik.idp.extension.BrainpoolCurves
 import de.bdr.servko.keycloak.gematik.idp.model.AuthenticationFlowType
 import de.bdr.servko.keycloak.gematik.idp.model.GematikIDPConfig
 import de.bdr.servko.keycloak.gematik.idp.service.GematikIdpOpenIDConfigurationService
+import de.bdr.servko.keycloak.gematik.idp.tsl.CertificateVerificationResult
+import de.bdr.servko.keycloak.gematik.idp.tsl.TslCertificateVerifierProvider
 import de.bdr.servko.keycloak.gematik.idp.util.RestClient
 import org.assertj.core.api.Assertions.*
 import org.jose4j.lang.JoseException
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.keycloak.common.crypto.CryptoIntegration
@@ -38,9 +42,11 @@ import java.time.ZoneId
 
 internal class GematikIDPFactoryTest {
 
+    private val tslCertificateVerifierProvider = mock<TslCertificateVerifierProvider>()
     private val session = mock<KeycloakSession> {
         val keycloakContext = mock<KeycloakContext> { on { realm }.doReturn(mock {}) }
         on { context }.thenReturn(keycloakContext)
+        on { getProvider(TslCertificateVerifierProvider::class.java) }.thenReturn(tslCertificateVerifierProvider)
     }
     private val configUrl = "http://localhost:8081/.well-known/openid-configuration"
     private val userAgent = "Servko/1.0.0 Servko/Client"
@@ -56,18 +62,23 @@ internal class GematikIDPFactoryTest {
     private val rest = mock<RestClient> {}
 
     private val serviceFactory: (KeycloakSession) -> GematikIdpOpenIDConfigurationService = {
-        object : GematikIdpOpenIDConfigurationService(rest) {
+        object : GematikIdpOpenIDConfigurationService(it, rest) {
             override fun skipAllValidators(): Boolean = true
         }
     }
 
-    private val underTest = GematikIDPFactory()
+    private lateinit var underTest: GematikIDPFactory
+
+    @BeforeEach
+    fun setUp() {
+        BrainpoolCurves.init()
+        CryptoIntegration.init(javaClass.classLoader)
+
+        underTest = GematikIDPFactory()
+    }
 
     @Test
     fun createAndUpdateConfig() {
-        CryptoIntegration.init(javaClass.classLoader)
-        underTest.postInit(null)
-
         whenever(rest.doGet(any(), any())).thenReturn(mockedOpenidConfig)
 
         underTest.createAndUpdateConfig(session, config, clock, serviceFactory)
@@ -77,9 +88,6 @@ internal class GematikIDPFactoryTest {
 
     @Test
     fun createAndUpdateConfig_cache() {
-        CryptoIntegration.init(javaClass.classLoader)
-        underTest.postInit(null)
-
         whenever(rest.doGet(any(), eq(userAgent))).thenReturn(mockedOpenidConfig)
 
         underTest.createAndUpdateConfig(session, config, clock, serviceFactory)
@@ -98,9 +106,6 @@ internal class GematikIDPFactoryTest {
     @Test
     fun `createAndUpdateConfig - throws UnknownHostException - success`() {
         // arrange
-        CryptoIntegration.init(javaClass.classLoader)
-        underTest.postInit(null)
-
         whenever(rest.doGet(any(), eq(userAgent))).thenAnswer { _ ->
             throw UnknownHostException()
         }
@@ -116,9 +121,6 @@ internal class GematikIDPFactoryTest {
     @Test
     fun `createAndUpdateConfig - throws JoseException- success`() {
         // arrange
-        CryptoIntegration.init(javaClass.classLoader)
-        underTest.postInit(null)
-
         whenever(rest.doGet(any(), eq(userAgent))).thenAnswer { _ ->
             throw JoseException("msg")
         }
@@ -134,9 +136,6 @@ internal class GematikIDPFactoryTest {
     @Test
     fun `createAndUpdateConfig - throws unknown exception - failure`() {
         // arrange
-        CryptoIntegration.init(javaClass.classLoader)
-        underTest.postInit(null)
-
         whenever(rest.doGet(any(), eq(userAgent))).thenThrow(RuntimeException("msg"))
 
         // act & assert
@@ -144,6 +143,40 @@ internal class GematikIDPFactoryTest {
             underTest.createAndUpdateConfig(session, config, clock, serviceFactory)
         }.isInstanceOf(RuntimeException::class.java)
             .hasMessage("msg")
+    }
+
+    @Test
+    fun `createAndUpdateConfig - certificate validation enabled - success`() {
+        // arrange
+        whenever(rest.doGet(any(), any())).thenReturn(mockedOpenidConfig)
+        whenever(tslCertificateVerifierProvider.verifyCertificate(any(), any())) doReturn CertificateVerificationResult(
+            true
+        )
+        config.setValidateOpenIDConfigSigningCertificate(true)
+
+        // act
+        underTest.createAndUpdateConfig(session, config, clock, serviceFactory)
+
+        // assert
+        assertThat(config.openidConfig).isEqualTo(TestUtils.discoveryDocument)
+    }
+
+    @Test
+    fun `createAndUpdateConfig - certificate validation enabled - invalid certificate`() {
+        // arrange
+        whenever(rest.doGet(any(), any())).thenReturn(mockedOpenidConfig)
+        whenever(tslCertificateVerifierProvider.verifyCertificate(any(), any())) doReturn CertificateVerificationResult(
+            false,
+            errorMessage = "invalid certificate"
+        )
+        config.setValidateOpenIDConfigSigningCertificate(true)
+
+        // act
+        val result = underTest.createAndUpdateConfig(session, config, clock, serviceFactory)
+
+        // assert
+        assertThat(result).isNotNull
+        assertThat(result.config).isEqualTo(config)
     }
 
     @Test

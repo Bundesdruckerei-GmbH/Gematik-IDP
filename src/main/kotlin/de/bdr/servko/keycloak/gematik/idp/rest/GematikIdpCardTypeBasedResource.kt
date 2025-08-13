@@ -73,7 +73,7 @@ abstract class GematikIdpCardTypeBasedResource: GematikIDPResource() {
         } catch (snfe: SessionNotFoundException) {
             return respondWithStatusRedirect(GematikIDPStep.ERROR.name, authenticatorNextStepUrl)
         } catch (e: Exception) {
-            return callback.error("Failed to resolve auth session: ${e.message}")
+            return callback.error(config, "Failed to resolve auth session: ${e.message}")
         }
 
         return when (val step = GematikIDPUtil.getGematikIdpStepFrom(authSession)) {
@@ -105,7 +105,7 @@ abstract class GematikIdpCardTypeBasedResource: GematikIDPResource() {
         } catch (snfe: SessionNotFoundException) {
             return handleSessionTimeout(snfe)
         }  catch (e: Exception) {
-            return callback.error("Failed to resolve auth session: ${e.message}")
+            return callback.error(config, "Failed to resolve auth session: ${e.message}")
         }
 
         return when (val step = GematikIDPUtil.getGematikIdpStepFrom(authSession)) {
@@ -159,7 +159,7 @@ abstract class GematikIdpCardTypeBasedResource: GematikIDPResource() {
         } catch (snfe: SessionNotFoundException) {
             return handleSessionTimeout(snfe)
         } catch (e: Exception) {
-            return callback.error("Failed to resolve auth session: ${e.message}")
+            return callback.error(config, "Failed to resolve auth session: ${e.message}")
         }
 
         if (error != null || errorDetails != null || errorUri != null) {
@@ -184,7 +184,7 @@ abstract class GematikIdpCardTypeBasedResource: GematikIDPResource() {
             }
 
             else -> {
-                callback.error("invalid step for code $encodedState")
+                callback.error(config, "invalid step for code $encodedState")
             }
         }
     }
