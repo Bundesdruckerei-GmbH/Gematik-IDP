@@ -390,7 +390,7 @@ internal class GematikIDPHbaResourceTest : GematikIDPEndpointBaseTest() {
         whenever(authSessionMock.getAuthNote("error_uri")).thenReturn(errorUri)
         whenever(authSessionMock.getAuthNote("GEMATIK_IDP_STEP")).thenReturn(GematikIDPStep.ERROR.name)
 
-        whenever(callbackMock.error(ArgumentMatchers.anyString())).thenReturn(
+        whenever(callbackMock.error(eq(config), ArgumentMatchers.anyString())).thenReturn(
             Response.status(Response.Status.BAD_REQUEST).build()
         )
 

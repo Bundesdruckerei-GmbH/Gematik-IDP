@@ -23,8 +23,8 @@ import de.bdr.servko.keycloak.gematik.idp.service.GematikIdpOpenIDConfigurationS
 import org.jose4j.jwt.JwtClaims
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
-import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator
-import org.keycloak.services.resources.admin.permissions.RealmPermissionEvaluator
+import org.keycloak.services.resources.admin.fgap.AdminPermissionEvaluator
+import org.keycloak.services.resources.admin.fgap.RealmPermissionEvaluator
 import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
@@ -45,9 +45,9 @@ class GematikIDPAdminRestResourceTest {
         val authorizationEndpoint = TestUtils.discoveryDocument.authorizationEndpoint
         val userAgent = "Servko/1.0.0 Servko/Client"
 
-        whenever(service.getOpenIDConfiguration(authorizationEndpoint, userAgent)).thenReturn(jwtClaims)
+        whenever(service.getOpenIDConfiguration(authorizationEndpoint, userAgent, false)).thenReturn(jwtClaims)
 
-        val response = underTest.openidConfiguration(authorizationEndpoint, userAgent)
+        val response = underTest.openidConfiguration(authorizationEndpoint, userAgent, false)
 
         verify(realmPermissionEvaluator).requireManageIdentityProviders()
         Assertions.assertEquals(200, response.status)

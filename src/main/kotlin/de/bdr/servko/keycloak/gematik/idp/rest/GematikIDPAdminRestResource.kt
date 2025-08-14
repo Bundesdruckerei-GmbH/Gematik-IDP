@@ -24,7 +24,7 @@ import jakarta.ws.rs.Produces
 import jakarta.ws.rs.QueryParam
 import jakarta.ws.rs.core.MediaType
 import jakarta.ws.rs.core.Response
-import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator
+import org.keycloak.services.resources.admin.fgap.AdminPermissionEvaluator
 
 class GematikIDPAdminRestResource(
     private val auth: AdminPermissionEvaluator,
@@ -40,11 +40,15 @@ class GematikIDPAdminRestResource(
     @GET
     @Path(OPENID_CONFIGURATION_PATH)
     @Produces(MediaType.APPLICATION_JSON)
-    fun openidConfiguration(@QueryParam("url") url: String, @QueryParam("user-agent") userAgent: String): Response {
+    fun openidConfiguration(
+        @QueryParam("url") url: String,
+        @QueryParam("user-agent") userAgent: String,
+        @QueryParam("validateSigningCertificate") validateSigningCertificate: Boolean?,
+    ): Response {
         // note: fine-grained admin permissions (see UsersResource#createUser) not supported for this endpoint
         auth.realm().requireManageIdentityProviders()
         return Response.ok()
-            .entity(service.getOpenIDConfiguration(url, userAgent).claimsMap)
+            .entity(service.getOpenIDConfiguration(url, userAgent, validateSigningCertificate ?: false).claimsMap)
             .build()
     }
 }

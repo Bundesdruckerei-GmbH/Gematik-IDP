@@ -155,7 +155,7 @@ abstract class GematikIDPResource {
         } catch (snfe: SessionNotFoundException) {
             return handleSessionTimeout(snfe)
         } catch (e: Exception) {
-            return callback.error("Failed to resolve auth session: ${e.message}")
+            return callback.error(config, "Failed to resolve auth session: ${e.message}")
         }
 
         val codeVerifier = PkceUtils.generateCodeVerifier()
@@ -177,7 +177,7 @@ abstract class GematikIDPResource {
         } catch (snfe: SessionNotFoundException) {
             return handleSessionTimeout(snfe)
         } catch (e: Exception) {
-            return callback.error("Failed to resolve auth session: ${e.message}")
+            return callback.error(config, "Failed to resolve auth session: ${e.message}")
         }
 
         return forms.setAttribute("client", ClientBean(session, authSession.client))

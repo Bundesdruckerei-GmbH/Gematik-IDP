@@ -18,6 +18,7 @@
 
 package de.bdr.servko.keycloak.gematik.idp.rest
 
+import de.bdr.servko.keycloak.gematik.idp.tsl.TslCertificateVerifierProvider
 import org.assertj.core.api.Assertions
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
@@ -25,14 +26,17 @@ import org.keycloak.models.KeycloakContext
 import org.keycloak.models.KeycloakSession
 import org.keycloak.models.RealmModel
 import org.keycloak.services.resources.admin.AdminEventBuilder
-import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator
+import org.keycloak.services.resources.admin.fgap.AdminPermissionEvaluator
 import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.mock
 
 class GematikIDPAdminRestResourceFactoryTest {
     private val keycloakSession = mock<KeycloakSession> {
-        val keycloakContext = mock<KeycloakContext> { on { realm }.doReturn(mock {}) }
-        on { context }.thenReturn(keycloakContext)
+        val keycloakContext = mock<KeycloakContext> {
+            on { realm } doReturn mock()
+        }
+        on { context } doReturn keycloakContext
+        on { getProvider(TslCertificateVerifierProvider::class.java) } doReturn mock<TslCertificateVerifierProvider>()
     }
     private val realmAuth = mock<AdminPermissionEvaluator> {}
     private val adminEvent = mock<AdminEventBuilder> {}

@@ -25,13 +25,14 @@ import org.keycloak.models.IdentityProviderModel
 class GematikIDPConfig(model: IdentityProviderModel? = null) : OIDCIdentityProviderConfig(model) {
 
     companion object {
-        private const val AUTHENTICATOR_AUTHORIZATION_URL = "authenticatorAuthorizationUrl"
-        private const val OPENID_CONFIG_URL = "openidConfigUrl"
-        private const val TIMEOUT_MS = "timeoutMs"
-        private const val IDP_TIMEOUT_MS = "idpTimeoutMs"
-        private const val IDP_USER_AGENT = "idpUserAgent"
-        private const val MULTIPLE_IDENTITY_MODE = "multipleIdentityMode"
-        private const val AUTHENTICATION_FLOW = "authenticationFlow"
+        const val AUTHENTICATOR_AUTHORIZATION_URL = "authenticatorAuthorizationUrl"
+        const val OPENID_CONFIG_URL = "openidConfigUrl"
+        const val VALIDATE_OPENID_CONFIG_SIGNING_CERTIFICATE = "validateOpenIDConfigSigningCertificate"
+        const val TIMEOUT_MS = "timeoutMs"
+        const val IDP_TIMEOUT_MS = "idpTimeoutMs"
+        const val IDP_USER_AGENT = "idpUserAgent"
+        const val MULTIPLE_IDENTITY_MODE = "multipleIdentityMode"
+        const val AUTHENTICATION_FLOW = "authenticationFlow"
         const val AUTHENTICATOR_AUTO_LAUNCH = "authenticatorAutoLaunch"
     }
 
@@ -41,6 +42,12 @@ class GematikIDPConfig(model: IdentityProviderModel? = null) : OIDCIdentityProvi
 
     fun setOpenidConfigUrl(url: String) = config.put(OPENID_CONFIG_URL, url)
     fun getOpenidConfigUrl(): String = config.getValue(OPENID_CONFIG_URL)
+
+    fun setValidateOpenIDConfigSigningCertificate(enabled: Boolean) =
+        config.put(VALIDATE_OPENID_CONFIG_SIGNING_CERTIFICATE, enabled.toString())
+
+    fun getValidateOpenIDConfigSigningCertificate() =
+        config[VALIDATE_OPENID_CONFIG_SIGNING_CERTIFICATE]?.toBoolean() ?: false
 
     lateinit var openidConfig: GematikDiscoveryDocument
     fun updateOpenidConfig(config: GematikDiscoveryDocument) {
@@ -61,6 +68,7 @@ class GematikIDPConfig(model: IdentityProviderModel? = null) : OIDCIdentityProvi
 
     fun setMultipleIdentityMode(multipleIdentityMode: Boolean) =
         config.put(MULTIPLE_IDENTITY_MODE, multipleIdentityMode.toString())
+
     fun getMultipleIdentityMode() = config[MULTIPLE_IDENTITY_MODE]?.toBoolean() == true
 
     fun setAuthenticatorAutoLaunch(authenticatorAutoLaunch: Boolean) =

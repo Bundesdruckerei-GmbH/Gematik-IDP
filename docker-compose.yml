@@ -39,11 +39,14 @@ services:
       KC_HTTPS_PORT: 8443
       KC_LOG_LEVEL: "info"
       KC_LOG_CONSOLE_OUTPUT: "default"
+      GEMATIK_IDP_TSL_PRIMARY_URL: "https://download-ref.tsl.ti-dienste.de/ECC/ECC-RSA_TSL-ref.xml"
+      GEMATIK_IDP_TSL_SECONDARY_URL: ""
       # Enable Debugger:
       JAVA_OPTS: -Xms64m -Xmx512m -XX:MetaspaceSize=96M -XX:MaxMetaspaceSize=256m -Djava.net.preferIPv4Stack=true -Djboss.modules.system.pkgs=org.jboss.byteman -Djava.awt.headless=true -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005
     volumes:
       - ./sample-realm:/opt/keycloak/data/import/
       - ./themes/gematik-idp:/opt/keycloak/themes/gematik-idp
+      - ./gematik-root-certificates:/opt/keycloak/conf/truststores/gematik
     entrypoint: "/opt/keycloak/bin/kc.sh start-dev --import-realm"
 
   idp-server:
