@@ -1,5 +1,16 @@
 # Release Notes
 
+## Release 3.10.0
+
+* Update Keycloak to 26.3.3
+  * Addressed an issue which causes the user email to be overwritten when sync mode is FORCE,
+    see [Keycloak Issue-42281](https://github.com/keycloak/keycloak/issues/42281)
+* Improved gematik root certificate handling
+  * Print missing issuer certificate while building certificate chain 
+  * Added `gematik-root-certificates/download-certificates.sh` to download and verify gematik root certificates
+* Update Kotlin to 2.2.20
+* Dependency updates
+
 ## Release 3.9.0
 
 * Update Keycloak to 26.3.2

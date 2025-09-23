@@ -79,14 +79,22 @@ The XML signing certificate is validated against the intermediate certificates f
 root certificates from the Keycloak truststore. To add the gematik root certificates to the Keycloak truststore,
 configure Keycloak correctly (see
 [Keycloak - Configuring trusted certificates](https://www.keycloak.org/server/keycloak-truststore)) and download the
-root certificates:
+root certificates from:
 
 - PU: https://download.tsl.ti-dienste.de/ECC/ROOT-CA/
 - RU: https://download-ref.tsl.ti-dienste.de/ECC/ROOT-CA/
 
+or execute the script:
+
+```bash
+chmod +x ./gematik-root-certificates/download-certificates.sh &&
+./gematik-root-certificates/download-certificates.sh ./gematik-root-certificates
+```
+
+All certificates stored in `gematik-root-certificates` are mounted to the Keycloak truststore for local development.
+
 If the signing certificate is valid, the gematik certificate chain is stored and used for future validation of the
-signing certificate of the openid-configuration JWS.\
-The validation of the discovery document can be enabled/disabled via the IDP configuration.
+signing certificate of the openid-configuration JWS.
 
 Additionally, a periodic task is scheduled to update the gematik certificate chain from the TSL XML every 6 hours. The
 interval can be overwritten via the environment variable `GEMATIK_IDP_TSL_UPDATE_INTERVAL_MS`.

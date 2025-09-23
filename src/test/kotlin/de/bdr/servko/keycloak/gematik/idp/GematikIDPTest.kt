@@ -25,20 +25,32 @@ import jakarta.ws.rs.core.Response
 import jakarta.ws.rs.core.UriBuilder
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.NullAndEmptySource
+import org.junit.jupiter.params.provider.ValueSource
+import org.keycloak.broker.provider.AbstractIdentityProvider.BROKER_REGISTERED_NEW_USER
+import org.keycloak.broker.provider.AbstractIdentityProvider.UPDATE_PROFILE_EMAIL_CHANGED
 import org.keycloak.broker.provider.AuthenticationRequest
+import org.keycloak.broker.provider.BrokeredIdentityContext
 import org.keycloak.broker.provider.IdentityProvider
 import org.keycloak.broker.provider.util.IdentityBrokerState
 import org.keycloak.events.EventBuilder
 import org.keycloak.forms.login.LoginFormsProvider
+import org.keycloak.models.IdentityProviderModel
+import org.keycloak.models.IdentityProviderSyncMode
 import org.keycloak.models.KeycloakContext
 import org.keycloak.models.KeycloakSession
 import org.keycloak.models.KeycloakUriInfo
 import org.keycloak.models.RealmModel
+import org.keycloak.models.UserModel
 import org.keycloak.sessions.AuthenticationSessionModel
 import org.keycloak.sessions.AuthenticationSessionProvider
 import org.keycloak.sessions.RootAuthenticationSessionModel
+import org.mockito.ArgumentMatchers.anyString
 import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.mock
+import org.mockito.kotlin.never
+import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import java.net.URI
 import java.util.*
@@ -54,9 +66,13 @@ internal class GematikIDPTest {
 
     private val config: GematikIDPConfig = GematikIDPConfig().apply {
         alias = idpAlias
+        syncMode = IdentityProviderSyncMode.FORCE
     }
     private val realm = mock<RealmModel> {
         on { name } doReturn realmName
+    }
+    private val user = mock<UserModel> {
+        on { email } doReturn "test-user@gematik.de"
     }
 
     private val rootAuthSessionMock: RootAuthenticationSessionModel = mock<RootAuthenticationSessionModel> {
@@ -106,5 +122,51 @@ internal class GematikIDPTest {
 
         assertThat(objectUnderTest.callback(realm, authenticationCallback, eventBuilder))
             .isInstanceOf(GematikIDPLegacyResource::class.java)
+    }
+
+    @Test
+    fun `should update email when federatedEmail is not null or blank `() {
+        // arrange
+        val federatedEmail = "federated-email@gematik.de"
+
+        val idpConfig = mock<IdentityProviderModel>()
+        whenever(idpConfig.isTrustEmail).thenReturn(false)
+
+        val brokerAuthSession = mock<AuthenticationSessionModel>()
+        whenever(brokerAuthSession.getAuthNote(BROKER_REGISTERED_NEW_USER)).thenReturn("false")
+        whenever(brokerAuthSession.getAuthNote(UPDATE_PROFILE_EMAIL_CHANGED)).thenReturn("false")
+
+        val brokeredIdentityContext = mock<BrokeredIdentityContext>()
+        whenever(brokeredIdentityContext.authenticationSession).thenReturn(brokerAuthSession)
+        whenever(brokeredIdentityContext.idpConfig).thenReturn(idpConfig)
+        whenever(brokeredIdentityContext.email).thenReturn(federatedEmail)
+
+        objectUnderTest.updateBrokeredUser(session, realm, user, brokeredIdentityContext)
+
+        // Verify that email was never updated
+        verify(user).email = federatedEmail
+    }
+
+    @ParameterizedTest(name = "should not update email when federatedEmail is '{0}'")
+    @NullAndEmptySource
+    @ValueSource(strings = ["", "  "])
+    fun `should not update email when federatedEmail is null or blank `(federatedEmail: String?) {
+        // arrange
+        val idpConfig = mock<IdentityProviderModel>()
+        whenever(idpConfig.isTrustEmail).thenReturn(false)
+
+        val brokerAuthSession = mock<AuthenticationSessionModel>()
+        whenever(brokerAuthSession.getAuthNote(BROKER_REGISTERED_NEW_USER)).thenReturn("false")
+        whenever(brokerAuthSession.getAuthNote(UPDATE_PROFILE_EMAIL_CHANGED)).thenReturn("false")
+
+        val brokeredIdentityContext = mock<BrokeredIdentityContext>()
+        whenever(brokeredIdentityContext.authenticationSession).thenReturn(brokerAuthSession)
+        whenever(brokeredIdentityContext.idpConfig).thenReturn(idpConfig)
+        whenever(brokeredIdentityContext.email).thenReturn(federatedEmail)
+
+        objectUnderTest.updateBrokeredUser(session, realm, user, brokeredIdentityContext)
+
+        // Verify that email was never updated
+        verify(user, never()).email = anyString()
     }
 }
