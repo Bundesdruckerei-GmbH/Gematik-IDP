@@ -27,11 +27,11 @@ import jakarta.annotation.Generated
 import jakarta.ws.rs.core.Response
 import org.keycloak.broker.provider.AbstractIdentityProvider
 import org.keycloak.broker.provider.AuthenticationRequest
+import org.keycloak.broker.provider.BrokeredIdentityContext
 import org.keycloak.broker.provider.IdentityProvider
 import org.keycloak.events.EventBuilder
-import org.keycloak.models.FederatedIdentityModel
-import org.keycloak.models.KeycloakSession
-import org.keycloak.models.RealmModel
+import org.keycloak.models.*
+
 
 class GematikIDP(session: KeycloakSession, config: GematikIDPConfig) :
     AbstractIdentityProvider<GematikIDPConfig>(session, config) {
@@ -76,4 +76,28 @@ class GematikIDP(session: KeycloakSession, config: GematikIDPConfig) :
     override fun retrieveToken(session: KeycloakSession, identity: FederatedIdentityModel): Response =
         Response.ok(identity.token).build()
 
+    /**
+     * The Keycloak update does not take into account that user email addresses may be null/not set on the IDP side,
+     * or that claim is not supported by the IDP service
+     *
+     * @adapted org.keycloak.broker.provider.AbstractIdentityProvider#updateEmail
+     */
+    override fun updateEmail(user: UserModel, context: BrokeredIdentityContext) {
+        val authSession = context.authenticationSession
+        val isNewUser = authSession.getAuthNote(BROKER_REGISTERED_NEW_USER).toBoolean()
+        val federatedEmail = context.email
+
+        if (isNewUser || IdentityProviderSyncMode.FORCE == config.syncMode) {
+            if (authSession.getAuthNote(UPDATE_PROFILE_EMAIL_CHANGED).toBoolean()) {
+                // user updated the email and needs verification
+                user.isEmailVerified = false
+                return
+            }
+
+            setEmailVerified(user, context)
+            if (!federatedEmail.isNullOrBlank()) {
+                user.email = federatedEmail
+            }
+        }
+    }
 }

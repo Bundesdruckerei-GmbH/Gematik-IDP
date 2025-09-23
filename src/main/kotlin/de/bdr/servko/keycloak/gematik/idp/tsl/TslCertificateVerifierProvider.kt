@@ -102,7 +102,7 @@ open class TslCertificateVerifierProvider(
             // Find issuer certificate and continue chain
             certificateByPrincipalSupplier(certificate.issuerX500Principal)
                 ?.let { buildCertificateChain(it, certificateByPrincipalSupplier, chain) }
-                ?: chain
+                ?: handleIssuerNotFound(certificate.issuerX500Principal, chain)
         }
     }
 
@@ -115,6 +115,11 @@ open class TslCertificateVerifierProvider(
             // ignore exception as it is expected for non-root certificates
             false
         }
+
+    private fun handleIssuerNotFound(issuerX500Principal: X500Principal, chain: MutableList<X509Certificate>): MutableList<X509Certificate> {
+        logger.warn("Issuer '$issuerX500Principal' not found for chain ${chain.joinToString { it.subjectX500Principal.name }}")
+        return chain
+    }
 
     private fun verifyCertificateChain(
         certificateChain: List<X509Certificate>,

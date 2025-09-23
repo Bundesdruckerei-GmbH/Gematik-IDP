@@ -13,11 +13,19 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-FROM quay.io/keycloak/keycloak:26.3.2 AS builder
+FROM quay.io/keycloak/keycloak:26.3.3 AS builder
 
 WORKDIR /opt/keycloak
 # for demonstration purposes only, please make sure to use proper certificates in production instead
-RUN keytool -genkeypair -storepass password -storetype PKCS12 -keyalg RSA -keysize 2048 -dname "CN=server" -alias server -ext "SAN:c=DNS:localhost,IP:127.0.0.1" -keystore conf/server.keystore
+RUN keytool -genkeypair \
+    -storepass password \
+    -storetype PKCS12 \
+    -keyalg RSA \
+    -keysize 2048 \
+    -dname "CN=server" \
+    -alias server \
+    -ext "SAN:c=DNS:localhost,IP:127.0.0.1" \
+    -keystore conf/server.keystore
 
 COPY /target/gematik-idp-*.jar /opt/keycloak/providers/
 COPY /themes/gematik-idp /opt/keycloak/themes/gematik-idp
