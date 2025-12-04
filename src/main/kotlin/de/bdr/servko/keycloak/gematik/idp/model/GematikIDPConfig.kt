@@ -68,7 +68,6 @@ class GematikIDPConfig(model: IdentityProviderModel? = null) : OIDCIdentityProvi
 
     fun setMultipleIdentityMode(multipleIdentityMode: Boolean) =
         config.put(MULTIPLE_IDENTITY_MODE, multipleIdentityMode.toString())
-
     fun getMultipleIdentityMode() = config[MULTIPLE_IDENTITY_MODE]?.toBoolean() == true
 
     fun setAuthenticatorAutoLaunch(authenticatorAutoLaunch: Boolean) =

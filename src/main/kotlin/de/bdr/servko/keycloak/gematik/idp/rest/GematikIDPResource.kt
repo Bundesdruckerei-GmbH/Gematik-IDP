@@ -26,8 +26,10 @@ import de.bdr.servko.keycloak.gematik.idp.service.GematikIdpCertificateService
 import de.bdr.servko.keycloak.gematik.idp.util.GematikIDPUtil
 import de.bdr.servko.keycloak.gematik.idp.util.GematikIdpLiterals
 import jakarta.ws.rs.GET
+import jakarta.ws.rs.HeaderParam
 import jakarta.ws.rs.Path
 import jakarta.ws.rs.QueryParam
+import jakarta.ws.rs.core.HttpHeaders
 import jakarta.ws.rs.core.Response
 import jakarta.ws.rs.core.UriBuilder
 import org.jboss.logging.Logger
@@ -128,13 +130,13 @@ abstract class GematikIDPResource {
     @GET
     @Path(GematikIdpLiterals.RESULT_PATH)
     abstract fun result(
-        code: String?,
-        encodedState: String?,
-        cardType: String? = null,
-        error: String? = null,
-        errorDetails: String? = null,
-        errorUri: String? = null,
-        userAgent: String? = null,
+        @QueryParam(OAuth2Constants.CODE) code: String?,
+        @QueryParam(OAuth2Constants.STATE) encodedState: String?,
+        @QueryParam(GematikIdpLiterals.CARD_TYPE) cardType: String? = null,
+        @QueryParam(GematikIdpLiterals.ERROR) error: String? = null,
+        @QueryParam(GematikIdpLiterals.ERROR_DETAILS) errorDetails: String? = null,
+        @QueryParam(GematikIdpLiterals.ERROR_URI) errorUri: String? = null,
+        @HeaderParam(HttpHeaders.USER_AGENT) userAgent: String? = null,
     ): Response
 
     /**
