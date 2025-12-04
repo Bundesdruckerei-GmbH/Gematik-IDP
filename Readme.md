@@ -12,8 +12,8 @@ moved from JavaX to Jakarta, which is why this version is incompatible with othe
 ## Installation
 
 1. Run `mvn clean install` in this directory.
-   - By default, the Kotlin dependency is included in the jar. If you already have the Kotlin dependency in place,
-     run `mvn clean install -P=-includeKotlin,excludeKotlin` which excludes Kotlin from the jar.
+    - By default, the Kotlin dependency is included in the jar. If you already have the Kotlin dependency in place,
+      run `mvn clean install -P=-includeKotlin,excludeKotlin` which excludes Kotlin from the jar.
 2. After completion, install the `gematik-idp` jar from the target folder into your Keycloak instance by copying it into
    your Docker container under `/opt/keycloak/providers/` and rebuilding
    the [Quarkus environment](https://www.keycloak.org/server/containers).
@@ -22,8 +22,8 @@ moved from JavaX to Jakarta, which is why this version is incompatible with othe
    Specific configuration properties are listed below.
 4. Set the login theme in your realm, where you added the Identity Provider, to gematik-idp for the full support of
    all features. You can also add the content from `./themes/gematik-idp` to you custom theme if necessary.
-   - By default, the theme-resources are included in the jar. If you have your own theme, you can exclude the
-     theme-resources with specifying the maven profile `excludeThemeResources`.
+    - By default, the theme-resources are included in the jar. If you have your own theme, you can exclude the
+      theme-resources with specifying the maven profile `excludeThemeResources`.
 
 ## Local Deployment
 
@@ -134,12 +134,12 @@ illegal state cannot be reached.
    maps to the newly created role
 3. Go to "Authentication > Flows" and select your registration authentication flow from the dropdown. Click "Add flow"
    and add a new generic flow
-   1. Check the "CONDITIONAL" radio button next to the new entry
-   2. Add executions for "Condition - User Role" and "Deny Access" as children to this flow via the "Actions" menu
-   3. Check the radio button "REQUIRED" next to both added executions
-   4. Configure the "Condition - User Role" execution to check for the newly create role from step 1
-   5. Configure the "Deny Access" execution to show the error message. You're able to localized messages by using a
-      message property key here.
+    1. Check the "CONDITIONAL" radio button next to the new entry
+    2. Add executions for "Condition - User Role" and "Deny Access" as children to this flow via the "Actions" menu
+    3. Check the radio button "REQUIRED" next to both added executions
+    4. Configure the "Condition - User Role" execution to check for the newly create role from step 1
+    5. Configure the "Deny Access" execution to show the error message. You're able to localized messages by using a
+       message property key here.
 4. Move the newly added flow up to the top of the list.
 
 Now the OTC Registration flow will check, if the user that tries to go through this flow has the newly created role and

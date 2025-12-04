@@ -14,3 +14,5 @@ http-client.private.env.json
 
 # maven jvm config files that may contain the key store password
 .mvn/jvm.config
+gematik-root-certificates/*.der
+gematik-root-certificates/*.sha256

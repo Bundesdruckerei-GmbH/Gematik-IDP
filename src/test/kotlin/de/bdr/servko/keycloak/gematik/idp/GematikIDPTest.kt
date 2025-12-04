@@ -26,8 +26,7 @@ import jakarta.ws.rs.core.UriBuilder
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
-import org.junit.jupiter.params.provider.NullAndEmptySource
-import org.junit.jupiter.params.provider.ValueSource
+import org.junit.jupiter.params.provider.NullSource
 import org.keycloak.broker.provider.AbstractIdentityProvider.BROKER_REGISTERED_NEW_USER
 import org.keycloak.broker.provider.AbstractIdentityProvider.UPDATE_PROFILE_EMAIL_CHANGED
 import org.keycloak.broker.provider.AuthenticationRequest
@@ -36,22 +35,12 @@ import org.keycloak.broker.provider.IdentityProvider
 import org.keycloak.broker.provider.util.IdentityBrokerState
 import org.keycloak.events.EventBuilder
 import org.keycloak.forms.login.LoginFormsProvider
-import org.keycloak.models.IdentityProviderModel
-import org.keycloak.models.IdentityProviderSyncMode
-import org.keycloak.models.KeycloakContext
-import org.keycloak.models.KeycloakSession
-import org.keycloak.models.KeycloakUriInfo
-import org.keycloak.models.RealmModel
-import org.keycloak.models.UserModel
+import org.keycloak.models.*
 import org.keycloak.sessions.AuthenticationSessionModel
 import org.keycloak.sessions.AuthenticationSessionProvider
 import org.keycloak.sessions.RootAuthenticationSessionModel
 import org.mockito.ArgumentMatchers.anyString
-import org.mockito.kotlin.doReturn
-import org.mockito.kotlin.mock
-import org.mockito.kotlin.never
-import org.mockito.kotlin.verify
-import org.mockito.kotlin.whenever
+import org.mockito.kotlin.*
 import java.net.URI
 import java.util.*
 
@@ -125,7 +114,7 @@ internal class GematikIDPTest {
     }
 
     @Test
-    fun `should update email when federatedEmail is not null or blank `() {
+    fun `should update email when federatedEmail is not null`() {
         // arrange
         val federatedEmail = "federated-email@gematik.de"
 
@@ -143,14 +132,13 @@ internal class GematikIDPTest {
 
         objectUnderTest.updateBrokeredUser(session, realm, user, brokeredIdentityContext)
 
-        // Verify that email was never updated
+        // Verify that email was updated
         verify(user).email = federatedEmail
     }
 
-    @ParameterizedTest(name = "should not update email when federatedEmail is '{0}'")
-    @NullAndEmptySource
-    @ValueSource(strings = ["", "  "])
-    fun `should not update email when federatedEmail is null or blank `(federatedEmail: String?) {
+    @ParameterizedTest(name = "should not update email when federatedEmail is null")
+    @NullSource
+    fun `should not update email when federatedEmail is null `(federatedEmail: String?) {
         // arrange
         val idpConfig = mock<IdentityProviderModel>()
         whenever(idpConfig.isTrustEmail).thenReturn(false)

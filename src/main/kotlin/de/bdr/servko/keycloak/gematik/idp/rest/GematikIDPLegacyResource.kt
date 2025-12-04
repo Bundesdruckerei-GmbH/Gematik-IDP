@@ -301,7 +301,7 @@ class GematikIDPLegacyResource(
 
     /**
      * When calling this plugin in a browser based on Chromium, the second opening tab may not open the
-     * Gematik-Authenticator. See https://partner.bdr.de/jira/browse/SERVKO-1413
+     * Gematik-Authenticator.
      * When reloading this new tab, the HBA-data is written in the SMCB-fields, because the IDP step auth notes gets
      * scrambled. To mitigate this, we make a sanity check, if the ID-token contains an organization name, when the
      * step is RECEIVED_HBA_DATA, because the HBA hasn't got this field.

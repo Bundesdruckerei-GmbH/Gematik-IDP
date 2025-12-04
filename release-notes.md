@@ -1,13 +1,22 @@
 # Release Notes
 
+## Release 3.11.0
+
+* Update Keycloak to 26.4.5
+    * removed GematikIDP#updateEmail overwrite, as it is handled by Keycloak,
+      see [Keycloak Issue-42281](https://github.com/keycloak/keycloak/issues/42281)
+* Improved pom.xml dependency management
+* Update Kotlin to 2.2.21
+* Dependency updates
+
 ## Release 3.10.0
 
 * Update Keycloak to 26.3.3
-  * Addressed an issue which causes the user email to be overwritten when sync mode is FORCE,
-    see [Keycloak Issue-42281](https://github.com/keycloak/keycloak/issues/42281)
+    * Addressed an issue which causes the user email to be overwritten when sync mode is FORCE,
+      see [Keycloak Issue-42281](https://github.com/keycloak/keycloak/issues/42281)
 * Improved gematik root certificate handling
-  * Print missing issuer certificate while building certificate chain 
-  * Added `gematik-root-certificates/download-certificates.sh` to download and verify gematik root certificates
+    * Print missing issuer certificate while building certificate chain
+    * Added `gematik-root-certificates/download-certificates.sh` to download and verify gematik root certificates
 * Update Kotlin to 2.2.20
 * Dependency updates
 
@@ -15,7 +24,7 @@
 
 * Update Keycloak to 26.3.2
 * Resolved [Issue#18 - Validierung des Discovery Dokumentes](https://github.com/Bundesdruckerei-GmbH/Gematik-IDP/issues/18)
-  * see Readme chapter _TSL certificate validation_ for more information
+    * see Readme chapter _TSL certificate validation_ for more information
 * Dependency Updates
 
 ## Release 3.8.0
