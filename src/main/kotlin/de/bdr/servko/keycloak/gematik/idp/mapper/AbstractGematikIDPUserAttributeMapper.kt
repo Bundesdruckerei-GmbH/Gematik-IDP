@@ -48,7 +48,7 @@ abstract class AbstractGematikIDPUserAttributeMapper : AbstractIdentityProviderM
                 CONFIG_USER_ATTRIBUTE,
                 "User Attribute Name",
                 "User attribute name to store information into.",
-                ProviderConfigProperty.STRING_TYPE,
+                ProviderConfigProperty.USER_PROFILE_ATTRIBUTE_LIST_TYPE,
                 null
             ),
             ProviderConfigProperty(

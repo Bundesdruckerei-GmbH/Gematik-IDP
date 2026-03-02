@@ -35,7 +35,7 @@ class GematikIDPState(
             encodedState.split(STATE_DELIMITER).takeIf {
                 it.size == 3
             }?.let {
-                GematikIDPState(it.component1(), it.component2(), it.component3())
+                GematikIDPState(it.component1(), it.component2(), it.component3());
             } ?: throw Exception("invalid state $encodedState")
     }
 

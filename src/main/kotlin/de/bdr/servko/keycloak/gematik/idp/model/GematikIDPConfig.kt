@@ -20,6 +20,8 @@ package de.bdr.servko.keycloak.gematik.idp.model
 
 import org.keycloak.broker.oidc.OIDCIdentityProviderConfig
 import org.keycloak.models.IdentityProviderModel
+import org.keycloak.models.RealmModel
+import de.bdr.servko.keycloak.gematik.idp.exception.InvalidAuthenticationFlowException
 
 
 class GematikIDPConfig(model: IdentityProviderModel? = null) : OIDCIdentityProviderConfig(model) {
@@ -27,6 +29,7 @@ class GematikIDPConfig(model: IdentityProviderModel? = null) : OIDCIdentityProvi
     companion object {
         const val AUTHENTICATOR_AUTHORIZATION_URL = "authenticatorAuthorizationUrl"
         const val OPENID_CONFIG_URL = "openidConfigUrl"
+        const val VALIDATE_TOKEN_SIGNER_CERTIFICATE = "validateTokenSignerCertificate"
         const val VALIDATE_OPENID_CONFIG_SIGNING_CERTIFICATE = "validateOpenIDConfigSigningCertificate"
         const val TIMEOUT_MS = "timeoutMs"
         const val IDP_TIMEOUT_MS = "idpTimeoutMs"
@@ -42,6 +45,12 @@ class GematikIDPConfig(model: IdentityProviderModel? = null) : OIDCIdentityProvi
 
     fun setOpenidConfigUrl(url: String) = config.put(OPENID_CONFIG_URL, url)
     fun getOpenidConfigUrl(): String = config.getValue(OPENID_CONFIG_URL)
+
+    fun setValidateTokenSignerCertificate(enabled: Boolean) =
+        config.put(VALIDATE_TOKEN_SIGNER_CERTIFICATE, enabled.toString())
+
+    fun getValidateTokenSignerCertificate() =
+        config[VALIDATE_TOKEN_SIGNER_CERTIFICATE]?.toBoolean() ?: false
 
     fun setValidateOpenIDConfigSigningCertificate(enabled: Boolean) =
         config.put(VALIDATE_OPENID_CONFIG_SIGNING_CERTIFICATE, enabled.toString())
@@ -80,7 +89,7 @@ class GematikIDPConfig(model: IdentityProviderModel? = null) : OIDCIdentityProvi
 
     fun getAuthenticationFlow(): AuthenticationFlowType {
         return AuthenticationFlowType.entries.find { it.name == config[AUTHENTICATION_FLOW] }
-            ?: AuthenticationFlowType.LEGACY
+            ?: AuthenticationFlowType.MULTI
     }
 
     override fun getDefaultScope(): String {
@@ -98,4 +107,10 @@ class GematikIDPConfig(model: IdentityProviderModel? = null) : OIDCIdentityProvi
         return true
     }
 
+    override fun validate(realm: RealmModel?) {
+        if (AuthenticationFlowType.entries.none { it.name == config[AUTHENTICATION_FLOW] }) {
+            throw InvalidAuthenticationFlowException("Authentication flow '${config[AUTHENTICATION_FLOW]}' is not valid")
+        }
+        super.validate(realm)
+    }
 }

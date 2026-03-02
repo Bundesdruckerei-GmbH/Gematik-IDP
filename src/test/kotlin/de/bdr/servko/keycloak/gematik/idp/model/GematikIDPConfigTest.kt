@@ -19,12 +19,17 @@
 package de.bdr.servko.keycloak.gematik.idp.model
 
 import org.assertj.core.api.Assertions.assertThat
+import org.mockito.Mockito
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertThrows
+import org.junit.jupiter.api.assertDoesNotThrow
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.EnumSource
 import org.junit.jupiter.params.provider.NullAndEmptySource
 import org.junit.jupiter.params.provider.ValueSource
 import org.keycloak.broker.oidc.OIDCIdentityProviderConfig
+import org.keycloak.models.RealmModel
+import de.bdr.servko.keycloak.gematik.idp.exception.InvalidAuthenticationFlowException
 
 internal class GematikIDPConfigTest {
     @Test
@@ -254,7 +259,7 @@ internal class GematikIDPConfigTest {
         val result = idpConfig.getAuthenticationFlow()
 
         // assert
-        assertThat(result).isEqualTo(AuthenticationFlowType.LEGACY)
+        assertThat(result).isEqualTo(AuthenticationFlowType.MULTI)
     }
 
     @ParameterizedTest
@@ -281,6 +286,30 @@ internal class GematikIDPConfigTest {
 
         // assert
         assertThat(result).isTrue()
+    }
+
+    @Test
+    fun `validate - invalid Authentication Flow type throws exception`() {
+        // arrange
+        val idpConfig = initGematikIDPConfigWith("authenticationFlow", "INVALID_FLOW_TYPE")
+
+        // assert
+        assertThrows<InvalidAuthenticationFlowException> {
+            idpConfig.validate(null)
+        }
+    }
+
+    @ParameterizedTest
+    @EnumSource(value = AuthenticationFlowType::class)
+    fun `validate - Authentication Flow type updated without Exception`(type: AuthenticationFlowType) {
+        // arrange
+        val idpConfig = initGematikIDPConfigWith("authenticationFlow", type.toString())
+        val realm = Mockito.mock(RealmModel::class.java)
+
+        // assert
+        assertDoesNotThrow {
+            idpConfig.validate(realm)
+        }
     }
 
     private fun initGematikIDPConfig(): GematikIDPConfig {

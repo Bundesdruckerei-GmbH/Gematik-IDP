@@ -27,11 +27,9 @@ import jakarta.annotation.Generated
 import jakarta.ws.rs.core.Response
 import org.keycloak.broker.provider.AbstractIdentityProvider
 import org.keycloak.broker.provider.AuthenticationRequest
-import org.keycloak.broker.provider.IdentityProvider
+import org.keycloak.broker.provider.UserAuthenticationIdentityProvider
 import org.keycloak.events.EventBuilder
-import org.keycloak.models.FederatedIdentityModel
-import org.keycloak.models.KeycloakSession
-import org.keycloak.models.RealmModel
+import org.keycloak.models.*
 
 
 class GematikIDP(session: KeycloakSession, config: GematikIDPConfig) :
@@ -63,7 +61,7 @@ class GematikIDP(session: KeycloakSession, config: GematikIDPConfig) :
      */
     override fun callback(
         realm: RealmModel,
-        callback: IdentityProvider.AuthenticationCallback,
+        callback: UserAuthenticationIdentityProvider.AuthenticationCallback,
         event: EventBuilder,
     ): GematikIDPResource = GematikIDPResource.from(
         realm = realm,

@@ -18,6 +18,7 @@
 
 package de.bdr.servko.keycloak.gematik.idp.tsl
 
+import de.bdr.servko.keycloak.gematik.idp.validation.GematikIdpCertificateValidatorProvider
 import eu.europa.esig.trustedlist.jaxb.tsl.TrustStatusListType
 import org.jboss.logging.Logger
 import org.keycloak.Config
@@ -104,6 +105,11 @@ class TslProviderFactory(
         if (tslSignatureVerificationResult.isValid) {
             logger.info("TSL document has valid signature")
             val tslData = tslDocument.getPrincipalToCertificateMap()
+            val previousSequenceNumber = tslRepository.getSequenceNumber()
+
+            if (tslDocument.getTslSequenceNumber() > previousSequenceNumber.get()) {
+                invalidateCertificateValidationCache(session)
+            }
             tslRepository.updateDataFromTsl(session, tslData, tslDocument.getTslSequenceNumber())
         } else {
             logger.warn("TSL document has no valid signature: '${tslSignatureVerificationResult.errorMessage}'")
@@ -151,5 +157,14 @@ class TslProviderFactory(
             session.close()
         }
     }
-}
 
+    private fun invalidateCertificateValidationCache(session: KeycloakSession) {
+        try {
+            val provider = session.getProvider(GematikIdpCertificateValidatorProvider::class.java)
+            provider?.invalidateCache()
+            logger.info("Certificate validation cache invalidated due to TSL update")
+        } catch (e: Exception) {
+            logger.warn("Failed to invalidate certificate validation cache: ${e.message}")
+        }
+    }
+}

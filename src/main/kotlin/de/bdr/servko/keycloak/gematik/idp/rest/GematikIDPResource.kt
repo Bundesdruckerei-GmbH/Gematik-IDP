@@ -25,6 +25,7 @@ import de.bdr.servko.keycloak.gematik.idp.service.GematikIDPService
 import de.bdr.servko.keycloak.gematik.idp.service.GematikIdpCertificateService
 import de.bdr.servko.keycloak.gematik.idp.util.GematikIDPUtil
 import de.bdr.servko.keycloak.gematik.idp.util.GematikIdpLiterals
+import de.bdr.servko.keycloak.gematik.idp.validation.GematikIdpCertificateValidatorProvider
 import jakarta.ws.rs.GET
 import jakarta.ws.rs.HeaderParam
 import jakarta.ws.rs.Path
@@ -35,7 +36,7 @@ import jakarta.ws.rs.core.UriBuilder
 import org.jboss.logging.Logger
 import org.keycloak.OAuth2Constants
 import org.keycloak.broker.provider.BrokeredIdentityContext
-import org.keycloak.broker.provider.IdentityProvider
+import org.keycloak.broker.provider.UserAuthenticationIdentityProvider
 import org.keycloak.common.util.Time
 import org.keycloak.forms.login.LoginFormsProvider
 import org.keycloak.forms.login.freemarker.model.ClientBean
@@ -47,7 +48,7 @@ import java.net.URI
 
 abstract class GematikIDPResource {
     abstract val realm: RealmModel
-    abstract val callback: IdentityProvider.AuthenticationCallback
+    abstract val callback: UserAuthenticationIdentityProvider.AuthenticationCallback
     abstract val session: KeycloakSession
     abstract val gematikIDP: GematikIDP
     abstract val config: GematikIDPConfig
@@ -60,7 +61,7 @@ abstract class GematikIDPResource {
     companion object {
         fun from(
             realm: RealmModel,
-            callback: IdentityProvider.AuthenticationCallback,
+            callback: UserAuthenticationIdentityProvider.AuthenticationCallback,
             session: KeycloakSession,
             gematikIDP: GematikIDP,
             config: GematikIDPConfig,
@@ -69,18 +70,12 @@ abstract class GematikIDPResource {
             val certificateService = GematikIdpCertificateService(
                 realm = realm,
                 session = session,
-                config = config
+                config = config,
             )
             val service = GematikIDPService(session)
             val loginFormsProvider = forms ?: session.getProvider(LoginFormsProvider::class.java)
 
             return when (config.getAuthenticationFlow()) {
-                AuthenticationFlowType.MULTI -> {
-                    GematikIDPMultiResource(
-                        realm, callback, session, gematikIDP, config, service, loginFormsProvider, certificateService
-                    )
-                }
-
                 AuthenticationFlowType.HBA -> {
                     GematikIDPHbaResource(
                         realm, callback, session, gematikIDP, config, service, loginFormsProvider, certificateService
@@ -94,7 +89,7 @@ abstract class GematikIDPResource {
                 }
 
                 else -> {
-                    GematikIDPLegacyResource(
+                    GematikIDPMultiResource(
                         realm, callback, session, gematikIDP, config, service, loginFormsProvider, certificateService
                     )
                 }

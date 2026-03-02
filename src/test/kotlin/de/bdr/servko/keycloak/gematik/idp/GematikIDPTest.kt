@@ -20,7 +20,8 @@ package de.bdr.servko.keycloak.gematik.idp
 
 import de.bdr.servko.keycloak.gematik.idp.model.GematikIDPConfig
 import de.bdr.servko.keycloak.gematik.idp.model.GematikIDPState
-import de.bdr.servko.keycloak.gematik.idp.rest.GematikIDPLegacyResource
+import de.bdr.servko.keycloak.gematik.idp.rest.GematikIDPResource
+import de.bdr.servko.keycloak.gematik.idp.validation.GematikIdpCertificateValidatorProvider
 import jakarta.ws.rs.core.Response
 import jakarta.ws.rs.core.UriBuilder
 import org.assertj.core.api.Assertions.assertThat
@@ -31,16 +32,26 @@ import org.keycloak.broker.provider.AbstractIdentityProvider.BROKER_REGISTERED_N
 import org.keycloak.broker.provider.AbstractIdentityProvider.UPDATE_PROFILE_EMAIL_CHANGED
 import org.keycloak.broker.provider.AuthenticationRequest
 import org.keycloak.broker.provider.BrokeredIdentityContext
-import org.keycloak.broker.provider.IdentityProvider
+import org.keycloak.broker.provider.UserAuthenticationIdentityProvider
 import org.keycloak.broker.provider.util.IdentityBrokerState
 import org.keycloak.events.EventBuilder
 import org.keycloak.forms.login.LoginFormsProvider
-import org.keycloak.models.*
+import org.keycloak.models.IdentityProviderModel
+import org.keycloak.models.IdentityProviderSyncMode
+import org.keycloak.models.KeycloakContext
+import org.keycloak.models.KeycloakSession
+import org.keycloak.models.KeycloakUriInfo
+import org.keycloak.models.RealmModel
+import org.keycloak.models.UserModel
 import org.keycloak.sessions.AuthenticationSessionModel
 import org.keycloak.sessions.AuthenticationSessionProvider
 import org.keycloak.sessions.RootAuthenticationSessionModel
 import org.mockito.ArgumentMatchers.anyString
-import org.mockito.kotlin.*
+import org.mockito.kotlin.doReturn
+import org.mockito.kotlin.mock
+import org.mockito.kotlin.never
+import org.mockito.kotlin.verify
+import org.mockito.kotlin.whenever
 import java.net.URI
 import java.util.*
 
@@ -104,13 +115,15 @@ internal class GematikIDPTest {
 
     @Test
     fun callback() {
+        val certificateValidator = mock<GematikIdpCertificateValidatorProvider>()
         val formsProvider = mock<LoginFormsProvider>()
+        whenever(session.getProvider(GematikIdpCertificateValidatorProvider::class.java)).thenReturn(certificateValidator)
         whenever(session.getProvider(LoginFormsProvider::class.java)).thenReturn(formsProvider)
-        val authenticationCallback = mock<IdentityProvider.AuthenticationCallback>()
+        val authenticationCallback = mock<UserAuthenticationIdentityProvider.AuthenticationCallback>()
         val eventBuilder = mock<EventBuilder>()
 
         assertThat(objectUnderTest.callback(realm, authenticationCallback, eventBuilder))
-            .isInstanceOf(GematikIDPLegacyResource::class.java)
+            .isInstanceOf(GematikIDPResource::class.java)
     }
 
     @Test
