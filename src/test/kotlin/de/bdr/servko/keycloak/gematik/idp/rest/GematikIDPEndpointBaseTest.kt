@@ -27,11 +27,12 @@ import de.bdr.servko.keycloak.gematik.idp.model.GematikIDPStatusResponse
 import de.bdr.servko.keycloak.gematik.idp.service.GematikIDPService
 import de.bdr.servko.keycloak.gematik.idp.token.TestTokenUtil
 import de.bdr.servko.keycloak.gematik.idp.util.RestClient
+import de.bdr.servko.keycloak.gematik.idp.validation.GematikIdpCertificateValidatorProvider
 import jakarta.ws.rs.core.Response
 import jakarta.ws.rs.core.UriBuilder
 import org.assertj.core.api.Assertions.assertThat
 import org.keycloak.OAuth2Constants
-import org.keycloak.broker.provider.IdentityProvider
+import org.keycloak.broker.provider.UserAuthenticationIdentityProvider
 import org.keycloak.forms.login.LoginFormsProvider
 import org.keycloak.models.*
 import org.keycloak.protocol.oidc.utils.PkceUtils
@@ -72,7 +73,7 @@ abstract class GematikIDPEndpointBaseTest {
         on { getClientByClientId(CLIENT_ID) } doReturn clientMock
     }
 
-    val callbackMock = mock<IdentityProvider.AuthenticationCallback>()
+    val callbackMock = mock<UserAuthenticationIdentityProvider.AuthenticationCallback>()
 
     val authSessionMock = mock<AuthenticationSessionModel> {
         on { realm } doReturn realmMock
@@ -81,6 +82,9 @@ abstract class GematikIDPEndpointBaseTest {
 
     val service = mock<GematikIDPService> {
         on { resolveAuthSessionFromEncodedState(any(), any()) } doReturn authSessionMock
+    }
+
+    val certificateValidator = mock<GematikIdpCertificateValidatorProvider> {
     }
 
     val sessionMock = mock<KeycloakSession> {
@@ -92,6 +96,7 @@ abstract class GematikIDPEndpointBaseTest {
             on { realm } doAnswer { realmMock }
         }
         on { context } doReturn keycloakContext
+        on { getProvider(GematikIdpCertificateValidatorProvider::class.java) } doReturn certificateValidator
     }
 
     val rest = mock<RestClient> {

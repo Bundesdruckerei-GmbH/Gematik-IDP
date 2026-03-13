@@ -99,6 +99,7 @@ class GematikIDPFactory : AbstractIdentityProviderFactory<GematikIDP>(), ServerI
             .authenticatorAuthorizationUrl()
             .timeoutMs()
             .openidConfigUrl()
+            .validateTokenSignerCertificate()
             .validateOpenIDConfigSigningCertificate()
             .idpTimeoutMs()
             .idpUserAgent()

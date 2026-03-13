@@ -22,7 +22,7 @@
 
     <groupId>de.bdr.servko</groupId>
     <artifactId>gematik-idp</artifactId>
-    <version>3.11.0</version>
+    <version>3.12.0</version>
     <description>
         Keycloak plugin allowing authentication with the gematik Authenticator and central IDP.
     </description>
@@ -42,19 +42,19 @@
         <maven.compiler.target>${java.version}</maven.compiler.target>
 
         <!-- Keycloak Properties -->
-        <keycloak.version>26.4.5</keycloak.version>
+        <keycloak.version>26.5.3</keycloak.version>
         <!--Should match <quarkus.version> of Keycloak https://github.com/keycloak/keycloak/blob/main/pom.xml#L48, Switch to correct branch/tag -->
-        <quarkus-resteasy-reactive.version>3.27.0</quarkus-resteasy-reactive.version>
+        <quarkus-resteasy-reactive.version>3.27.2</quarkus-resteasy-reactive.version>
 
         <!-- Maven Plugin Versions -->
         <maven-shade-plugin.version>3.6.1</maven-shade-plugin.version>
         <argLine/>
 
         <!-- Misc Plugin Versions -->
-        <kotlin.version>2.2.21</kotlin.version>
+        <kotlin.version>2.3.0</kotlin.version>
 
         <!-- Test Plugin Versions -->
-        <mockito-plugin.version>5.20.0</mockito-plugin.version>
+        <mockito-plugin.version>5.21.0</mockito-plugin.version>
 
         <!-- Sonar Properties -->
         <skipDependencyCheck>true</skipDependencyCheck>
@@ -302,15 +302,14 @@
                 <version>3.5.4</version>
                 <configuration>
                     <argLine>
-                        @{argLine}
-                        -javaagent:${settings.localRepository}/org/mockito/mockito-core/${mockito-plugin.version}/mockito-core-${mockito-plugin.version}.jar
+                        @{argLine} -javaagent:${settings.localRepository}/org/mockito/mockito-core/${mockito-plugin.version}/mockito-core-${mockito-plugin.version}.jar
                     </argLine>
                 </configuration>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-source-plugin</artifactId>
-                <version>3.3.1</version>
+                <version>3.4.0</version>
                 <executions>
                     <execution>
                         <id>attach-sources</id>
@@ -327,7 +326,7 @@
                 <plugin>
                     <groupId>org.sonarsource.scanner.maven</groupId>
                     <artifactId>sonar-maven-plugin</artifactId>
-                    <version>5.3.0.6276</version>
+                    <version>5.5.0.6356</version>
                 </plugin>
             </plugins>
         </pluginManagement>
@@ -444,7 +443,7 @@
                     <plugin>
                         <groupId>org.owasp</groupId>
                         <artifactId>dependency-check-maven</artifactId>
-                        <version>12.1.9</version>
+                        <version>12.2.0</version>
                         <configuration>
                             <format>ALL</format>
                             <ossindexAnalyzerEnabled>false</ossindexAnalyzerEnabled>

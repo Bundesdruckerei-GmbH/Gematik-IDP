@@ -50,6 +50,7 @@ support the new theme with this plugin.
 | Authentication Flow                                             | Either single, HBA, SMCB or multiple request                                                                                                        | Choose your preferred authentication flow. When single, HBA or SMCB is selected, only a single request is made to the Gematik-Authenticator, but this flow requires at least an Authenticator in version 4.6.0. Otherwise, multiple requests are made to the Gematik-Authenticator. |
 | Authenticator Timeout (ms)                                      | default: 20000                                                                                                                                      | Timeout in milliseconds until the process of establishing a connection to the Authenticator is aborted                                                                                                                                                                              |
 | Gematik IDP openid configuration url                            | https://idp.app.ti-dienste.de/.well-known/openid-configuration <br/> https://idp.zentral.idp.splitdns.ti-dienste.de/.wellknown/openid-configuration | https://idp.app.ti-dienste.de availble from public internet <br/> https://idp.zentral.idp.splitdns.ti-dienste.de/ only available from TI (Telematik-Infrastruktur)                                                                                                                  |
+| Enable token signer certificate validation                      | ON or OFF (default)                                                                                                                                 | If enabled, the ID-Token signing certificate is validated against the full gematik certificate chain. A caching mechanism is used to avoid redundant validations.                                                                                                                    |
 | Enable openid discovery document signing certificate validation | ON or OFF (default)                                                                                                                                 | If enabled, the signing certificate of the JWS openid discovery document, is validated with the full gematik certificate chain.                                                                                                                                                     |
 | Gematik IDP timeout (ms)                                        | default: 10000                                                                                                                                      | Timeout in milliseconds until the process of establishing a connection to the Gematik IDP is aborted                                                                                                                                                                                |
 | Gematik IDP User-Agent                                          |                                                                                                                                                     | User-Agent Header as specified in "gemILF_PS_eRp - A_20015-01": `<Produktname>/<Produktversion> <Herstellername>/<client_id>`                                                                                                                                                       |
@@ -99,9 +100,18 @@ signing certificate of the openid-configuration JWS.
 Additionally, a periodic task is scheduled to update the gematik certificate chain from the TSL XML every 6 hours. The
 interval can be overwritten via the environment variable `GEMATIK_IDP_TSL_UPDATE_INTERVAL_MS`.
 
+## ID-Token signer certificate validation
+The ID-Token signing certificate can be validated against the intermediate certificates from the TSL file **and** the gematik
+root certificates from the Keycloak truststore. This feature is **disabled by default** and can be enabled via the
+`Enable token signer certificate validation` toggle in the admin UI.
+
+A caching mechanism avoids redundant validations: once a certificate is validated, it is cached for 1 hour (default).
+The TTL can be overwritten via the environment variable `GEMATIK_IDP_CERTIFICATE_VALIDATION_CACHE_TTL_MS`.
+The cache is automatically invalidated when the TSL is updated.
+
 ## Theme
 
-The template and javascript files are supplied as part of the compiled jar and are available under
+The template and JavaScript files are supplied as part of the compiled jar and are available under
 `/src/main/resources/theme-resources`. To use the script it has to be added to the `theme.properties` file as scripts:
 `scripts=js/gematik-idp.js`. Sample theme configuration can be found under `/themes/gematik-idp`. For more information
 about extending your own themes please read
@@ -159,7 +169,6 @@ acknowledge before the Gematik-Authenticator is opened.
 
 A description of the different authentication flows can be found in the following files:
 
-- [Authentication flow for HBA and SMC-B with multiple requests to the Gematik-Authenticator](new-auth-flow.md)
 - [Authentication flow for HBA and SMC-B with a single requests to the Gematik-Authenticator](multi-auth-flow.md)
 - [Authentication flow for HBA with a single requests to the Gematik-Authenticator](hba-auth-flow.md)
 - [Authentication flow for SMC-B with a single requests to the Gematik-Authenticator](smcb-auth-flow.md)

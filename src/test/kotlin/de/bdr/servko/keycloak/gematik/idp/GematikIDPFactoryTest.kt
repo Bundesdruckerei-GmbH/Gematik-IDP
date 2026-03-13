@@ -36,6 +36,7 @@ import org.keycloak.models.KeycloakSession
 import org.keycloak.provider.ProviderConfigProperty
 import org.mockito.kotlin.*
 import java.net.UnknownHostException
+import java.security.cert.CertificateException
 import java.time.Clock
 import java.time.Instant
 import java.time.ZoneId
@@ -153,6 +154,7 @@ internal class GematikIDPFactoryTest {
             true
         )
         config.setValidateOpenIDConfigSigningCertificate(true)
+        config.setValidateTokenSignerCertificate(true)
 
         // act
         underTest.createAndUpdateConfig(session, config, clock, serviceFactory)
@@ -170,6 +172,7 @@ internal class GematikIDPFactoryTest {
             errorMessage = "invalid certificate"
         )
         config.setValidateOpenIDConfigSigningCertificate(true)
+        config.setValidateTokenSignerCertificate(true)
 
         // act
         val result = underTest.createAndUpdateConfig(session, config, clock, serviceFactory)
@@ -217,7 +220,6 @@ internal class GematikIDPFactoryTest {
             assertThat(result?.helpText).isEqualTo("Choose your preferred authentication flow.")
             assertThat(result?.defaultValue).isEqualTo(AuthenticationFlowType.MULTI.toString())
             assertThat(result?.options).containsExactlyInAnyOrder(
-                AuthenticationFlowType.LEGACY.toString(),
                 AuthenticationFlowType.MULTI.toString(),
                 AuthenticationFlowType.HBA.toString(),
                 AuthenticationFlowType.SMCB.toString()

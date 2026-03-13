@@ -23,6 +23,7 @@ import de.bdr.servko.keycloak.gematik.idp.model.GematikIDPConfig
 import de.bdr.servko.keycloak.gematik.idp.util.GematikIDPUtil
 import de.bdr.servko.keycloak.gematik.idp.util.GematikIdpLiterals
 import de.bdr.servko.keycloak.gematik.idp.util.RestClient
+import de.bdr.servko.keycloak.gematik.idp.validation.GematikIdpCertificateValidatorProvider
 import org.bouncycastle.jce.provider.BouncyCastleProvider
 import org.jboss.logging.Logger
 import org.jose4j.json.JsonUtil
@@ -45,6 +46,8 @@ open class GematikIdpCertificateService(
     private val session: KeycloakSession,
     private val config: GematikIDPConfig,
     private val rest: RestClient = RestClient(session),
+    private val certificateValidator: GematikIdpCertificateValidatorProvider =
+        session.getProvider(GematikIdpCertificateValidatorProvider::class.java),
 ) {
     private val logger = Logger.getLogger(this::class.java)
 
@@ -82,9 +85,12 @@ open class GematikIdpCertificateService(
         }
 
         val jwks = this.getJWKS(config.openidConfig.jwksUri, config.getIdpUserAgent())
+        val signingKey = jwks.first { it.keyId == "puk_idp_sig" }
+
+        validateTokenSignerCertificate(signingKey)
 
         return JwtConsumerBuilder()
-            .setVerificationKey(jwks.first { it.keyId == "puk_idp_sig" }.publicKey)
+            .setVerificationKey(signingKey.publicKey)
             .setExpectedAudience(config.clientId)
             .setJwsProviderContext(BrainpoolCurves.PROVIDER_CONTEXT)
             .also {
@@ -141,6 +147,14 @@ open class GematikIdpCertificateService(
         (JsonUtil.parseJson(it)[JsonWebKeySet.JWK_SET_MEMBER_NAME] as List<*>).filterIsInstance<Map<String, Any>>()
     }.map {
         PublicJsonWebKey.Factory.newPublicJwk(it, BouncyCastleProvider.PROVIDER_NAME)
+    }
+
+    private fun validateTokenSignerCertificate(signingKey: PublicJsonWebKey) {
+        if (!config.getValidateTokenSignerCertificate()) {
+            logger.info("Validation of the signing certificate of the ID-Token is disabled.")
+            return
+        }
+        certificateValidator.validateTokenSignerCertificate(signingKey.leafCertificate)
     }
 
     protected open fun generateTokenKeyBytes(): ByteArray = SecretGenerator.getInstance().randomBytes(32)

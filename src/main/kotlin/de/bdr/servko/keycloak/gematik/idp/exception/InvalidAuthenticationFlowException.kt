@@ -1,6 +1,6 @@
 /*
- * Copyright 2025 Bundesdruckerei GmbH and/or its affiliates
- * and other contributors.
+ *  Copyright 2025 Bundesdruckerei GmbH and/or its affiliates
+ *  and other contributors.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -15,11 +15,6 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
+package de.bdr.servko.keycloak.gematik.idp.exception
 
-package de.bdr.servko.keycloak.gematik.idp.model
-
-enum class AuthenticationFlowType(var typeName: String) {
-    MULTI("multi"),
-    HBA("HBA"),
-    SMCB("SMC-B");
-}
+class InvalidAuthenticationFlowException(message:String): IllegalArgumentException(message)

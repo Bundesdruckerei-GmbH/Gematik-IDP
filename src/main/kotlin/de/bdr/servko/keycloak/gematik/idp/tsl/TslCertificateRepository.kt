@@ -87,6 +87,8 @@ class TslCertificateRepository() {
      */
     fun getCertificateByPrincipal(principal: X500Principal): X509Certificate? = certificates[principal]
 
+    fun getSequenceNumber(): AtomicReference<BigInteger> = tslSequenceNumber
+
     private fun getKeycloakTrustedCertificates(session: KeycloakSession): Map<X500Principal, X509Certificate> =
         session.getProvider(TruststoreProvider::class.java).let { truststoreProvider ->
             buildMap {

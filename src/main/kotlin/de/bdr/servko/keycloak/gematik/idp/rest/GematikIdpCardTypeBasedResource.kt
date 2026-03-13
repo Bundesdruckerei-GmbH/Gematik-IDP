@@ -192,7 +192,6 @@ abstract class GematikIdpCardTypeBasedResource: GematikIDPResource() {
     /**
      * Generate the Authenticator url.
      * redirectUri is our Keycloak instance /auth/realms/<realm>/broker/gematik-cidp/endpoint/result
-     * [de.bdr.servko.keycloak.gematik.idp.rest.GematikIDPLegacyEndpoint.resultPost]
      * challengePath is the central IDP
      */
     override fun generateAuthenticatorUrl(encodedState: String, codeVerifier: String, cardType: String): URI {

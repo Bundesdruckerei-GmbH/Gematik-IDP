@@ -31,7 +31,6 @@ fun ProviderConfigurationBuilder.authenticationFlow(): ProviderConfigurationBuil
     .defaultValue(AuthenticationFlowType.MULTI.toString())
     .options(
         listOf(
-            AuthenticationFlowType.LEGACY.toString(),
             AuthenticationFlowType.MULTI.toString(),
             AuthenticationFlowType.HBA.toString(),
             AuthenticationFlowType.SMCB.toString()
@@ -60,6 +59,14 @@ fun ProviderConfigurationBuilder.openidConfigUrl(): ProviderConfigurationBuilder
     .helpText("Url to the Gematik IDP discovery document, which is fetched for authorization and token url.")
     .type(ProviderConfigProperty.STRING_TYPE)
     .add()
+
+fun ProviderConfigurationBuilder.validateTokenSignerCertificate(): ProviderConfigurationBuilder =
+    this.property()
+        .name(GematikIDPConfig.VALIDATE_TOKEN_SIGNER_CERTIFICATE)
+        .label("Enable token signer cer certificate validation")
+        .helpText("Upon activation, the signing certificate is validated against the complete certificate chain of gematik.")
+        .type(ProviderConfigProperty.BOOLEAN_TYPE)
+        .add()
 
 fun ProviderConfigurationBuilder.validateOpenIDConfigSigningCertificate(): ProviderConfigurationBuilder =
     this.property()

@@ -29,7 +29,7 @@ import de.bdr.servko.keycloak.gematik.idp.util.GematikIdpLiterals
 import jakarta.ws.rs.core.MediaType
 import jakarta.ws.rs.core.Response
 import org.jboss.logging.Logger
-import org.keycloak.broker.provider.IdentityProvider
+import org.keycloak.broker.provider.UserAuthenticationIdentityProvider
 import org.keycloak.forms.login.LoginFormsProvider
 import org.keycloak.models.KeycloakSession
 import org.keycloak.models.RealmModel
@@ -38,7 +38,7 @@ import org.keycloak.util.JsonSerialization
 
 class GematikIDPMultiResource(
     override val realm: RealmModel,
-    override val callback: IdentityProvider.AuthenticationCallback,
+    override val callback: UserAuthenticationIdentityProvider.AuthenticationCallback,
     override val session: KeycloakSession,
     override val gematikIDP: GematikIDP,
     override val config: GematikIDPConfig,

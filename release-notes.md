@@ -1,5 +1,21 @@
 # Release Notes
 
+## Release 3.12.0
+
+* Added validation for ID-Token signer certificate against gematik TSL certificate chain
+    * Caching mechanism ensures moderate processing load
+    * Configurable via admin UI toggle (disabled by default)
+* Removed legacy authentication flow
+    * Default authentication flow changed from `LEGACY` to `MULTI`
+    * Added validation for authentication flow selection on configuration
+* Fixed PostgreSQL image version to 16 in `docker-compose.yml`
+* Update Keycloak to 26.5.3
+    * Migrated to `UserAuthenticationIdentityProvider` API
+    * User attribute mapper now uses `USER_PROFILE_ATTRIBUTE_LIST_TYPE`
+* Update Kotlin to 2.3.0
+* Update gematik IDP reference server to 30.0.3
+* Dependency updates
+
 ## Release 3.11.0
 
 * Update Keycloak to 26.4.5

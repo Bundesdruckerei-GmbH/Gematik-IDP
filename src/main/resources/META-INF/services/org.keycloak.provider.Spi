@@ -17,3 +17,4 @@
 #
 
 de.bdr.servko.keycloak.gematik.idp.tsl.TslSpi
+de.bdr.servko.keycloak.gematik.idp.validation.GematikIdpCertificateValidatorSpi
