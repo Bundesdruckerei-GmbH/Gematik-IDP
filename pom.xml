@@ -1,20 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-    Copyright 2023 Bundesdruckerei GmbH and/or its affiliates
-    and other contributors.
-
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
--->
+  ~ Copyright 2026 Bundesdruckerei GmbH
+  ~ For the license, see the accompanying file LICENSE.md
+  -->
 <project xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
@@ -22,7 +10,7 @@
 
     <groupId>de.bdr.servko</groupId>
     <artifactId>gematik-idp</artifactId>
-    <version>3.12.0</version>
+    <version>3.13.0</version>
     <description>
         Keycloak plugin allowing authentication with the gematik Authenticator and central IDP.
     </description>
@@ -42,9 +30,9 @@
         <maven.compiler.target>${java.version}</maven.compiler.target>
 
         <!-- Keycloak Properties -->
-        <keycloak.version>26.5.3</keycloak.version>
+        <keycloak.version>26.5.6</keycloak.version>
         <!--Should match <quarkus.version> of Keycloak https://github.com/keycloak/keycloak/blob/main/pom.xml#L48, Switch to correct branch/tag -->
-        <quarkus-resteasy-reactive.version>3.27.2</quarkus-resteasy-reactive.version>
+        <quarkus-resteasy-reactive.version>3.33.1</quarkus-resteasy-reactive.version>
 
         <!-- Maven Plugin Versions -->
         <maven-shade-plugin.version>3.6.1</maven-shade-plugin.version>
@@ -299,10 +287,11 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
-                <version>3.5.4</version>
+                <version>3.5.5</version>
                 <configuration>
                     <argLine>
-                        @{argLine} -javaagent:${settings.localRepository}/org/mockito/mockito-core/${mockito-plugin.version}/mockito-core-${mockito-plugin.version}.jar
+                        @{argLine}
+                        -javaagent:${settings.localRepository}/org/mockito/mockito-core/${mockito-plugin.version}/mockito-core-${mockito-plugin.version}.jar
                     </argLine>
                 </configuration>
             </plugin>
