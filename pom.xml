@@ -32,7 +32,7 @@
         <!-- Keycloak Properties -->
         <keycloak.version>26.5.6</keycloak.version>
         <!--Should match <quarkus.version> of Keycloak https://github.com/keycloak/keycloak/blob/main/pom.xml#L48, Switch to correct branch/tag -->
-        <quarkus-resteasy-reactive.version>3.33.1</quarkus-resteasy-reactive.version>
+        <quarkus-resteasy-reactive.version>3.27.2</quarkus-resteasy-reactive.version>
 
         <!-- Maven Plugin Versions -->
         <maven-shade-plugin.version>3.6.1</maven-shade-plugin.version>
