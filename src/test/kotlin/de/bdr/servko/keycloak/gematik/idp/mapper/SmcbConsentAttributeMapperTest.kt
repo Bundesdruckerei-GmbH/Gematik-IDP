@@ -1,19 +1,6 @@
 /*
- *  Copyright 2023 Bundesdruckerei GmbH and/or its affiliates
- *  and other contributors.
- *
- *  Licensed under the Apache License, Version 2.0 (the "License");
- *  you may not use this file except in compliance with the License.
- *  You may obtain a copy of the License at
- *
- *  http://www.apache.org/licenses/LICENSE-2.0
- *
- *  Unless required by applicable law or agreed to in writing, software
- *  distributed under the License is distributed on an "AS IS" BASIS,
- *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *  See the License for the specific language governing permissions and
- *  limitations under the License.
- *
+ * Copyright 2026 Bundesdruckerei GmbH
+ * For the license, see the accompanying file LICENSE.md
  */
 
 package de.bdr.servko.keycloak.gematik.idp.mapper
@@ -33,11 +20,13 @@ internal class SmcbConsentAttributeMapperTest {
 
     private val session: KeycloakSession = mock()
     private val realm: RealmModel = mock()
-    private val config: GematikIDPConfig = mock()
+    private val idpConfig: GematikIDPConfig = mock { on { isEnabled } doReturn true }
 
-    private val context  = spy(BrokeredIdentityContext("id", config))
-    private val consentCreatedDateAttribute = AbstractGematikAuthenticatorConsentAttributeMapper.CONFIG_AUTHENTICATOR_CREATED_DATE_ATTRIBUTE
-    private val consentLastUpdatedDateAttribute = AbstractGematikAuthenticatorConsentAttributeMapper.CONFIG_AUTHENTICATOR_LAST_UPDATED_DATE_ATTRIBUTE
+    private val context = spy(BrokeredIdentityContext("id", idpConfig))
+    private val consentCreatedDateAttribute =
+        AbstractGematikAuthenticatorConsentAttributeMapper.CONFIG_AUTHENTICATOR_CREATED_DATE_ATTRIBUTE
+    private val consentLastUpdatedDateAttribute =
+        AbstractGematikAuthenticatorConsentAttributeMapper.CONFIG_AUTHENTICATOR_LAST_UPDATED_DATE_ATTRIBUTE
     private val mapperModel = IdentityProviderMapperModel().apply {
         config = mapOf(
             AbstractGematikAuthenticatorConsentAttributeMapper.CONFIG_AUTHENTICATOR_CREATED_DATE_ATTRIBUTE to
@@ -150,7 +139,7 @@ internal class SmcbConsentAttributeMapperTest {
 
     @Test
     fun `updateBrokeredUser does not update created_date`() {
-        val onceUponATime =  Instant.MIN.toString()
+        val onceUponATime = Instant.MIN.toString()
         val userAttributes = mapOf(createdDateAttribute to listOf(onceUponATime))
         val user: UserModel = mock() {
             on { attributes } doReturn userAttributes
@@ -228,7 +217,7 @@ internal class SmcbConsentAttributeMapperTest {
 
     @Test
     fun `updateBrokeredUser updates last_updated_date`() {
-        val onceUponATime =  Instant.MIN.toString()
+        val onceUponATime = Instant.MIN.toString()
         val userAttributes = mapOf(createdDateAttribute to listOf(onceUponATime))
         val user: UserModel = mock() {
             on { attributes } doReturn userAttributes

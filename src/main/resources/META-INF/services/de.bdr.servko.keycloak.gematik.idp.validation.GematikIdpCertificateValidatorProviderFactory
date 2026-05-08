@@ -1,1 +1,6 @@
+#
+# Copyright 2026 Bundesdruckerei GmbH
+# For the license, see the accompanying file LICENSE.md
+#
+
 de.bdr.servko.keycloak.gematik.idp.validation.GematikIdpCertificateValidatorProviderFactory

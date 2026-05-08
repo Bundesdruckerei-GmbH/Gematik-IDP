@@ -1,4 +1,9 @@
 #!/usr/bin/env bash
+#
+# Copyright 2026 Bundesdruckerei GmbH
+# For the license, see the accompanying file LICENSE.md
+#
+
 set -euo pipefail
 
 COUNT=11
