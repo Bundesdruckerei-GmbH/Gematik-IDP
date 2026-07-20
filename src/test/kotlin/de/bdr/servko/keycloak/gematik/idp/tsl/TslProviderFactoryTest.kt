@@ -11,6 +11,7 @@ import org.junit.jupiter.api.assertDoesNotThrow
 import org.keycloak.connections.httpclient.HttpClientProvider
 import org.keycloak.models.KeycloakSession
 import org.keycloak.models.KeycloakSessionFactory
+import org.keycloak.timer.ScheduledTask
 import org.keycloak.timer.TimerProvider
 import org.keycloak.truststore.TruststoreProvider
 import org.mockito.kotlin.*
@@ -184,7 +185,7 @@ class TslProviderFactoryTest : TslBaseTest() {
     fun `postInit - schedule periodic update - failure`() {
         val cert = TestCertUtil.generateCertificate()
         keyStore.setCertificateEntry("root", cert)
-        whenever(timerProvider.scheduleTask(any(), any(), any())) doThrow RuntimeException()
+        whenever(timerProvider.scheduleTask(any<ScheduledTask>(), any<Long>(), any<String>())) doThrow RuntimeException()
 
 
         assertDoesNotThrow { underTest.postInit(sessionFactory) }
@@ -219,7 +220,7 @@ class TslProviderFactoryTest : TslBaseTest() {
 
     @Test
     fun `close - no scheduled task - failure`() {
-        whenever(timerProvider.scheduleTask(any(), any(), any())) doThrow RuntimeException()
+        whenever(timerProvider.scheduleTask(any<ScheduledTask>(), any<Long>(), any<String>())) doThrow RuntimeException()
         underTest.postInit(sessionFactory)
 
 

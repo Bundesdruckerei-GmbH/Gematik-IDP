@@ -1,7 +1,15 @@
 # Release Notes
 
-## Release 3.13.0
+## Release Beta Version 3.14.0 - compatible with Authenticator Version 4.17.0 and earlier
+* Attention: This is not the final version. We release this preview of the new plugin version to enable early testing
+* Added support for new authenticator version 4.17.0 but still backwards compatible with earlier versions
+* Added several related new configuration parameters e.g.
+  * port ranges
+  * authenticator server timeout
+  * authenticator version
+* Update Keycloak to 26.6.3
 
+## Release 3.13.0
 * Update Keycloak to 26.5.6
 * Copyright header update
 * LICENSE.md update

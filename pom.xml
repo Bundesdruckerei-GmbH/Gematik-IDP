@@ -10,7 +10,7 @@
 
     <groupId>de.bdr.servko</groupId>
     <artifactId>gematik-idp</artifactId>
-    <version>3.13.0</version>
+    <version>3.38.0-SNAPSHOT</version>
     <description>
         Keycloak plugin allowing authentication with the gematik Authenticator and central IDP.
     </description>
@@ -30,19 +30,19 @@
         <maven.compiler.target>${java.version}</maven.compiler.target>
 
         <!-- Keycloak Properties -->
-        <keycloak.version>26.5.6</keycloak.version>
+        <keycloak.version>26.6.3</keycloak.version>
         <!--Should match <quarkus.version> of Keycloak https://github.com/keycloak/keycloak/blob/main/pom.xml#L48, Switch to correct branch/tag -->
-        <quarkus-resteasy-reactive.version>3.27.2</quarkus-resteasy-reactive.version>
+        <quarkus-resteasy-reactive.version>3.33.2</quarkus-resteasy-reactive.version>
 
         <!-- Maven Plugin Versions -->
-        <maven-shade-plugin.version>3.6.1</maven-shade-plugin.version>
+        <maven-shade-plugin.version>3.6.2</maven-shade-plugin.version>
         <argLine/>
 
         <!-- Misc Plugin Versions -->
-        <kotlin.version>2.3.0</kotlin.version>
+        <kotlin.version>2.3.20</kotlin.version>
 
         <!-- Test Plugin Versions -->
-        <mockito-plugin.version>5.21.0</mockito-plugin.version>
+        <mockito-plugin.version>5.23.0</mockito-plugin.version>
 
         <!-- Sonar Properties -->
         <skipDependencyCheck>true</skipDependencyCheck>
@@ -51,6 +51,7 @@
         <!-- With this variable, you can store your own Nist data mirrors. If these are empty, the default sources are used. -->
         <dependencyCheck.nvdDatafeedUrl>${env.NVD_DATAFEED_URL}</dependencyCheck.nvdDatafeedUrl>
         <dependencyCheck.failBuildOnCVSS>8</dependencyCheck.failBuildOnCVSS>
+        <dependencyCheck.maven.version>12.2.2</dependencyCheck.maven.version>
     </properties>
 
     <dependencyManagement>
@@ -74,10 +75,11 @@
                 <scope>provided</scope>
             </dependency>
             <dependency>
-                <groupId>io.quarkus.resteasy.reactive</groupId>
-                <artifactId>resteasy-reactive</artifactId>
+                <groupId>io.quarkus</groupId>
+                <artifactId>quarkus-bom</artifactId>
                 <version>${quarkus-resteasy-reactive.version}</version>
-                <scope>provided</scope>
+                <type>pom</type>
+                <scope>import</scope>
             </dependency>
             <dependency>
                 <groupId>org.bitbucket.b_c</groupId>
@@ -93,7 +95,7 @@
             <dependency>
                 <groupId>eu.europa.ec.joinup.sd-dss</groupId>
                 <artifactId>dss-tsl-validation</artifactId>
-                <version>6.3</version>
+                <version>6.4</version>
             </dependency>
 
             <dependency>
@@ -111,7 +113,7 @@
             <dependency>
                 <groupId>org.junit</groupId>
                 <artifactId>junit-bom</artifactId>
-                <version>6.0.1</version>
+                <version>6.1.0</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
@@ -138,7 +140,7 @@
             <dependency>
                 <groupId>org.mockito.kotlin</groupId>
                 <artifactId>mockito-kotlin</artifactId>
-                <version>6.1.0</version>
+                <version>6.3.0</version>
                 <scope>test</scope>
                 <exclusions>
                     <exclusion>
@@ -150,7 +152,7 @@
             <dependency>
                 <groupId>org.assertj</groupId>
                 <artifactId>assertj-core</artifactId>
-                <version>3.27.6</version>
+                <version>3.27.7</version>
                 <scope>test</scope>
                 <exclusions>
                     <exclusion>
@@ -287,7 +289,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
-                <version>3.5.5</version>
+                <version>3.5.6</version>
                 <configuration>
                     <argLine>
                         @{argLine}
@@ -315,7 +317,7 @@
                 <plugin>
                     <groupId>org.sonarsource.scanner.maven</groupId>
                     <artifactId>sonar-maven-plugin</artifactId>
-                    <version>5.5.0.6356</version>
+                    <version>5.7.0.6970</version>
                 </plugin>
             </plugins>
         </pluginManagement>
@@ -432,7 +434,7 @@
                     <plugin>
                         <groupId>org.owasp</groupId>
                         <artifactId>dependency-check-maven</artifactId>
-                        <version>12.2.0</version>
+                        <version>${dependencyCheck.maven.version}</version>
                         <configuration>
                             <format>ALL</format>
                             <ossindexAnalyzerEnabled>false</ossindexAnalyzerEnabled>
@@ -443,6 +445,7 @@
 
                             <!-- for false positives -->
                             <suppressionFiles>
+                                <suppressionFile>keycloak-suppressed-cves.xml</suppressionFile>
                                 <suppressionFile>suppressed-cves.xml</suppressionFile>
                             </suppressionFiles>
                             <!-- for false positives -->
@@ -469,7 +472,7 @@
                     <plugin>
                         <groupId>org.jacoco</groupId>
                         <artifactId>jacoco-maven-plugin</artifactId>
-                        <version>0.8.14</version>
+                        <version>0.8.15</version>
                         <executions>
                             <execution>
                                 <id>prepare-agent</id>

@@ -23,7 +23,6 @@ import org.keycloak.models.KeycloakSession
 import org.keycloak.provider.ProviderConfigProperty
 import org.mockito.kotlin.*
 import java.net.UnknownHostException
-import java.security.cert.CertificateException
 import java.time.Clock
 import java.time.Instant
 import java.time.ZoneId
@@ -38,9 +37,13 @@ internal class GematikIDPFactoryTest {
     }
     private val configUrl = "http://localhost:8081/.well-known/openid-configuration"
     private val userAgent = "Servko/1.0.0 Servko/Client"
+    private val loginTimeoutMs = "60000"
+    private val authenticatorVersion = "4.6.0"
     private val config = GematikIDPConfig().apply {
         setIdpUserAgent(userAgent)
         setOpenidConfigUrl(configUrl)
+        setLoginTimeoutMs(loginTimeoutMs)
+        setAuthenticatorVersion(authenticatorVersion)
     }
 
     private val mockedOpenidConfig =
@@ -215,6 +218,22 @@ internal class GematikIDPFactoryTest {
         }
 
         @Test
+        fun `configProperties - returns authenticator version config property`() {
+            // arrange
+
+            // act
+            val result = underTest.configProperties
+                .findLast { it.name == "authenticatorVersion" }
+
+            // assert
+            assertThat(result).isNotNull
+            assertThat(result?.label).isEqualTo("Authenticator Version")
+            assertThat(result?.helpText).isEqualTo("Minimum compatible version of the authenticator.")
+            assertThat(result?.type).isEqualTo(ProviderConfigProperty.STRING_TYPE)
+            assertThat(result?.defaultValue).isEqualTo("4.6.0")
+        }
+
+        @Test
         fun `configProperties - returns authenticator authorization url config property`() {
             // arrange
 
@@ -226,6 +245,21 @@ internal class GematikIDPFactoryTest {
             assertThat(result).isNotNull
             assertThat(result?.label).isEqualTo("Authenticator IDP Authorization Url Overwrite")
             assertThat(result?.helpText).isEqualTo("Authorization endpoint of the central IDP, used in the Authenticator. Will be extracted from the openid-configuration when left empty.")
+            assertThat(result?.type).isEqualTo(ProviderConfigProperty.STRING_TYPE)
+        }
+
+        @Test
+        fun `configProperties - returns login timeout ms config property`() {
+            // arrange
+
+            // act
+            val result = underTest.configProperties
+                .findLast { it.name == "loginTimeoutMs" }
+
+            // assert
+            assertThat(result).isNotNull
+            assertThat(result?.label).isEqualTo("Login Timeout (ms)")
+            assertThat(result?.helpText).isEqualTo("Timeout in milliseconds until the login process is aborted (default 600000).")
             assertThat(result?.type).isEqualTo(ProviderConfigProperty.STRING_TYPE)
         }
 

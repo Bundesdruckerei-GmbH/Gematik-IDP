@@ -12,12 +12,9 @@ import de.bdr.servko.keycloak.gematik.idp.service.GematikIDPService
 import de.bdr.servko.keycloak.gematik.idp.service.GematikIdpCertificateService
 import de.bdr.servko.keycloak.gematik.idp.util.GematikIDPUtil
 import de.bdr.servko.keycloak.gematik.idp.util.GematikIdpLiterals
-import de.bdr.servko.keycloak.gematik.idp.validation.GematikIdpCertificateValidatorProvider
-import jakarta.ws.rs.GET
-import jakarta.ws.rs.HeaderParam
-import jakarta.ws.rs.Path
-import jakarta.ws.rs.QueryParam
+import jakarta.ws.rs.*
 import jakarta.ws.rs.core.HttpHeaders
+import jakarta.ws.rs.core.MediaType
 import jakarta.ws.rs.core.Response
 import jakarta.ws.rs.core.UriBuilder
 import org.jboss.logging.Logger
@@ -44,6 +41,7 @@ abstract class GematikIDPResource {
     abstract val logger: Logger
     abstract val initialStepName: String
     abstract val initialCardType: String
+    abstract val startingCardType: String
 
     companion object {
         fun from(
@@ -126,27 +124,89 @@ abstract class GematikIDPResource {
      * redirectUri is our Keycloak instance /auth/realms/<realm>/broker/gematik-cidp/endpoint/result
      * challengePath is the central IDP
      */
-    abstract fun generateAuthenticatorUrl(encodedState: String, codeVerifier: String, cardType: String): URI
+    abstract fun generateAuthenticatorUrl(
+        encodedState: String,
+        codeVerifier: String,
+        cardType: String,
+        authenticatorPort: String?,
+        handShakeId: String?,
+    ): URI
+
+    /**
+     * Generate the Authorize url for the new flow.
+     * redirectUri is our Keycloak instance /auth/realms/<realm>/broker/gematik-cidp/endpoint/result
+     * challengePath is the central IDP
+     */
+    abstract fun generateAuthorizeUrl(
+        encodedState: String,
+        codeVerifier: String,
+        cardType: String,
+        authenticatorPort: String,
+        handShakeId: String,
+    ): URI
+
+    /**
+     * Generate status url for the new flow.
+     */
+    abstract fun probeAuthenticatorServerUrl(authenticatorPort: String): URI
 
     /**
      * Initial call made by the user. We have access to the browser and therefore to the cookies.
+     * The startAuth endpoint initializes the authentication session and renders the
+     * HTML form (gematik-idp.ftl). It now optionally accepts a `freePort` query
+     * parameter that is discovered on the client side. When present the value is
+     * propagated to the template so that the front‑end can include it in the
+     * configuration JSON.
      */
     @GET
     @Path(GematikIdpLiterals.START_AUTH_PATH)
-    fun startAuth(@QueryParam(OAuth2Constants.STATE) encodedState: String): Response {
-        val authSession: AuthenticationSessionModel = try {
-            service.resolveAuthSessionFromEncodedState(realm, encodedState)
-        } catch (snfe: SessionNotFoundException) {
-            return handleSessionTimeout(snfe)
-        } catch (e: Exception) {
-            return callback.error(config, "Failed to resolve auth session: ${e.message}")
+    fun startAuth(
+        @QueryParam(OAuth2Constants.STATE) encodedState: String,
+    ): Response =
+        withAuthSession(encodedState) { authSession ->
+            val authenticatorPort = authSession.getAuthNote(GematikIdpLiterals.AUTHENTICATOR_PORT)
+                ?: return@withAuthSession Response.status(Response.Status.BAD_REQUEST)
+                    .entity("Missing authenticatorPort")
+                    .build()
+            val handshakeId = authSession.getAuthNote(GematikIdpLiterals.HANDSHAKE_ID)
+            val codeVerifier = PkceUtils.generateCodeVerifier()
+            authSession.setAuthNote(GematikIdpLiterals.CODE_VERIFIER, codeVerifier)
+            authSession.setAuthNote(GematikIdpLiterals.GEMATIK_IDP_STEP, initialStepName)
+            generateAuthenticatorFormResponse(
+                encodedState,
+                codeVerifier,
+                initialCardType,
+                authenticatorPort,
+                handshakeId
+            )
         }
 
-        val codeVerifier = PkceUtils.generateCodeVerifier()
-        authSession.setAuthNote(GematikIdpLiterals.CODE_VERIFIER, codeVerifier)
-        authSession.setAuthNote(GematikIdpLiterals.GEMATIK_IDP_STEP, initialStepName)
-
-        return generateAuthenticatorFormResponse(encodedState, codeVerifier, initialCardType)
+    /**
+     * The authRequest endpoint creates the url for the authorize endpoint.
+     */
+    @GET
+    @Path(GematikIdpLiterals.AUTH_REQUEST_PATH)
+    fun authRequest(
+        @QueryParam(OAuth2Constants.STATE) encodedState: String,
+        @QueryParam(GematikIdpLiterals.AUTHENTICATOR_VERSION_PARAM) version: String,
+    ): Response {
+        val authenticatorNextStepUrl = GematikIDPUtil.getEndpointUri(
+            session, realm,
+            GematikIDPState.fromEncodedState(encodedState), config,
+            GematikIdpLiterals.AUTHENTICATOR_NEXT_STEP
+        )
+        return withAuthSession(
+            encodedState,
+            onSessionNotFound = { respondWithStatusRedirect(GematikIDPStep.ERROR.name, authenticatorNextStepUrl) })
+        { authSession ->
+            authSession.setAuthNote(GematikIdpLiterals.AUTHENTICATOR_VERSION, version)
+            val handshakeId = authSession.getAuthNote(GematikIdpLiterals.HANDSHAKE_ID)
+            val authenticatorPort = authSession.getAuthNote(GematikIdpLiterals.AUTHENTICATOR_PORT)
+            val codeVerifier = authSession.getAuthNote(GematikIdpLiterals.CODE_VERIFIER)
+            val authorizeUrl =
+                generateAuthorizeUrl(encodedState, codeVerifier, startingCardType, authenticatorPort, handshakeId)
+            Response.seeOther(authorizeUrl).build()
+        }
     }
 
     /**
@@ -169,27 +229,82 @@ abstract class GematikIDPResource {
     }
 
     /**
+     * The endpoint returns a JSON object containing the configured free‑port range.
+     * The payload contains the expected `portRangeStart` and `portRangeEnd` values derived from the
+     * configuration (`GematikIDPConfig`).
+     */
+    @GET
+    @Path(GematikIdpLiterals.PREFLIGHT)
+    @Produces(MediaType.APPLICATION_JSON)
+    fun preflight(): Response {
+        val portStart = config.getAuthenticatorPortRangeStart()
+        val portEnd = config.getAuthenticatorPortRangeEnd()
+
+        return Response.ok(
+            mapOf(
+                "authenticatorPortRangeStart" to portStart,
+                "authenticatorPortRangeEnd" to portEnd,
+            )
+        ).build()
+    }
+
+    protected fun withAuthSession(
+        encodedState: String,
+        onSessionNotFound: ((SessionNotFoundException) -> Response)? = null,
+        block: (AuthenticationSessionModel) -> Response,
+    ): Response {
+        val authSession = try {
+            service.resolveAuthSessionFromEncodedState(realm, encodedState)
+        } catch (snfe: SessionNotFoundException) {
+            return onSessionNotFound?.invoke(snfe) ?: handleSessionTimeout(snfe)
+        } catch (e: Exception) {
+            return callback.error(config, "Failed to resolve auth session: ${e.message}")
+        }
+
+        if (GematikIDPUtil.isLoginTimedOut(authSession, config.getLoginTimeoutMs())) {
+            return handleLoginTimeout()
+        }
+
+        return block(authSession)
+    }
+
+    /**
      * Generates the form response which is shown to a user at the beginning of each authentication step.
      */
     fun generateAuthenticatorFormResponse(
         encodedState: String,
         codeVerifier: String,
         cardType: String,
+        authenticatorPort: String? = null,
+        handshakeId: String? = null,
     ): Response {
-        val authenticatorUrl = generateAuthenticatorUrl(encodedState, codeVerifier, cardType)
+        val authenticatorUrl =
+            generateAuthenticatorUrl(encodedState, codeVerifier, cardType, authenticatorPort, handshakeId)
         val brokerState = GematikIDPState.fromEncodedState(encodedState)
         val timeoutUrl =
             GematikIDPUtil.getEndpointUri(session, realm, brokerState, config, GematikIdpLiterals.TIMEOUT_PATH)
-
-        val loginFormsProvider = forms.setAttribute("authenticatorUrl", authenticatorUrl)
+        val loginFormsProvider = forms
+            .setAttribute("authenticatorUrl", authenticatorUrl)
             .setAttribute("timeoutUrl", timeoutUrl)
             .setAttribute("timeoutMs", config.getTimeoutMs())
+            .setAttribute("authenticatorHttpServerTimeoutMs", config.getAuthenticatorHttpServerTimeoutMs())
 
+        if (!authenticatorPort.isNullOrBlank() && !handshakeId.isNullOrBlank()) {
+            val authRequestUrl =
+                GematikIDPUtil.getEndpointUri(session, realm, brokerState, config, GematikIdpLiterals.AUTH_REQUEST_PATH)
+            loginFormsProvider.setAttribute("authRequestUrl", authRequestUrl)
+            loginFormsProvider.setAttribute(
+                "probeAuthenticatorServerUrl",
+                probeAuthenticatorServerUrl(authenticatorPort)
+            )
+        }
         val statusUrl =
             GematikIDPUtil.getEndpointUri(session, realm, brokerState, config, GematikIdpLiterals.AUTHENTICATION_STATUS)
 
         loginFormsProvider.setAttribute("statusUrl", statusUrl)
         loginFormsProvider.setAttribute(GematikIDPConfig.AUTHENTICATOR_AUTO_LAUNCH, config.getAuthenticatorAutoLaunch())
+        loginFormsProvider.setAttribute("authenticatorPortRangeStart", config.getAuthenticatorPortRangeStart())
+        loginFormsProvider.setAttribute("authenticatorPortRangeEnd", config.getAuthenticatorPortRangeEnd())
 
         return loginFormsProvider.createForm("gematik-idp.ftl")
     }
@@ -225,7 +340,14 @@ abstract class GematikIDPResource {
             .createErrorPage(Response.Status.BAD_REQUEST)
     }
 
+    fun handleLoginTimeout(): Response {
+        return forms.setError(AuthenticatorErrorTypes.LOGIN_TIMEOUT.error, "Login timeout. Please log in again.")
+            .createErrorPage(Response.Status.BAD_REQUEST)
+    }
+
     fun handleAuthenticatorProtocol(): UriBuilder = UriBuilder.fromPath("//").scheme("authenticator")
+
+    fun handleAuthorizeEndpoint(baseUrl: String): UriBuilder = UriBuilder.fromUri(baseUrl)
 
     fun initIdentityContext(
         telematikId: String,

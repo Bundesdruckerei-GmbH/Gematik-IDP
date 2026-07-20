@@ -8,18 +8,20 @@ package de.bdr.servko.keycloak.gematik.idp.util
 class GematikIdpLiterals {
     companion object {
         const val START_AUTH_PATH = "startAuth"
+        const val AUTH_REQUEST_PATH = "authRequest"
         const val RESULT_PATH = "result"
         const val TIMEOUT_PATH = "timeout"
+        const val PREFLIGHT = "preflight"
+        const val LOGIN_START_TIME_NOTE = "loginStartTime"
         const val AUTHENTICATION_STATUS = "status"
         const val AUTHENTICATOR_NEXT_STEP = "nextStep"
         const val AUTHENTICATOR_VERSION = "authenticatorVersion"
+        const val AUTHENTICATOR_VERSION_PARAM = "authenticator_version"
 
-        const val CHALLENGE_PATH = "challenge_path"
+        const val CHALLENGE_PATH_PARAM = "challenge_path"
         const val CALLBACK = "callback"
         const val CARD_TYPE = "cardType"
 
-        const val SCOPE_HBA = "Person_ID"
-        const val SCOPE_SMCB = "Institutions_ID"
         const val TOKEN_KEY = "token_key"
         const val KEY_VERIFIER = "key_verifier"
 
@@ -34,5 +36,10 @@ class GematikIdpLiterals {
 
         const val CONSENT_DECLINED_ERROR = "access_denied"
         const val CONSENT_DECLINED_ERROR_DETAIL = "User declined consent"
+
+        const val AUTHENTICATOR_PORT = "authenticatorPort"
+        const val SERVER_PORT_PARAMETER = "server_port"
+        // Handshake identifier used by the new‑version authenticator flow.
+        const val HANDSHAKE_ID = "handshake_id"
     }
 }

@@ -1,7 +1,7 @@
 #  Copyright 2026 Bundesdruckerei GmbH
 #  For the license, see the accompanying file LICENSE.md
 
-FROM quay.io/keycloak/keycloak:26.5.6 AS builder
+FROM quay.io/keycloak/keycloak:26.6.3 AS builder
 
 WORKDIR /opt/keycloak
 # for demonstration purposes only, please make sure to use proper certificates in production instead

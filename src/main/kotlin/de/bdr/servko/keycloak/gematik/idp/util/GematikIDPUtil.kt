@@ -15,6 +15,7 @@ import org.jose4j.jwe.KeyManagementAlgorithmIdentifiers
 import org.jose4j.jwk.PublicJsonWebKey
 import org.jose4j.jwt.JwtClaims
 import org.keycloak.OAuth2Constants
+import org.keycloak.common.util.Time
 import org.keycloak.models.KeycloakSession
 import org.keycloak.models.RealmModel
 import org.keycloak.services.resources.IdentityBrokerService
@@ -25,6 +26,7 @@ import java.net.URI
 
 class GematikIDPUtil {
     companion object {
+
         fun getGematikIdpStepFrom(authSession: AuthenticationSessionModel): GematikIDPStep =
             authSession.getAuthNote(GematikIdpLiterals.GEMATIK_IDP_STEP)?.let {
                 GematikIDPStep.valueOf(it)
@@ -97,7 +99,7 @@ class GematikIDPUtil {
             realm: RealmModel,
             state: GematikIDPState?,
             config: GematikIDPConfig,
-            endpoint: String,
+            endpoint: String
         ): URI =
             RealmsResource.brokerUrl(session.context.uri)
                 .path(IdentityBrokerService::class.java, "getEndpoint")
@@ -109,6 +111,24 @@ class GematikIDPUtil {
                     }
                 }
                 .build(realm.name, config.alias)
-    }
 
+        fun isLoginTimedOut(
+            authSession: AuthenticationSessionModel,
+            loginTimeoutMs: Int
+        ): Boolean {
+            if (loginTimeoutMs <= 0) return false
+            val startStr = authSession.getAuthNote(GematikIdpLiterals.LOGIN_START_TIME_NOTE)
+                ?: return false
+
+            val start = startStr.toLongOrNull() ?: return false
+            val now = Time.currentTimeMillis()
+            return (now - start) > loginTimeoutMs
+        }
+
+        fun isNewAuthenticatorFlow(authSession: AuthenticationSessionModel): Boolean {
+            val authenticatorVersion = AuthenticatorVersion.from(authSession.getAuthNote(GematikIdpLiterals.AUTHENTICATOR_VERSION))
+            val authenticatorVersionForNewFlow = AuthenticatorVersion.from(AUTHENTICATOR_VERSION_NEW_FLOW)
+            return authenticatorVersion.isGreaterThenOrEqual(authenticatorVersionForNewFlow)
+        }
+    }
 }

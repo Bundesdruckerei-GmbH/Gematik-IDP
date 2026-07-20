@@ -52,10 +52,27 @@ data class AuthenticatorVersion(
     }
 
     fun isGreaterThenOrEqual(toCompare: AuthenticatorVersion): Boolean {
-        return (toCompare.isNullOrEmpty() && !this.isNullOrEmpty()) || (
-                (major == toCompare.major || major!! > toCompare.major!!) &&
-                        (minor == toCompare.minor || minor!! > toCompare.minor!!) &&
-                        (patch == toCompare.patch || patch!! > toCompare.patch!!)
-                )
+        if (toCompare.isNullOrEmpty() && !this.isNullOrEmpty()) {
+            return true
+        }
+
+        // major
+        val majorThis = this.major ?: Int.MIN_VALUE
+        val majorThat = toCompare.major ?: Int.MIN_VALUE
+        if (majorThis != majorThat) {
+            return majorThis > majorThat
+        }
+
+        // minor
+        val minorThis = this.minor ?: Int.MIN_VALUE
+        val minorThat = toCompare.minor ?: Int.MIN_VALUE
+        if (minorThis != minorThat) {
+            return minorThis > minorThat
+        }
+
+        // patch
+        val patchThis = this.patch ?: Int.MIN_VALUE
+        val patchThat = toCompare.patch ?: Int.MIN_VALUE
+        return patchThis >= patchThat
     }
 }

@@ -8,11 +8,11 @@ package de.bdr.servko.keycloak.gematik.idp.rest
 import de.bdr.servko.keycloak.gematik.idp.GematikIDP
 import de.bdr.servko.keycloak.gematik.idp.TestUtils
 import de.bdr.servko.keycloak.gematik.idp.extension.BrainpoolCurves
-import de.bdr.servko.keycloak.gematik.idp.model.AuthenticatorErrorTypes
-import de.bdr.servko.keycloak.gematik.idp.model.ContextData
-import de.bdr.servko.keycloak.gematik.idp.model.GematikIDPStatusResponse
-import de.bdr.servko.keycloak.gematik.idp.model.GematikIDPStep
+import de.bdr.servko.keycloak.gematik.idp.model.*
 import de.bdr.servko.keycloak.gematik.idp.service.GematikIdpCertificateService
+import de.bdr.servko.keycloak.gematik.idp.util.GematikIdpLiterals.Companion.AUTHENTICATOR_PORT
+import de.bdr.servko.keycloak.gematik.idp.util.GematikIdpLiterals.Companion.CODE_VERIFIER
+import de.bdr.servko.keycloak.gematik.idp.util.GematikIdpLiterals.Companion.HANDSHAKE_ID
 import jakarta.ws.rs.core.Response
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeEach
@@ -20,12 +20,9 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.EnumSource
 import org.junit.jupiter.params.provider.NullAndEmptySource
-import org.keycloak.OAuth2Constants
 import org.keycloak.broker.provider.BrokeredIdentityContext
 import org.keycloak.common.crypto.CryptoIntegration
-import org.keycloak.common.util.Base64
 import org.keycloak.forms.login.freemarker.model.ClientBean
-import org.keycloak.protocol.oidc.OIDCLoginProtocol
 import org.mockito.ArgumentMatchers
 import org.mockito.kotlin.*
 import java.net.URI
@@ -36,9 +33,9 @@ internal class GematikIDPSmcbResourceTest : GematikIDPEndpointBaseTest() {
 
     private val certificateService = object : GematikIdpCertificateService(realmMock, sessionMock, config, rest) {
         override fun generateTokenKeyBytes(): ByteArray = if (isHba) {
-            Base64.decode("dg99COL1CfysxnBuUTxz4gjfNdtD6OoCca5sdKwdUSY=")
+            ("dg99COL1CfysxnBuUTxz4gjfNdtD6OoCca5sdKwdUSY=").decodeBase64()
         } else {
-            Base64.decode("zdztIiMMgVa3jKdvrNG04BtbTZ4TjbbziazVjLLmEbM=")
+            ("zdztIiMMgVa3jKdvrNG04BtbTZ4TjbbziazVjLLmEbM=").decodeBase64()
         }
 
         override fun skipAllValidators(): Boolean = true
@@ -98,7 +95,7 @@ internal class GematikIDPSmcbResourceTest : GematikIDPEndpointBaseTest() {
 
         verify(formsMock).setAttribute(eq("authenticatorUrl"), authenticatorUrlCaptor.capture())
         val authenticatorUrl = authenticatorUrlCaptor.firstValue
-        assertAuthenticatorUrl(authenticatorUrl)
+        assertAuthenticatorUrl(authenticatorUrl, "SMC-B")
 
         verify(formsMock).setAttribute(
             "timeoutUrl",
@@ -112,6 +109,58 @@ internal class GematikIDPSmcbResourceTest : GematikIDPEndpointBaseTest() {
         verify(formsMock).setAttribute("authenticatorAutoLaunch", true)
         verify(formsMock).createForm("gematik-idp.ftl")
         verify(authSessionMock).setAuthNote("GEMATIK_IDP_STEP", "REQUESTED_SMCB_DATA")
+    }
+
+    @Test
+    fun `startAuth - returns correct form response with port and handshake_id`() {
+        whenever(authSessionMock.getAuthNote(AUTHENTICATOR_PORT)).thenReturn("1234")
+        whenever(authSessionMock.getAuthNote(HANDSHAKE_ID)).thenReturn("vg3xs")
+
+        // arrange
+        assertThat(underTest.startAuth(state).statusInfo).isEqualTo(Response.Status.OK)
+
+        val authenticatorUrlCaptor = argumentCaptor<URI>()
+
+        verify(formsMock).setAttribute(eq("authenticatorUrl"), authenticatorUrlCaptor.capture())
+        val authenticatorUrl = authenticatorUrlCaptor.firstValue
+        assertAuthenticatorUrl(authenticatorUrl, "SMC-B")
+
+        verify(formsMock).setAttribute(
+            "timeoutUrl",
+            URI.create("http://localhost:8080/realms/$REALM_NAME/broker/$IDP_ALIAS/endpoint/timeout?state=$state")
+        )
+        verify(formsMock).setAttribute(
+            "statusUrl",
+            URI.create("http://localhost:8080/realms/$REALM_NAME/broker/$IDP_ALIAS/endpoint/status?state=$state")
+        )
+        verify(formsMock).setAttribute(
+            "authRequestUrl",
+            URI.create("http://localhost:8080/realms/$REALM_NAME/broker/$IDP_ALIAS/endpoint/authRequest?state=$state")
+        )
+        verify(formsMock).setAttribute(
+            "probeAuthenticatorServerUrl",
+            URI.create("http://localhost:1234/status")
+        )
+
+        verify(formsMock).setAttribute("authenticatorPortRangeStart", 1024)
+        verify(formsMock).setAttribute("authenticatorPortRangeEnd", 65535)
+        verify(formsMock).setAttribute("timeoutMs", 20000)
+        verify(formsMock).setAttribute("authenticatorHttpServerTimeoutMs", 10000)
+        verify(formsMock).setAttribute("authenticatorAutoLaunch", true)
+        verify(formsMock).createForm("gematik-idp.ftl")
+        verify(authSessionMock).setAuthNote("GEMATIK_IDP_STEP", "REQUESTED_SMCB_DATA")
+    }
+
+    @Test
+    fun `authRequest - returns correct response`() {
+        whenever(authSessionMock.getAuthNote(HANDSHAKE_ID)).thenReturn("gt3kj6")
+        whenever(authSessionMock.getAuthNote(AUTHENTICATOR_PORT)).thenReturn("1234")
+        whenever(authSessionMock.getAuthNote(CODE_VERIFIER)).thenReturn("1234")
+
+        val response = underTest.authRequest(state, "4.17.1")
+        assertThat(response.status).isEqualTo(303)
+        assertThat(response.location).isNotNull
+        assertAuthorizeUrl(response.location, AuthenticationCardType.SMCB.typeName)
     }
 
     @ParameterizedTest
@@ -362,6 +411,7 @@ internal class GematikIDPSmcbResourceTest : GematikIDPEndpointBaseTest() {
 
         whenever(authSessionMock.getAuthNote("GEMATIK_IDP_STEP")).thenReturn(GematikIDPStep.REQUESTED_SMCB_DATA.name)
         whenever(authSessionMock.getAuthNote("CODE_VERIFIER")).thenReturn(smcbKeyVerifier)
+        whenever(authSessionMock.getAuthNote("authenticatorVersion")).thenReturn(authenticatorVersion)
 
         val error = "authenticator.unsupportedCardType"
         val errorDetails = "Received HBA data, which is not configured for this flow."
@@ -385,6 +435,28 @@ internal class GematikIDPSmcbResourceTest : GematikIDPEndpointBaseTest() {
         verify(authSessionMock).setAuthNote("error", error)
         verify(authSessionMock).setAuthNote("error_details", errorDetails)
         verify(authSessionMock).setAuthNote("error_uri", errorUri)
+        verify(authSessionMock).setAuthNote("GEMATIK_IDP_STEP", GematikIDPStep.ERROR.name)
+    }
+
+    @Test
+    fun `result - function call with authenticator version error`() {
+        // arrange
+        isHba = false
+
+        whenever(authSessionMock.getAuthNote("GEMATIK_IDP_STEP")).thenReturn(GematikIDPStep.REQUESTED_SMCB_DATA.name)
+        whenever(authSessionMock.getAuthNote("CODE_VERIFIER")).thenReturn(smcbKeyVerifier)
+
+        val error = "authenticator.unsupportedAuthenticatorVersion"
+        val errorDetails = "Authenticator version unsupported. Please update your Authenticator."
+
+        // act
+        val result = underTest.result(CODE, state, "SMC-B", null, null, null, "authenticator/4.5.0 gematik/!")
+
+        // assert
+        assertThat(result.statusInfo).isEqualTo(Response.Status.NO_CONTENT)
+        verify(authSessionMock).setAuthNote("error", error)
+        verify(authSessionMock).setAuthNote("error_details", errorDetails)
+        verify(authSessionMock).setAuthNote("error_uri", null)
         verify(authSessionMock).setAuthNote("GEMATIK_IDP_STEP", GematikIDPStep.ERROR.name)
     }
 
@@ -426,12 +498,13 @@ internal class GematikIDPSmcbResourceTest : GematikIDPEndpointBaseTest() {
     }
 
     @Test
-    fun `result - received HBA data successfully - data is saved in session`() {
+    fun `result - unsupported HBA data received - error details are saved in session`() {
         // arrange
         isHba = true
 
         whenever(authSessionMock.getAuthNote("GEMATIK_IDP_STEP")).thenReturn(GematikIDPStep.REQUESTED_HBA_DATA.name)
         whenever(authSessionMock.getAuthNote("CODE_VERIFIER")).thenReturn(hbaKeyVerifier)
+        whenever(authSessionMock.getAuthNote("authenticatorVersion")).thenReturn(authenticatorVersion)
 
         val error = "authenticator.unsupportedCardType"
         val errorDetails = "Received HBA data, which is not configured for this flow."
@@ -457,12 +530,43 @@ internal class GematikIDPSmcbResourceTest : GematikIDPEndpointBaseTest() {
     }
 
     @Test
+    fun `result - received SMC-B data successfully - redirect to next step in new flow`() {
+        // arrange
+        isHba = false
+
+        whenever(authSessionMock.getAuthNote("GEMATIK_IDP_STEP")).thenReturn(GematikIDPStep.RECEIVED_SMCB_DATA.name)
+        whenever(authSessionMock.getAuthNote("CODE_VERIFIER")).thenReturn(smcbKeyVerifier)
+        whenever(authSessionMock.getAuthNote("authenticatorVersion")).thenReturn("4.17.1")
+
+        mockDoGetJwk()
+        mockDoPostToGetSmcbToken()
+
+        // act
+        val result = underTest.result(
+            CODE,
+            state,
+            "SMC-B",
+            null,
+            null,
+            null,
+            "4.17.1"
+        )
+
+        // assert
+        assertThat(result.statusInfo.statusCode).isEqualTo(Response.Status.SEE_OTHER.statusCode)
+        assertThat(result.location).isEqualTo(URI("http://localhost:8080/realms/test-realm/broker/gematik-idp/endpoint/nextStep?state=rootSessionId__gematik_client__tabId"))
+        verify(authSessionMock).setAuthNote("GEMATIK_IDP_STEP", GematikIDPStep.RECEIVED_SMCB_DATA.name)
+        verify(authSessionMock).setAuthNote(eq("SMCB_DATA"), any())
+    }
+
+    @Test
     fun `result - received SMC-B data successfully - data is saved in session`() {
         // arrange
         isHba = false
 
         whenever(authSessionMock.getAuthNote("GEMATIK_IDP_STEP")).thenReturn(GematikIDPStep.REQUESTED_SMCB_DATA.name)
         whenever(authSessionMock.getAuthNote("CODE_VERIFIER")).thenReturn(smcbKeyVerifier)
+        whenever(authSessionMock.getAuthNote("authenticatorVersion")).thenReturn(authenticatorVersion)
 
         mockDoGetJwk()
         mockDoPostToGetSmcbToken()
@@ -481,32 +585,5 @@ internal class GematikIDPSmcbResourceTest : GematikIDPEndpointBaseTest() {
         assertThat(result.statusInfo).isEqualTo(Response.Status.OK)
         verify(authSessionMock).setAuthNote("GEMATIK_IDP_STEP", GematikIDPStep.RECEIVED_SMCB_DATA.name)
         verify(authSessionMock).setAuthNote(eq("SMCB_DATA"), any())
-    }
-
-    private fun assertAuthenticatorUrl(authenticatorUrl: URI) {
-        assertThat(authenticatorUrl).hasNoHost()
-        assertThat(authenticatorUrl.toString()).startsWith("authenticator://")
-        assertThat(authenticatorUrl.toString()).contains("callback=direct")
-        val queryParams = authenticatorUrl.query.split("=", "&", limit = 2)
-        assertThat(queryParams).hasSize(2)
-        assertThat(queryParams[0]).isEqualTo("challenge_path")
-        val challengeUri = URI.create(queryParams[1].replace(" ", "%20"))
-        assertThat(challengeUri).hasHost("host.docker.internal").hasPort(8081).hasPath("/sign_response")
-        val challengeQueryParams = challengeUri.query.split("&").associate { queryParam ->
-            queryParam.split("=").let {
-                it[0] to it[1]
-            }
-        }
-
-        assertThat(challengeQueryParams[OAuth2Constants.CLIENT_ID]).isEqualTo(GEMATIK_CLIENT_ID)
-        assertThat(challengeQueryParams[OAuth2Constants.RESPONSE_TYPE]).isEqualTo(OAuth2Constants.CODE)
-        assertThat(challengeQueryParams[OAuth2Constants.REDIRECT_URI]).isEqualTo(
-            "http://localhost:8080/realms/$REALM_NAME/broker/$IDP_ALIAS/endpoint/result"
-        )
-        assertThat(challengeQueryParams[OAuth2Constants.STATE]).isEqualTo(state)
-        assertThat(challengeQueryParams["cardType"]).isEqualTo("SMC-B")
-        assertThat(challengeQueryParams[OAuth2Constants.CODE_CHALLENGE]).isNotBlank
-        assertThat(challengeQueryParams[OAuth2Constants.CODE_CHALLENGE_METHOD]).isEqualTo(OAuth2Constants.PKCE_METHOD_S256)
-        assertThat(challengeQueryParams[OIDCLoginProtocol.NONCE_PARAM]).isNotBlank
     }
 }

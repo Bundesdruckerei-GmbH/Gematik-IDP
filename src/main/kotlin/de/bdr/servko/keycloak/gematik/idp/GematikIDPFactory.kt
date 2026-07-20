@@ -83,8 +83,13 @@ class GematikIDPFactory : AbstractIdentityProviderFactory<GematikIDP>(), ServerI
     override fun getConfigProperties(): MutableList<ProviderConfigProperty> =
         ProviderConfigurationBuilder.create()
             .authenticationFlow()
+            .authenticatorVersion()
             .authenticatorAuthorizationUrl()
+            .loginTimeoutMs()
             .timeoutMs()
+            .authenticatorPortRangeStart()
+            .authenticatorPortRangeEnd()
+            .authenticatorHttpServerTimeoutMs()
             .openidConfigUrl()
             .validateTokenSignerCertificate()
             .validateOpenIDConfigSigningCertificate()

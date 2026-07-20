@@ -1,0 +1,50 @@
+@startuml
+!define ACTIVITY_FONTNAME Helvetica
+skinparam activity {
+    BackgroundColor   #F9F9F9
+    BorderColor       #2A7AE2
+    FontName          ACTIVITY_FONTNAME
+    FontSize          14
+    ArrowColor        #2A7AE2
+    ArrowThickness    2
+    BarColor          #2A7AE2
+}
+
+title Authenticator 4.17.0 polling mechanisms
+'--------------------------------------------------------------------
+' Parallel start – both mechanisms are launched at the same time
+'--------------------------------------------------------------------
+fork
+    :Start **New‑version polling**;
+    note right: Starts a mechanism that
+    note right: periodically checks the local http‑server.
+    while (Http‑server not detected?) is (timeout?\n< MAX_WAIT ms)
+        :Check if local http server is up;
+    endwhile (detected)
+
+    if (Http‑server detected?) then (yes)
+        :New version of Authenticator **running**;
+        :Stop legacy polling;
+        :Send additional parameters\nto http server to start flow;
+        stop
+    else (no – timeout)
+        :Stop new‑version polling;
+        :Consider **old version** running;
+        note right: Legacy polling takes over
+    endif
+fork again
+    :Start **Legacy polling**;
+    note left: Legacy mechanism has been active from the beginning.
+    while (Legacy polling active?) is (waiting for status)
+        :Call getStatus() on legacy Authenticator;
+        if (Status received?) then (yes)
+            :Legacy Authenticator **running**;
+            :Cancel new‑version polling (if still alive);
+            stop
+        else (no)
+            -[grey]-> (continue waiting)
+        endif
+    endwhile
+end fork
+
+@enduml

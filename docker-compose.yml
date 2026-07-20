@@ -38,7 +38,7 @@ services:
     entrypoint: "/opt/keycloak/bin/kc.sh start-dev --import-realm"
 
   idp-server:
-    image: gematik1/idp-server:30.0.3
+    image: gematik1/idp-server:30.0.11
     container_name: gem-ref-idp-server
     restart: always
     ports:

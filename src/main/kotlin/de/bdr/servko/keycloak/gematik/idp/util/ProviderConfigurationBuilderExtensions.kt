@@ -33,11 +33,28 @@ fun ProviderConfigurationBuilder.authenticatorAuthorizationUrl(): ProviderConfig
     .type(ProviderConfigProperty.STRING_TYPE)
     .add()
 
+fun ProviderConfigurationBuilder.authenticatorVersion(): ProviderConfigurationBuilder = this.property()
+    .name(GematikIDPConfig.AUTHENTICATOR_VERSION)
+    .label("Authenticator Version")
+    .helpText("Minimum compatible version of the authenticator.")
+    .type(ProviderConfigProperty.STRING_TYPE)
+    .defaultValue(GematikIDPConfig.MINIMUM_AUTHENTICATOR_VERSION.toString())
+    .add()
+
+fun ProviderConfigurationBuilder.loginTimeoutMs(): ProviderConfigurationBuilder = this.property()
+    .name(GematikIDPConfig.LOGIN_TIMEOUT_MS)
+    .label("Login Timeout (ms)")
+    .helpText("Timeout in milliseconds until the login process is aborted (default 600000).")
+    .type(ProviderConfigProperty.STRING_TYPE)
+    .defaultValue(LOGIN_TIMEOUT_MS_VALUE.toString())
+    .add()
+
 fun ProviderConfigurationBuilder.timeoutMs(): ProviderConfigurationBuilder = this.property()
     .name(GematikIDPConfig.TIMEOUT_MS)
     .label("Authenticator Timeout (ms)")
     .helpText("Timeout in milliseconds until the process of establishing a connection to the Authenticator is aborted (default 20000).")
     .type(ProviderConfigProperty.STRING_TYPE)
+    .defaultValue(AUTHENTICATOR_TIMEOUT_MS_VALUE.toString())
     .add()
 
 fun ProviderConfigurationBuilder.openidConfigUrl(): ProviderConfigurationBuilder = this.property()
@@ -68,6 +85,7 @@ fun ProviderConfigurationBuilder.idpTimeoutMs(): ProviderConfigurationBuilder = 
     .label("Gematik IDP timeout (ms)")
     .helpText("Timeout in milliseconds until the process of establishing a connection to the Gematik IDP is aborted (default 10000).")
     .type(ProviderConfigProperty.STRING_TYPE)
+    .defaultValue(IDP_TIMEOUT_MS_VALUE.toString())
     .add()
 
 fun ProviderConfigurationBuilder.idpUserAgent(): ProviderConfigurationBuilder = this.property()
@@ -89,4 +107,35 @@ fun ProviderConfigurationBuilder.authenticatorAutoLaunch(): ProviderConfiguratio
     .label("Authenticator Auto-Launch")
     .helpText("When enabled, the login page launches the Gematik Authenticator immediately without showing the confirmation modal.")
     .type(ProviderConfigProperty.BOOLEAN_TYPE)
+    .add()
+
+fun ProviderConfigurationBuilder.authenticatorPortRangeStart(): ProviderConfigurationBuilder = this.property()
+    .name(GematikIDPConfig.AUTHENTICATOR_PORT_RANGE_START)
+    .label("Authenticator Port Range Start")
+    .helpText(
+        "First port of the free‑port range (default " + GematikIDPConfig.AUTHENTICATOR_MIN_PORT + "). Must be between " +
+                GematikIDPConfig.AUTHENTICATOR_MIN_PORT + " and " + GematikIDPConfig.AUTHENTICATOR_MAX_PORT + "."
+    )
+    .type(ProviderConfigProperty.NUMBER_TYPE)
+    .defaultValue(GematikIDPConfig.AUTHENTICATOR_MIN_PORT)
+    .add()
+
+fun ProviderConfigurationBuilder.authenticatorPortRangeEnd(): ProviderConfigurationBuilder = this.property()
+    .name(GematikIDPConfig.AUTHENTICATOR_PORT_RANGE_END)
+    .label("Authenticator Port Range End")
+    .helpText(
+        "Last port of the free‑port range (default " + GematikIDPConfig.AUTHENTICATOR_MAX_PORT + "). Must be >= "
+                + GematikIDPConfig().getAuthenticatorPortRangeStart() + " and within " +
+                GematikIDPConfig.AUTHENTICATOR_MIN_PORT + "–" + GematikIDPConfig.AUTHENTICATOR_MAX_PORT + "."
+    )
+    .defaultValue(GematikIDPConfig.AUTHENTICATOR_MAX_PORT)
+    .type(ProviderConfigProperty.NUMBER_TYPE)
+    .add()
+
+fun ProviderConfigurationBuilder.authenticatorHttpServerTimeoutMs(): ProviderConfigurationBuilder = this.property()
+    .name(GematikIDPConfig.AUTHENTICATOR_HTTP_SERVER_TIMEOUT_MS)
+    .label("Authenticator Startup Timeout (local HTTP server timeout)")
+    .helpText("Timeout in milliseconds to establish communication to the authenticator's local HTTP server. Defaults to 10 seconds.")
+    .type(ProviderConfigProperty.NUMBER_TYPE)
+    .defaultValue(AUTHENTICATOR_HTTP_SERVER_TIMEOUT_MS_VALUE)
     .add()
