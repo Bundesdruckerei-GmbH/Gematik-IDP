@@ -1,5 +1,16 @@
 # Release Notes
 
+## Release 3.14.0
+
+* Added support for new authenticator version 4.17.1 but still backwards compatible with earlier versions
+    * Added support for communication via HTTP server provided by Gematik Authenticator
+    * Update polling mechanism in order to support new authenticator flow
+    * Added several related new configuration parameters e.g.
+        * port ranges
+        * authenticator server timeout
+        * authenticator version
+* Update Keycloak to 26.8.2
+
 ## Release 3.13.0
 
 * Update Keycloak to 26.5.6
@@ -12,15 +23,15 @@
 ## Release 3.12.0
 
 * Added validation for ID-Token signer certificate against gematik TSL certificate chain
-  * Caching mechanism ensures moderate processing load
-  * Configurable via admin UI toggle (disabled by default)
+    * Caching mechanism ensures moderate processing load
+    * Configurable via admin UI toggle (disabled by default)
 * Removed legacy authentication flow
-  * Default authentication flow changed from `LEGACY` to `MULTI`
-  * Added validation for authentication flow selection on configuration
+    * Default authentication flow changed from `LEGACY` to `MULTI`
+    * Added validation for authentication flow selection on configuration
 * Fixed PostgreSQL image version to 16 in `docker-compose.yml`
 * Update Keycloak to 26.5.3
-  * Migrated to `UserAuthenticationIdentityProvider` API
-  * User attribute mapper now uses `USER_PROFILE_ATTRIBUTE_LIST_TYPE`
+    * Migrated to `UserAuthenticationIdentityProvider` API
+    * User attribute mapper now uses `USER_PROFILE_ATTRIBUTE_LIST_TYPE`
 * Update Kotlin to 2.3.0
 * Update gematik IDP reference server to 30.0.3
 * Dependency updates
@@ -48,7 +59,8 @@
 ## Release 3.9.0
 
 * Update Keycloak to 26.3.2
-* Resolved [Issue#18 - Validierung des Discovery Dokumentes](https://github.com/Bundesdruckerei-GmbH/Gematik-IDP/issues/18)
+*
+Resolved [Issue#18 - Validierung des Discovery Dokumentes](https://github.com/Bundesdruckerei-GmbH/Gematik-IDP/issues/18)
     * see Readme chapter _TSL certificate validation_ for more information
 * Dependency Updates
 

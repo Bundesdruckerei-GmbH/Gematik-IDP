@@ -7,13 +7,13 @@ package de.bdr.servko.keycloak.gematik.idp.service
 
 import de.bdr.servko.keycloak.gematik.idp.extension.BrainpoolCurves
 import de.bdr.servko.keycloak.gematik.idp.tsl.TslCertificateVerifierProvider
+import de.bdr.servko.keycloak.gematik.idp.util.GematikIDPUtil.Companion.decodeBase64
 import de.bdr.servko.keycloak.gematik.idp.util.RestClient
 import org.jboss.logging.Logger
 import org.jose4j.jws.JsonWebSignature
 import org.jose4j.jwt.JwtClaims
 import org.jose4j.jwt.consumer.JwtConsumerBuilder
 import org.jose4j.jwx.HeaderParameterNames
-import org.keycloak.common.util.Base64
 import org.keycloak.common.util.DerUtils
 import org.keycloak.models.KeycloakSession
 import java.io.ByteArrayInputStream
@@ -43,10 +43,7 @@ open class GematikIdpOpenIDConfigurationService(
         val signingCertificate: X509Certificate =
             JsonWebSignature.fromCompactSerialization(openidConfigurationJWT).run {
                 //extract base64 encoded x5c certificate from header
-                Base64.decode(
-                    (headers.getObjectHeaderValue(HeaderParameterNames.X509_CERTIFICATE_CHAIN) as List<*>).filterIsInstance<String>()
-                        .first()
-                )
+                (headers.getObjectHeaderValue(HeaderParameterNames.X509_CERTIFICATE_CHAIN) as List<*>).filterIsInstance<String>().first().decodeBase64()
             }.let { x5cBytes ->
                 //use org.keycloak.common.util.DerUtils to generate the key, since it's using BC
                 ByteArrayInputStream(x5cBytes).use {

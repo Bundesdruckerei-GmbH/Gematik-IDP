@@ -4,4 +4,4 @@
  */
 package de.bdr.servko.keycloak.gematik.idp.exception
 
-class ClientException(message:String): Exception(message)
+class ClientException(message: String) : RuntimeException(message)

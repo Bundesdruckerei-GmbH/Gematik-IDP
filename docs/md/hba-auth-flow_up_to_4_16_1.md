@@ -5,7 +5,7 @@ Supported only in Gematik Authenticator version above 4.6.0 via the `authenticat
 
 ## Flow Diagram
 
-![Flow](/docs/img/flow_smcb.png)
+![Flow](/docs/img/flow_hba_up_to_4_16_1.png)
 
 1. User initiated login
 2. User selects the `Login with HBA`, which triggers the gematik-idp
@@ -25,23 +25,23 @@ Supported only in Gematik Authenticator version above 4.6.0 via the `authenticat
 9. Keycloak generates `code_verifier` and stores it in the session of the user
 10. Generate the deeplink to the Authenticator, passing among other things
     1. challenge_path: url to the C-IDP
-       1. Containing a field name ``cardType`` set to multi
+       1. Containing a field name ``cardType`` set to HBA
     2. redirect_url: url to Keycloak
     3. code_challenge: generated `code_verifier`
 11. User opens Authenticator app
-12. Authenticator app automatically starts SMCB flow with the IDP
+12. Authenticator app automatically starts HBA flow with the IDP
 13. Browser pulls the authentication status repeatedly, while waiting for the exchange between Gematik-Authenticator and Keycloak to complete
-14. Authenticator app and C-IDP communicate, exchanging certificates and SMCB data
+14. Authenticator app and C-IDP communicate, exchanging certificates and HBA data
 15. Authenticator calls `redirect_url`
-16. Keycloak responds with 200 and saves the SMCB data
+16. Keycloak responds with 200 and saves the HBA data
 17. Keycloak fetches certificate from C-IDP
 18. C-IDP returns certificate
 19. Keycloak generates `key_verifier` with the certificate and `code_verifier` from user session
 20. Call to C-IDP to retrieve ID-token
 21. Responds with json, which contains id_token and access_token as JWE
-22. Keycloak decrypts id_token, verifies it and stores [SMCB data](/docs/smcb-id-token.json) in the session
+22. Keycloak decrypts id_token, verifies it and stores [HBA data](/docs/hba-id-token.json) in the session
 23. Keycloak responses status call from step 12 with 200 and provides the URL to the next step.
 24. User browser calls `nextStepUrl` from the status response
-25. Keycloak updates the user, based on IDP-mapper with the stored SMCB data
+25. Keycloak updates the user, based on IDP-mapper with the stored HBA
 26. Keycloak calls initial redirect_url
 27. Return the user to the initial application

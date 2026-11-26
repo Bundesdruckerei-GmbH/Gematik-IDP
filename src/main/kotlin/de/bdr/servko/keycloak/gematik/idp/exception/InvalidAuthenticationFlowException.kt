@@ -4,4 +4,5 @@
  */
 package de.bdr.servko.keycloak.gematik.idp.exception
 
-class InvalidAuthenticationFlowException(message:String): IllegalArgumentException(message)
+class InvalidAuthenticationFlowException(flowName:String?):
+    IllegalArgumentException("Authentication flow '${flowName}' is not valid")

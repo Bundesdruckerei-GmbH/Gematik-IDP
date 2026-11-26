@@ -41,11 +41,11 @@ class ErrorUtils {
             return Response.noContent().build()
         }
 
-        fun saveUnsupportedAuthenticatorVersion(authSession: AuthenticationSessionModel): Response {
+        fun saveUnsupportedAuthenticatorVersion(authSession: AuthenticationSessionModel, minVersion: String): Response {
             authSession.setAuthNote(GematikIdpLiterals.ERROR, AuthenticatorErrorTypes.UNSUPPORTED_AUTHENTICATOR_VERSION.error)
             authSession.setAuthNote(
                 GematikIdpLiterals.ERROR_DETAILS,
-                "Authenticator version unsupported. Please update your Authenticator."
+                minVersion
             )
             authSession.setAuthNote(GematikIdpLiterals.GEMATIK_IDP_STEP, GematikIDPStep.ERROR.name)
             authSession.setAuthNote(GematikIdpLiterals.ERROR_URI, null)

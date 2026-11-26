@@ -15,6 +15,7 @@ import org.jose4j.jwe.KeyManagementAlgorithmIdentifiers
 import org.jose4j.jwk.PublicJsonWebKey
 import org.jose4j.jwt.JwtClaims
 import org.keycloak.OAuth2Constants
+import org.keycloak.common.util.Time
 import org.keycloak.models.KeycloakSession
 import org.keycloak.models.RealmModel
 import org.keycloak.services.resources.IdentityBrokerService
@@ -22,11 +23,13 @@ import org.keycloak.services.resources.RealmsResource
 import org.keycloak.sessions.AuthenticationSessionModel
 import org.keycloak.util.JsonSerialization
 import java.net.URI
+import java.util.*
 
 class GematikIDPUtil {
     companion object {
+
         fun getGematikIdpStepFrom(authSession: AuthenticationSessionModel): GematikIDPStep =
-            authSession.getAuthNote(GematikIdpLiterals.GEMATIK_IDP_STEP)?.let {
+            authSession.getGematikIDPStepAuthNote()?.let {
                 GematikIDPStep.valueOf(it)
             } ?: GematikIDPStep.ERROR
 
@@ -39,15 +42,6 @@ class GematikIDPUtil {
                 @Suppress("UNCHECKED_CAST")
                 JsonSerialization.readValue(it, Map::class.java) as Map<String, Any>?
             }
-
-        fun setAuthenticatorVersionInAuthSession(
-            version: AuthenticatorVersion,
-            authSession: AuthenticationSessionModel,
-        ) {
-            if (!version.isNullOrEmpty()) {
-                authSession.setAuthNote(GematikIdpLiterals.AUTHENTICATOR_VERSION, version.toString())
-            }
-        }
 
         fun addAuthenticatorVersionToMdc(version: AuthenticatorVersion) {
             MDC.put(GematikIdpLiterals.AUTHENTICATOR_VERSION, version.toString())
@@ -109,6 +103,41 @@ class GematikIDPUtil {
                     }
                 }
                 .build(realm.name, config.alias)
-    }
 
+        fun isLoginTimedOut(
+            authSession: AuthenticationSessionModel,
+            loginTimeoutMs: Int,
+        ): Boolean {
+            if (loginTimeoutMs <= 0) return false
+            val startStr = authSession.getLoginStartTimeAuthNote()
+                ?: return false
+
+            val start = startStr.toLongOrNull() ?: return false
+            val now = Time.currentTimeMillis()
+            return (now - start) > loginTimeoutMs
+        }
+
+        fun isNewAuthenticatorFlow(
+            authSession: AuthenticationSessionModel,
+            providedVersion: AuthenticatorVersion? = null,
+            realm: RealmModel,
+        ): Boolean {
+            val disable417LoginFlow = "true".equals(
+                realm.getAttribute(GematikIdpLiterals.DISABLE_4_17_LOGIN_FLOW_ATTRIBUTE),
+                ignoreCase = true
+            )
+            if (disable417LoginFlow) return false
+
+            val version = providedVersion ?: authSession.getAuthenticatorVersionAuthNote()?.let {
+                AuthenticatorVersion.from(it)
+            }
+            return version?.let {
+                val authenticatorVersionForNewFlow = AuthenticatorVersion.from(AUTHENTICATOR_VERSION_NEW_FLOW)
+                it.isGreaterThenOrEqual(authenticatorVersionForNewFlow)
+            } ?: false
+        }
+
+        fun String.decodeBase64(): ByteArray =
+            Base64.getDecoder().decode(this)
+    }
 }

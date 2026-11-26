@@ -38,24 +38,29 @@
         <#compress>
             <script id="gematikIdpConfiguration" type="application/json">
                 {
-                    "statusUrl": "${statusUrl!""}",
-                    "timeoutUrl": "${timeoutUrl!""}",
-                    "timeout": ${timeoutMs?c}
+                "statusUrl": "${statusUrl!""}",
+                "timeoutUrl": "${timeoutUrl!""}",
+                "timeout": ${timeoutMs?c},
+                "authenticatorHttpServerTimeout": ${authenticatorHttpServerTimeoutMs?c},
+                "authRequestUrl": "${authRequestUrl!""}",
+                "probeAuthenticatorServerUrl": "${probeAuthenticatorServerUrl!""}"
                 }
             </script>
         </#compress>
 
         <#if authenticatorAutoLaunch>
-            <#-- Auto-launch path: skip modal, fire the authentication immediately -->
+        <#-- Auto-launch path: skip modal, fire the authentication immediately -->
             <meta http-equiv="refresh" content="1; URL=${authenticatorUrl}">
         <#else>
-            <#-- Modal -->
+        <#-- Modal -->
             <div class="pf-c-backdrop gematik-idp-modal">
                 <div class="pf-l-bullseye">
-                    <div class="pf-c-modal-box pf-m-md" role="dialog" aria-modal="true" aria-labelledby="modal-login-info-title"
+                    <div class="pf-c-modal-box pf-m-md" role="dialog" aria-modal="true"
+                         aria-labelledby="modal-login-info-title"
                          aria-describedby="modal-login-info-description">
                         <header class="pf-c-modal-box__header">
-                            <h1 class="pf-c-modal-box__title" id="modal-login-info-title">${msg("confirmOpenAuthenticatorModalHint")}</h1>
+                            <h1 class="pf-c-modal-box__title"
+                                id="modal-login-info-title">${msg("confirmOpenAuthenticatorModalHint")}</h1>
                         </header>
                         <div class="pf-c-modal-box__body" id="modal-login-info-description">
                             <p>
