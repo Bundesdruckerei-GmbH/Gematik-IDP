@@ -124,6 +124,7 @@ internal class AuthenticatorVersionTest {
         "2,1,1",
         "2,1,2",
         "2,2,1",
+        "1,8,5",
     )
     fun `isGreaterThenOrEqual with smaller version to compare - is true`(
         major: Int?,

@@ -8,7 +8,7 @@ package de.bdr.servko.keycloak.gematik.idp.tsl
 import jakarta.ws.rs.core.MediaType
 import org.apache.http.HttpHeaders
 import org.jboss.logging.Logger
-import org.keycloak.broker.provider.util.SimpleHttp
+import org.keycloak.http.simple.SimpleHttp
 import org.keycloak.models.KeycloakSession
 import java.io.IOException
 
@@ -47,8 +47,8 @@ class TslDownloadClient(
 
     private fun downloadTsl(url: String): String? =
         try {
-            val response = SimpleHttp
-                .doGet(url, session)
+            val response = SimpleHttp.create(session)
+                .doGet(url)
                 .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_XML)
                 .asResponse()
             if (response.status == 200) {

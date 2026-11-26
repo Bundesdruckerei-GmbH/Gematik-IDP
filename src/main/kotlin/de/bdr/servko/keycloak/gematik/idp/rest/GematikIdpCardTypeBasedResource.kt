@@ -5,37 +5,57 @@
 
 package de.bdr.servko.keycloak.gematik.idp.rest
 
-import de.bdr.servko.keycloak.gematik.idp.exception.SessionNotFoundException
 import de.bdr.servko.keycloak.gematik.idp.model.*
 import de.bdr.servko.keycloak.gematik.idp.service.GematikIdpCertificateService
-import de.bdr.servko.keycloak.gematik.idp.util.ErrorUtils
-import de.bdr.servko.keycloak.gematik.idp.util.GematikIDPUtil
-import de.bdr.servko.keycloak.gematik.idp.util.GematikIdpLiterals
-import de.bdr.servko.keycloak.gematik.idp.util.VersionFromUserAgentReader
+import de.bdr.servko.keycloak.gematik.idp.util.*
 import jakarta.ws.rs.GET
 import jakarta.ws.rs.HeaderParam
 import jakarta.ws.rs.Path
 import jakarta.ws.rs.QueryParam
 import jakarta.ws.rs.core.HttpHeaders
+import jakarta.ws.rs.core.MediaType
 import jakarta.ws.rs.core.Response
 import jakarta.ws.rs.core.UriBuilder
 import org.keycloak.OAuth2Constants
-import org.keycloak.common.util.Base64Url
-import org.keycloak.common.util.SecretGenerator
-import org.keycloak.protocol.oidc.OIDCLoginProtocol
-import org.keycloak.protocol.oidc.utils.PkceUtils
 import org.keycloak.sessions.AuthenticationSessionModel
+import org.keycloak.util.JsonSerialization
 import java.net.URI
 
-abstract class GematikIdpCardTypeBasedResource: GematikIDPResource() {
+
+abstract class GematikIdpCardTypeBasedResource : GematikIDPResource() {
     abstract val certificateService: GematikIdpCertificateService
     abstract val flowLastStep: GematikIDPStep
 
-    abstract fun handleHbaResult(authSession: AuthenticationSessionModel, code: String, cardType: String): Response
+    open fun handleHbaResult(authSession: AuthenticationSessionModel, encodedState: String?, code: String): Response =
+        storeClaimsAndStartNextStep(authSession, code, AuthenticationCardType.HBA) { redirectToNextStep(encodedState) }
 
-    abstract fun handleSmcbResult(authSession: AuthenticationSessionModel, code: String, cardType: String): Response
+    open fun handleSmcbResult(authSession: AuthenticationSessionModel, encodedState: String?, code: String): Response =
+        storeClaimsAndStartNextStep(authSession, code, AuthenticationCardType.SMCB) { redirectToNextStep(encodedState) }
 
     abstract fun finalizeLogin(authSession: AuthenticationSessionModel): Response
+
+    fun storeClaimsAndStartNextStep(
+        authSession: AuthenticationSessionModel,
+        code: String,
+        cardType: AuthenticationCardType,
+        redirectToNextStep: () -> Response,
+    ): Response {
+        getClaimsMap(authSession, code, cardType)?.let {
+            storeClaimsMapInSession(authSession, cardType, it)
+        } ?: return getUnauthorizedResponse(cardType)
+        return redirectToNextStep()
+    }
+
+    private fun redirectToNextStep(encodedState: String?): Response = encodedState?.let { state ->
+        val authenticatorNextStepUrl = GematikIDPUtil.getEndpointUri(
+            session,
+            realm,
+            GematikIDPState.fromEncodedState(state),
+            config,
+            GematikIdpLiterals.AUTHENTICATOR_NEXT_STEP
+        )
+        Response.seeOther(authenticatorNextStepUrl).build()
+    } ?: Response.ok().type(MediaType.APPLICATION_JSON_TYPE).build()
 
     /**
      * Called by the browser to check the current status of the login process. Used as part of the new authentication
@@ -49,32 +69,26 @@ abstract class GematikIdpCardTypeBasedResource: GematikIDPResource() {
         @QueryParam(OAuth2Constants.STATE) encodedState: String,
     ): Response {
         val authenticatorNextStepUrl = GematikIDPUtil.getEndpointUri(
-            session,
-            realm,
-            GematikIDPState.fromEncodedState(encodedState),
-            config,
+            session, realm,
+            GematikIDPState.fromEncodedState(encodedState), config,
             GematikIdpLiterals.AUTHENTICATOR_NEXT_STEP
         )
+        return withAuthSessionAndLoginTimeout(
+            encodedState,
+            onSessionNotFound = { respondWithStatusRedirect(GematikIDPStep.ERROR.name, authenticatorNextStepUrl) }
+        ) { authSession ->
+            when (val step = GematikIDPUtil.getGematikIdpStepFrom(authSession)) {
+                flowLastStep, GematikIDPStep.ERROR -> {
+                    respondWithStatusRedirect(step.name, authenticatorNextStepUrl)
+                }
 
-        val authSession: AuthenticationSessionModel = try {
-            service.resolveAuthSessionFromEncodedState(realm, encodedState)
-        } catch (snfe: SessionNotFoundException) {
-            return respondWithStatusRedirect(GematikIDPStep.ERROR.name, authenticatorNextStepUrl)
-        } catch (e: Exception) {
-            return callback.error(config, "Failed to resolve auth session: ${e.message}")
-        }
-
-        return when (val step = GematikIDPUtil.getGematikIdpStepFrom(authSession)) {
-            flowLastStep, GematikIDPStep.ERROR -> {
-                respondWithStatusRedirect(step.name, authenticatorNextStepUrl)
-            }
-
-            else -> {
-                Response.status(Response.Status.ACCEPTED).entity(
-                    GematikIDPStatusResponse(
-                        GematikIDPStep.WAITING_FOR_AUTHENTICATOR_RESPONSE.name, null
-                    )
-                ).build()
+                else -> {
+                    Response.status(Response.Status.ACCEPTED).entity(
+                        GematikIDPStatusResponse(
+                            GematikIDPStep.WAITING_FOR_AUTHENTICATOR_RESPONSE.name, null
+                        )
+                    ).build()
+                }
             }
         }
     }
@@ -87,22 +101,10 @@ abstract class GematikIdpCardTypeBasedResource: GematikIDPResource() {
     @Path(GematikIdpLiterals.AUTHENTICATOR_NEXT_STEP)
     override fun nextStep(
         @QueryParam(OAuth2Constants.STATE) encodedState: String,
-    ): Response {
-        val authSession: AuthenticationSessionModel = try {
-            service.resolveAuthSessionFromEncodedState(realm, encodedState)
-        } catch (snfe: SessionNotFoundException) {
-            return handleSessionTimeout(snfe)
-        }  catch (e: Exception) {
-            return callback.error(config, "Failed to resolve auth session: ${e.message}")
-        }
-
-        return when (val step = GematikIDPUtil.getGematikIdpStepFrom(authSession)) {
+    ): Response = withAuthSessionAndLoginTimeout(encodedState) { authSession ->
+        when (val step = GematikIDPUtil.getGematikIdpStepFrom(authSession)) {
             GematikIDPStep.ERROR -> {
-                val error: String? = authSession.getAuthNote(GematikIdpLiterals.ERROR)
-                val errorDetails: String? = authSession.getAuthNote(GematikIdpLiterals.ERROR_DETAILS)
-                val errorUri: String? = authSession.getAuthNote(GematikIdpLiterals.ERROR_URI)
-
-                handleErrorWhenCalledFromBrowser(error, errorDetails, errorUri)
+                handleAuthenticatorError(authSession)
             }
 
             flowLastStep -> {
@@ -132,103 +134,131 @@ abstract class GematikIdpCardTypeBasedResource: GematikIDPResource() {
         @QueryParam(GematikIdpLiterals.CARD_TYPE) cardType: String?,
         @QueryParam(GematikIdpLiterals.ERROR) error: String?,
         @QueryParam(GematikIdpLiterals.ERROR_DETAILS) errorDetails: String?,
+        @QueryParam(GematikIdpLiterals.ERROR_DESCRIPTION) errorDescription: String?,
         @QueryParam(GematikIdpLiterals.ERROR_URI) errorUri: String?,
         @HeaderParam(HttpHeaders.USER_AGENT) userAgent: String?,
     ): Response {
-        val version = VersionFromUserAgentReader.readVersionFrom(userAgent)
-        GematikIDPUtil.addAuthenticatorVersionToMdc(version)
 
+        val errorMessage = errorDetails ?: errorDescription
         if (code.isNullOrEmpty() && encodedState.isNullOrEmpty()) {
-            return handleErrorWhenCalledFromBrowser(error, errorDetails, errorUri)
+            return handleErrorWhenCalledFromBrowser(error, errorMessage, errorUri)
         }
+        return withAuthSessionAndLoginTimeout(encodedState!!) { authSession ->
+            val version = authSession.getAuthenticatorVersionAuthNote()
+                .takeIf { !it.isNullOrBlank() }
+                ?.let(AuthenticatorVersion::from)
+                ?: VersionFromUserAgentReader.readVersionFrom(userAgent)
+            GematikIDPUtil.addAuthenticatorVersionToMdc(version)
 
-        val authSession: AuthenticationSessionModel = try {
-            service.resolveAuthSessionFromEncodedState(realm, encodedState!!)
-        } catch (snfe: SessionNotFoundException) {
-            return handleSessionTimeout(snfe)
-        } catch (e: Exception) {
-            return callback.error(config, "Failed to resolve auth session: ${e.message}")
-        }
+            val newAuthenticatorVersion = GematikIDPUtil.isNewAuthenticatorFlow(authSession, version, realm)
+            val errorResponse = getAuthenticatorErrorResponse(
+                authSession,
+                error,
+                errorMessage,
+                errorUri,
+                version,
+                cardType,
+                newAuthenticatorVersion
+            )
+            errorResponse ?: run {
+                if (!version.isNullOrEmpty()) {
+                    authSession.setAuthenticatorVersionAuthNote(version.toString())
+                }
+                val encodedStateToPass = encodedState.takeIf { newAuthenticatorVersion }
+                when (cardType) {
+                    AuthenticationCardType.HBA.typeName ->
+                        handleHbaResult(authSession, encodedStateToPass, code!!)
 
-        if (error != null || errorDetails != null || errorUri != null) {
-            if (error == GematikIdpLiterals.CONSENT_DECLINED_ERROR && errorDetails == GematikIdpLiterals.CONSENT_DECLINED_ERROR_DETAIL) {
-                return ErrorUtils.saveConsentDeclined(authSession)
+                    AuthenticationCardType.SMCB.typeName ->
+                        handleSmcbResult(authSession, encodedStateToPass, code!!)
+
+                    else -> callback.error(config, "invalid step for code $encodedState")
+                }
             }
-            return ErrorUtils.saveIdpErrorInAuthSession(authSession, error, errorDetails, errorUri)
+        }
+    }
+
+    private fun getAuthenticatorErrorResponse(
+        authSession: AuthenticationSessionModel,
+        error: String?,
+        errorDetails: String?,
+        errorUri: String?,
+        version: AuthenticatorVersion?,
+        cardType: String?,
+        newAuthenticatorVersion: Boolean,
+    ): Response? {
+        var errorResponse: Response? = null
+        if (!error.isNullOrBlank() || !errorDetails.isNullOrBlank() || !errorUri.isNullOrBlank()) {
+            errorResponse = if (error == GematikIdpLiterals.CONSENT_DECLINED_ERROR &&
+                errorDetails == GematikIdpLiterals.CONSENT_DECLINED_ERROR_DETAIL
+            ) {
+                ErrorUtils.saveConsentDeclined(authSession)
+            } else {
+                ErrorUtils.saveIdpErrorInAuthSession(
+                    authSession, error, errorDetails, errorUri
+                )
+            }
+        }
+        if (errorResponse == null && !verifyVersionCompatibility(version)) {
+            errorResponse =
+                ErrorUtils.saveUnsupportedAuthenticatorVersion(authSession, config.getAuthenticatorVersion())
         }
 
-        if (cardType.isNullOrEmpty() || !verifyVersionCompatibility(version)) {
-            return ErrorUtils.saveUnsupportedAuthenticatorVersion(authSession)
-        }
+        return if (newAuthenticatorVersion && errorResponse != null) {
+            handleAuthenticatorError(authSession)
+        } else errorResponse
+    }
 
-        GematikIDPUtil.setAuthenticatorVersionInAuthSession(version, authSession)
-        return when (cardType) {
-            AuthenticationCardType.HBA.typeName -> {
-                handleHbaResult(authSession, code!!, cardType)
-            }
-
-            AuthenticationCardType.SMCB.typeName -> {
-                handleSmcbResult(authSession, code!!, cardType)
-            }
-
-            else -> {
-                callback.error(config, "invalid step for code $encodedState")
-            }
-        }
+    private fun handleAuthenticatorError(authSession: AuthenticationSessionModel): Response {
+        val error: String? = authSession.getAuthNote(GematikIdpLiterals.ERROR)
+        val errorDetails: String? = authSession.getAuthNote(GematikIdpLiterals.ERROR_DETAILS)
+        val errorUri: String? = authSession.getAuthNote(GematikIdpLiterals.ERROR_URI)
+        return handleErrorWhenCalledFromBrowser(error, errorDetails, errorUri)
     }
 
     /**
-     * Generate the Authenticator url.
-     * redirectUri is our Keycloak instance /auth/realms/<realm>/broker/gematik-cidp/endpoint/result
-     * challengePath is the central IDP
+     * Generate status url for the new flow.
      */
-    override fun generateAuthenticatorUrl(encodedState: String, codeVerifier: String, cardType: String): URI {
-        val redirectUri = GematikIDPUtil.getEndpointUri(
-            session, realm, null, config, GematikIdpLiterals.RESULT_PATH
-        )
-        val challengePath = generateChallengePath(
-            redirectUri, encodedState, codeVerifier, cardType
-        )
-        val uriBuilder = handleAuthenticatorProtocol().queryParam(
-            GematikIdpLiterals.CHALLENGE_PATH, challengePath
-        ).queryParam(GematikIdpLiterals.CALLBACK, GematikAuthenticatorCallbackType.DIRECT.simpleName())
-
-        return uriBuilder.build()
-    }
-
-    private fun generateChallengePath(
-        redirectUri: URI,
-        encodedState: String,
-        codeVerifier: String,
-        cardType: String,
-    ): URI = UriBuilder.fromUri(config.getAuthenticatorAuthorizationUrl())
-        .queryParam(OAuth2Constants.CLIENT_ID, config.clientId)
-        .queryParam(OAuth2Constants.RESPONSE_TYPE, OAuth2Constants.CODE)
-        .queryParam(OAuth2Constants.REDIRECT_URI, redirectUri)
-        .queryParam(OAuth2Constants.STATE, encodedState)
-        .queryParam(GematikIdpLiterals.CARD_TYPE, cardType)
-        .queryParam(OAuth2Constants.SCOPE, escapeScope(config.defaultScope.trim()))
-        .queryParam(OAuth2Constants.CODE_CHALLENGE, PkceUtils.generateS256CodeChallenge(codeVerifier))
-        .queryParam(OAuth2Constants.CODE_CHALLENGE_METHOD, OAuth2Constants.PKCE_METHOD_S256)
-        .queryParam(OIDCLoginProtocol.NONCE_PARAM, Base64Url.encode(SecretGenerator.getInstance().randomBytes(16)))
-        .build()
+    override fun probeAuthenticatorServerUrl(authenticatorPort: Int): URI =
+        UriBuilder.fromUri("$LOCALHOST$authenticatorPort$STATUS_ENDPOINT").build()
 
     fun getClaimsMap(
         authSession: AuthenticationSessionModel,
         code: String,
-        cardType: String,
+        cardType: AuthenticationCardType,
     ): MutableMap<String, Any>? {
-        val codeVerifier: String = authSession.getAuthNote(GematikIdpLiterals.CODE_VERIFIER)
-            ?: return null
+        val codeVerifier: String = authSession.getCodeVerifierAuthNote() ?: return null
         val idToken = certificateService.fetchIdToken(codeVerifier, code)
-
-        val claimsMap = idToken.jwtClaims.claimsMap
-
-        logger.debug("$cardType-DATA: ${claimsMap.map { (k, v) -> "$k:$v\n" }}")
+        val claimsMap = idToken.jwtClaims.claimsMap ?: return null
+        logger.debug("${cardType.typeName}-DATA: ${claimsMap.map { (k, v) -> "$k:$v\n" }}")
         return claimsMap
     }
 
-    private fun verifyVersionCompatibility(version: AuthenticatorVersion?): Boolean {
-        return version?.isGreaterThenOrEqual(AuthenticatorVersion(4, 6, 0)) ?: false
+    fun storeClaimsMapInSession(
+        authSession: AuthenticationSessionModel,
+        cardType: AuthenticationCardType,
+        claimsMap: MutableMap<String, Any>,
+    ) {
+        when (cardType) {
+            AuthenticationCardType.SMCB -> {
+                authSession.setAuthNote(
+                    GematikIdpLiterals.SMCB_DATA,
+                    JsonSerialization.writeValueAsString(claimsMap)
+                )
+                authSession.setGematikIDPStepAuthNote(GematikIDPStep.RECEIVED_SMCB_DATA.name)
+            }
+
+            AuthenticationCardType.HBA -> {
+                authSession.setAuthNote(
+                    GematikIdpLiterals.HBA_DATA,
+                    JsonSerialization.writeValueAsString(claimsMap)
+                )
+                authSession.setGematikIDPStepAuthNote(GematikIDPStep.RECEIVED_HBA_DATA.name)
+            }
+        }
     }
+
+    private fun verifyVersionCompatibility(version: AuthenticatorVersion?): Boolean =
+        version?.isGreaterThenOrEqual(AuthenticatorVersion.from(config.getAuthenticatorVersion())) ?: false
+
 }

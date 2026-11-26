@@ -6,16 +6,12 @@
 package de.bdr.servko.keycloak.gematik.idp.rest
 
 import de.bdr.servko.keycloak.gematik.idp.GematikIDP
-import de.bdr.servko.keycloak.gematik.idp.model.AuthenticationFlowType
-import de.bdr.servko.keycloak.gematik.idp.model.ContextData
-import de.bdr.servko.keycloak.gematik.idp.model.GematikIDPConfig
-import de.bdr.servko.keycloak.gematik.idp.model.GematikIDPStep
+import de.bdr.servko.keycloak.gematik.idp.model.*
 import de.bdr.servko.keycloak.gematik.idp.service.GematikIDPService
 import de.bdr.servko.keycloak.gematik.idp.service.GematikIdpCertificateService
 import de.bdr.servko.keycloak.gematik.idp.util.ErrorUtils
 import de.bdr.servko.keycloak.gematik.idp.util.GematikIDPUtil
 import de.bdr.servko.keycloak.gematik.idp.util.GematikIdpLiterals
-import jakarta.ws.rs.core.MediaType
 import jakarta.ws.rs.core.Response
 import org.jboss.logging.Logger
 import org.keycloak.broker.provider.UserAuthenticationIdentityProvider
@@ -23,7 +19,6 @@ import org.keycloak.forms.login.LoginFormsProvider
 import org.keycloak.models.KeycloakSession
 import org.keycloak.models.RealmModel
 import org.keycloak.sessions.AuthenticationSessionModel
-import org.keycloak.util.JsonSerialization
 
 class GematikIDPSmcbResource(
     override val realm: RealmModel,
@@ -35,22 +30,14 @@ class GematikIDPSmcbResource(
     override val forms: LoginFormsProvider = session.getProvider(LoginFormsProvider::class.java),
     override val certificateService: GematikIdpCertificateService,
     override val initialStepName: String = GematikIDPStep.REQUESTED_SMCB_DATA.name,
-    override val initialCardType: String = AuthenticationFlowType.SMCB.typeName,
+    override val initialFlowCardType: AuthenticationFlowType = AuthenticationFlowType.SMCB,
+    override val startingCardType: AuthenticationCardType = AuthenticationCardType.SMCB,
     override val flowLastStep: GematikIDPStep = GematikIDPStep.RECEIVED_SMCB_DATA,
 ) : GematikIdpCardTypeBasedResource() {
     override val logger: Logger = Logger.getLogger(this::class.java)
 
-    override fun handleHbaResult(authSession: AuthenticationSessionModel, code: String, cardType: String) =
-        ErrorUtils.saveCardTypeError(authSession, cardType)
-
-    override fun handleSmcbResult(authSession: AuthenticationSessionModel, code: String, cardType: String): Response {
-        val claimsMap = getClaimsMap(authSession, code, cardType)
-
-        authSession.setAuthNote(GematikIdpLiterals.SMCB_DATA, JsonSerialization.writeValueAsString(claimsMap))
-        authSession.setAuthNote(GematikIdpLiterals.GEMATIK_IDP_STEP, GematikIDPStep.RECEIVED_SMCB_DATA.name)
-
-        return Response.ok().type(MediaType.APPLICATION_JSON_TYPE).build()
-    }
+    override fun handleHbaResult(authSession: AuthenticationSessionModel, encodedState: String?, code: String) =
+        ErrorUtils.saveCardTypeError(authSession, AuthenticationCardType.HBA.typeName)
 
     override fun finalizeLogin(authSession: AuthenticationSessionModel): Response {
         val smcbData = GematikIDPUtil.getCertificateDataFromAuthNote(authSession, GematikIdpLiterals.SMCB_DATA)

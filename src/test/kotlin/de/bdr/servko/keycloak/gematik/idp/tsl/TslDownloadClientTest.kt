@@ -11,10 +11,10 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.NullAndEmptySource
-import org.keycloak.broker.provider.util.SimpleHttp
+import org.keycloak.http.simple.SimpleHttp
+import org.keycloak.http.simple.SimpleHttpRequest
+import org.keycloak.http.simple.SimpleHttpResponse
 import org.keycloak.models.KeycloakSession
-import org.mockito.ArgumentMatchers.any
-import org.mockito.ArgumentMatchers.anyString
 import org.mockito.Mockito.mockStatic
 import org.mockito.kotlin.*
 import java.io.IOException
@@ -23,13 +23,16 @@ class TslDownloadClientTest {
 
     private val session = mock<KeycloakSession>()
 
-    val response = mock<SimpleHttp.Response> {
+    val response = mock<SimpleHttpResponse> {
         on { status } doReturn 200
         on { asString() } doReturn ""
     }
-    val mockHttp = mock<SimpleHttp> {
+    val mockHttpRequest = mock<SimpleHttpRequest> {
         on { header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_XML) } doReturn this.mock
         on { asResponse() } doReturn response
+    }
+    val mockSimpleHttp = mock<SimpleHttp> {
+        on { doGet(eq("tslUrl")) } doReturn mockHttpRequest
     }
 
     @ParameterizedTest
@@ -46,8 +49,8 @@ class TslDownloadClientTest {
     fun `fetchTsl - with primary url - success`() {
         mockStatic(SimpleHttp::class.java).use { mockedStatic ->
             mockedStatic.`when`<Any> {
-                SimpleHttp.doGet(eq("tslUrl"), any())
-            }.thenReturn(mockHttp)
+                SimpleHttp.create(session)
+            }.thenReturn(mockSimpleHttp)
 
             val tslDownloadClient = TslDownloadClient(session, "tslUrl", null)
             val result = tslDownloadClient.fetchTsl()
@@ -59,22 +62,24 @@ class TslDownloadClientTest {
 
     @Test
     fun `fetchTsl - with fallback url - success`() {
-        val response2 = mock<SimpleHttp.Response> {
+        val fallbackResponse = mock<SimpleHttpResponse> {
             on { status } doReturn 200
             on { asString() } doReturn ""
         }
-        val mockHttp2 = mock<SimpleHttp> {
+        val fallbackRequest = mock<SimpleHttpRequest> {
             on { header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_XML) } doReturn this.mock
-            on { asResponse() } doReturn response2
+            on { asResponse() } doReturn fallbackResponse
         }
-
+        val fallbackSimpleHttp = mock<SimpleHttp> {
+            on { doGet(eq("tslBackupUrl")) } doReturn fallbackRequest
+        }
         mockStatic(SimpleHttp::class.java).use { mockedStatic ->
             mockedStatic.`when`<Any> {
-                SimpleHttp.doGet(anyString(), any())
-            }.thenReturn(mockHttp)
-                .thenReturn(mockHttp2)
+                SimpleHttp.create(session)
+            }
+                .thenReturn(mockSimpleHttp) // first call → primary
+                .thenReturn(fallbackSimpleHttp)  // second call → fallback
             whenever(response.status) doReturn 503
-
 
             val tslDownloadClient = TslDownloadClient(session, "tslUrl", "tslBackupUrl")
             val result = tslDownloadClient.fetchTsl()
@@ -88,11 +93,11 @@ class TslDownloadClientTest {
     fun `fetchTsl - response not ok - failure`() {
         mockStatic(SimpleHttp::class.java).use { mockedStatic ->
             mockedStatic.`when`<Any> {
-                SimpleHttp.doGet(anyString(), any())
-            }.thenReturn(mockHttp)
+                SimpleHttp.create(session)
+            }.thenReturn(mockSimpleHttp)
             whenever(response.status) doReturn 500
 
-            val tslDownloadClient = TslDownloadClient(session, "tslUrl", "tslBackupUrl")
+            val tslDownloadClient = TslDownloadClient(session, "tslUrl", null)
             val result = tslDownloadClient.fetchTsl()
 
             // assert
@@ -104,11 +109,11 @@ class TslDownloadClientTest {
     fun `fetchTsl - IOException - failure`() {
         mockStatic(SimpleHttp::class.java).use { mockedStatic ->
             mockedStatic.`when`<Any> {
-                SimpleHttp.doGet(anyString(), any())
-            }.thenReturn(mockHttp)
-            whenever(mockHttp.asResponse()) doThrow IOException()
+                SimpleHttp.create(session)
+            }.thenReturn(mockSimpleHttp)
+            whenever(mockHttpRequest.asResponse()) doThrow IOException()
 
-            val tslDownloadClient = TslDownloadClient(session, "tslUrl", "tslBackupUrl")
+            val tslDownloadClient = TslDownloadClient(session, "tslUrl", null)
 
             val result = tslDownloadClient.fetchTsl()
 

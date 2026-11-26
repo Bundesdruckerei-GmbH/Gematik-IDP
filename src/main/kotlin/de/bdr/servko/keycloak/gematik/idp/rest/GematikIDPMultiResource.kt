@@ -6,14 +6,10 @@
 package de.bdr.servko.keycloak.gematik.idp.rest
 
 import de.bdr.servko.keycloak.gematik.idp.GematikIDP
-import de.bdr.servko.keycloak.gematik.idp.model.AuthenticationFlowType
-import de.bdr.servko.keycloak.gematik.idp.model.ContextData
-import de.bdr.servko.keycloak.gematik.idp.model.GematikIDPConfig
-import de.bdr.servko.keycloak.gematik.idp.model.GematikIDPStep
+import de.bdr.servko.keycloak.gematik.idp.model.*
 import de.bdr.servko.keycloak.gematik.idp.service.GematikIDPService
 import de.bdr.servko.keycloak.gematik.idp.service.GematikIdpCertificateService
-import de.bdr.servko.keycloak.gematik.idp.util.GematikIDPUtil
-import de.bdr.servko.keycloak.gematik.idp.util.GematikIdpLiterals
+import de.bdr.servko.keycloak.gematik.idp.util.*
 import jakarta.ws.rs.core.MediaType
 import jakarta.ws.rs.core.Response
 import org.jboss.logging.Logger
@@ -22,7 +18,6 @@ import org.keycloak.forms.login.LoginFormsProvider
 import org.keycloak.models.KeycloakSession
 import org.keycloak.models.RealmModel
 import org.keycloak.sessions.AuthenticationSessionModel
-import org.keycloak.util.JsonSerialization
 
 class GematikIDPMultiResource(
     override val realm: RealmModel,
@@ -34,28 +29,35 @@ class GematikIDPMultiResource(
     override val forms: LoginFormsProvider = session.getProvider(LoginFormsProvider::class.java),
     override val certificateService: GematikIdpCertificateService,
     override val initialStepName: String = GematikIDPStep.REQUESTED_HBA_DATA.name,
-    override val initialCardType: String = AuthenticationFlowType.MULTI.typeName,
+    override val initialFlowCardType: AuthenticationFlowType = AuthenticationFlowType.MULTI,
+    override val startingCardType: AuthenticationCardType = AuthenticationCardType.HBA,
     override val flowLastStep: GematikIDPStep = GematikIDPStep.RECEIVED_SMCB_DATA,
 ) : GematikIdpCardTypeBasedResource() {
     override val logger: Logger = Logger.getLogger(this::class.java)
 
-    override fun handleHbaResult(authSession: AuthenticationSessionModel, code: String, cardType: String): Response {
-        val claimsMap = getClaimsMap(authSession, code, cardType)
+    override fun handleHbaResult(
+        authSession: AuthenticationSessionModel,
+        encodedState: String?,
+        code: String,
+    ): Response = storeClaimsAndStartNextStep(authSession, code, AuthenticationCardType.HBA) { continueWithSmcbCard(authSession, encodedState) }
 
-        authSession.setAuthNote(GematikIdpLiterals.HBA_DATA, JsonSerialization.writeValueAsString(claimsMap))
-        authSession.setAuthNote(GematikIdpLiterals.GEMATIK_IDP_STEP, GematikIDPStep.RECEIVED_HBA_DATA.name)
-
-        return Response.ok().type(MediaType.APPLICATION_JSON_TYPE).build()
-    }
-
-    override fun handleSmcbResult(authSession: AuthenticationSessionModel, code: String, cardType: String): Response {
-        val claimsMap = getClaimsMap(authSession, code, cardType)
-
-        authSession.setAuthNote(GematikIdpLiterals.SMCB_DATA, JsonSerialization.writeValueAsString(claimsMap))
-        authSession.setAuthNote(GematikIdpLiterals.GEMATIK_IDP_STEP, GematikIDPStep.RECEIVED_SMCB_DATA.name)
-
-        return Response.ok().type(MediaType.APPLICATION_JSON_TYPE).build()
-    }
+    private fun continueWithSmcbCard(authSession: AuthenticationSessionModel, encodedState: String?): Response = encodedState?.let {
+        val handshakeId = authSession.getHandshakeIdAuthNote()
+        val codeVerifier = authSession.getCodeVerifierAuthNote()
+        val authenticatorPort = authSession.getAuthenticatorPortAuthNote()
+        return if (authenticatorPort != null && handshakeId != null && codeVerifier != null) {
+            val authorizeUrl = generateAuthorizeUrl(
+                encodedState,
+                codeVerifier,
+                AuthenticationCardType.SMCB,
+                authenticatorPort,
+                handshakeId
+            )
+            Response.seeOther(authorizeUrl).build()
+        } else {
+            getMissingDataResponse()
+        }
+    } ?: Response.ok().type(MediaType.APPLICATION_JSON_TYPE).build()
 
     override fun finalizeLogin(authSession: AuthenticationSessionModel): Response {
         val hbaData = GematikIDPUtil.getCertificateDataFromAuthNote(authSession, GematikIdpLiterals.HBA_DATA)
@@ -65,12 +67,14 @@ class GematikIDPMultiResource(
 
         val telematikId = hbaData[ContextData.CONTEXT_HBA_TELEMATIK_ID.claim.value] as String
 
-        return callback.authenticated(initIdentityContext(
-            telematikId = telematikId,
-            authSession = authSession,
-            hbaData = hbaData,
-            smcbData = smcbData
-        ))
+        return callback.authenticated(
+            initIdentityContext(
+                telematikId = telematikId,
+                authSession = authSession,
+                hbaData = hbaData,
+                smcbData = smcbData
+            )
+        )
     }
 
 }

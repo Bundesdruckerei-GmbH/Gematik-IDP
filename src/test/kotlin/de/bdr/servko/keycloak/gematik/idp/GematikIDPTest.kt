@@ -8,7 +8,9 @@ package de.bdr.servko.keycloak.gematik.idp
 import de.bdr.servko.keycloak.gematik.idp.model.GematikIDPConfig
 import de.bdr.servko.keycloak.gematik.idp.model.GematikIDPState
 import de.bdr.servko.keycloak.gematik.idp.rest.GematikIDPResource
+import de.bdr.servko.keycloak.gematik.idp.util.GematikIdpLiterals
 import de.bdr.servko.keycloak.gematik.idp.validation.GematikIdpCertificateValidatorProvider
+import jakarta.ws.rs.core.MultivaluedMap
 import jakarta.ws.rs.core.Response
 import jakarta.ws.rs.core.UriBuilder
 import org.assertj.core.api.Assertions.assertThat
@@ -23,22 +25,12 @@ import org.keycloak.broker.provider.UserAuthenticationIdentityProvider
 import org.keycloak.broker.provider.util.IdentityBrokerState
 import org.keycloak.events.EventBuilder
 import org.keycloak.forms.login.LoginFormsProvider
-import org.keycloak.models.IdentityProviderModel
-import org.keycloak.models.IdentityProviderSyncMode
-import org.keycloak.models.KeycloakContext
-import org.keycloak.models.KeycloakSession
-import org.keycloak.models.KeycloakUriInfo
-import org.keycloak.models.RealmModel
-import org.keycloak.models.UserModel
+import org.keycloak.models.*
 import org.keycloak.sessions.AuthenticationSessionModel
 import org.keycloak.sessions.AuthenticationSessionProvider
 import org.keycloak.sessions.RootAuthenticationSessionModel
 import org.mockito.ArgumentMatchers.anyString
-import org.mockito.kotlin.doReturn
-import org.mockito.kotlin.mock
-import org.mockito.kotlin.never
-import org.mockito.kotlin.verify
-import org.mockito.kotlin.whenever
+import org.mockito.kotlin.*
 import java.net.URI
 import java.util.*
 
@@ -79,8 +71,18 @@ internal class GematikIDPTest {
                     UUID.randomUUID().toString(), null, clientId, tabId, clientData
                 )
     }
+
+    private val queryParamsMock = mock<MultivaluedMap<String, String>> {
+        on { getFirst(GematikIdpLiterals.AUTHENTICATOR_PORT) } doReturn "8083"
+        on { getFirst(GematikIdpLiterals.HANDSHAKE_ID) } doReturn "4dg578hs"
+        on { getFirst(GematikIdpLiterals.AUTHENTICATOR_VERSION_PARAM) } doReturn "4.17.1"
+    }
+
     private val keycloakUriInfo = mock<KeycloakUriInfo> {
+        // Provide a base URI builder for constructing redirect URLs
         on { baseUriBuilder } doReturn UriBuilder.fromUri("http://localhost:8080")
+        // Ensure queryParameters is non‑null to avoid NPE in performLogin.
+        on { queryParameters } doReturn queryParamsMock
     }
     private val keycloakContext = mock<KeycloakContext> {
         on { uri } doReturn keycloakUriInfo
@@ -90,7 +92,6 @@ internal class GematikIDPTest {
         on { context } doReturn keycloakContext
         on { authenticationSessions() } doReturn authSessionProvider
     }
-
     private val objectUnderTest: GematikIDP = GematikIDP(session, config)
 
     @Test
@@ -98,13 +99,103 @@ internal class GematikIDPTest {
         val performLogin = objectUnderTest.performLogin(request)
         assertThat(performLogin.status).isEqualTo(Response.Status.SEE_OTHER.statusCode)
         assertThat(performLogin.location).isEqualTo(URI.create("http://localhost:8080/realms/$realmName/broker/$idpAlias/endpoint/startAuth?state=$state"))
+        // Verify that the authenticatorPort auth note was set correctly.
+        verify(authSession).setAuthNote(
+            GematikIdpLiterals.AUTHENTICATOR_PORT,
+            "8083"
+        )
+        verify(authSession).setAuthNote(
+            GematikIdpLiterals.HANDSHAKE_ID,
+            "4dg578hs"
+        )
+    }
+
+    @Test
+    fun `performLogin() succeeds without handshake id and authenticator version`() {
+        val queryParamsMockMinimal = mock<MultivaluedMap<String, String>> {
+            on { getFirst(GematikIdpLiterals.AUTHENTICATOR_PORT) } doReturn "8083"
+            on { getFirst(GematikIdpLiterals.HANDSHAKE_ID) } doReturn ""
+            on { getFirst(GematikIdpLiterals.AUTHENTICATOR_VERSION_PARAM) } doReturn ""
+        }
+        val keycloakUriInfoMinimal = mock<KeycloakUriInfo> {
+            // Provide a base URI builder for constructing redirect URLs
+            on { baseUriBuilder } doReturn UriBuilder.fromUri("http://localhost:8080")
+            // Ensure queryParameters is non‑null to avoid NPE in performLogin.
+            on { queryParameters } doReturn queryParamsMockMinimal
+        }
+        val keycloakContextMinimal = mock<KeycloakContext> {
+            on { uri } doReturn keycloakUriInfoMinimal
+            on { realm } doReturn realm
+        }
+        val sessionMinimal = mock<KeycloakSession> {
+            on { context } doReturn keycloakContextMinimal
+            on { authenticationSessions() } doReturn authSessionProvider
+        }
+        val objectUnderTestMinimal = GematikIDP(sessionMinimal, config)
+        val performLogin = objectUnderTestMinimal.performLogin(request)
+        assertThat(performLogin.status).isEqualTo(Response.Status.SEE_OTHER.statusCode)
+        assertThat(performLogin.location).isEqualTo(URI.create("http://localhost:8080/realms/$realmName/broker/$idpAlias/endpoint/startAuth?state=$state"))
+        // Verify that the authenticatorPort auth note was set correctly.
+        verify(authSession).setAuthNote(
+            GematikIdpLiterals.AUTHENTICATOR_PORT,
+            "8083"
+        )
+        verify(authSession, never())
+            .setAuthNote(eq(GematikIdpLiterals.HANDSHAKE_ID), anyString())
+        verify(authSession, never())
+            .setAuthNote(eq(GematikIdpLiterals.AUTHENTICATOR_VERSION), anyString())
+    }
+
+    @Test
+    fun `performLogin returns BAD_REQUEST for invalid authenticatorPort`() {
+        // Setup a request where the authenticatorPort parameter is invalid (non‑numeric).
+        val invalidQueryParams = mock<MultivaluedMap<String, String>> {
+            on { getFirst(GematikIdpLiterals.AUTHENTICATOR_PORT) } doReturn "notANumber"
+        }
+        // For the invalid case we need a separate authentication session mock to avoid interference with the
+        // happy‑path verification that already called `setAuthNote` on `authSession`.
+        val authSessionInvalid = mock<AuthenticationSessionModel> {
+            on { realm } doReturn realm
+            on { parentSession } doReturn rootAuthSessionMock
+        }
+        val requestInvalid = mock<AuthenticationRequest> {
+            on { authenticationSession } doReturn authSessionInvalid
+            on { state } doReturn IdentityBrokerState.decoded(
+                UUID.randomUUID().toString(), null, clientId, tabId, clientData
+            )
+        }
+        val invalidKeycloakUriInfo = mock<KeycloakUriInfo> {
+            on { baseUriBuilder } doReturn UriBuilder.fromUri("http://localhost:8080")
+            on { queryParameters } doReturn invalidQueryParams
+        }
+        val invalidKeycloakContext = mock<KeycloakContext> {
+            on { uri } doReturn invalidKeycloakUriInfo
+            on { realm } doReturn realm
+        }
+        val invalidSession = mock<KeycloakSession> {
+            on { context } doReturn invalidKeycloakContext
+            on { authenticationSessions() } doReturn authSessionProvider
+        }
+        val underTest = GematikIDP(invalidSession, config)
+
+        // Act
+        val response = underTest.performLogin(requestInvalid)
+
+        //Assert
+        assertThat(response.status).isEqualTo(Response.Status.BAD_REQUEST.statusCode)
+        assertThat(response.entity).isEqualTo("Invalid authenticatorPort")
+        // No auth note should be set for the invalid case.
+        verify(authSessionInvalid, never()).setAuthNote(eq(GematikIdpLiterals.AUTHENTICATOR_PORT), any())
+        // No additional auth note should be set for the invalid case (the existing mock records only the happy‑path interaction).
     }
 
     @Test
     fun callback() {
         val certificateValidator = mock<GematikIdpCertificateValidatorProvider>()
         val formsProvider = mock<LoginFormsProvider>()
-        whenever(session.getProvider(GematikIdpCertificateValidatorProvider::class.java)).thenReturn(certificateValidator)
+        whenever(session.getProvider(GematikIdpCertificateValidatorProvider::class.java)).thenReturn(
+            certificateValidator
+        )
         whenever(session.getProvider(LoginFormsProvider::class.java)).thenReturn(formsProvider)
         val authenticationCallback = mock<UserAuthenticationIdentityProvider.AuthenticationCallback>()
         val eventBuilder = mock<EventBuilder>()

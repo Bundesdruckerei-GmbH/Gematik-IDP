@@ -12,7 +12,9 @@ enum class AuthenticatorErrorTypes(var error: String) {
     UNSUPPORTED_CARD_TYPE("authenticator.unsupportedCardType"),
     UNSUPPORTED_AUTHENTICATOR_VERSION("authenticator.unsupportedAuthenticatorVersion"),
     CONSENT_DECLINED("authenticator.consentDeclined"),
-    ERROR_IDP("authenticator.errorIdp");
+    ERROR_IDP("authenticator.errorIdp"),
+    MISSING_DATA("authenticator.missingData"),
+    UNAUTHORIZED("authenticationFailed");
 
     companion object {
         fun valueOf(type: String?): AuthenticatorErrorTypes {
@@ -23,6 +25,8 @@ enum class AuthenticatorErrorTypes(var error: String) {
                 UNSUPPORTED_AUTHENTICATOR_VERSION.error -> UNSUPPORTED_AUTHENTICATOR_VERSION
                 UNSUPPORTED_CARD_TYPE.error -> UNSUPPORTED_CARD_TYPE
                 CONSENT_DECLINED.error -> CONSENT_DECLINED
+                MISSING_DATA.error -> MISSING_DATA
+                UNAUTHORIZED.error -> UNAUTHORIZED
                 else -> ERROR_IDP
             }
         }

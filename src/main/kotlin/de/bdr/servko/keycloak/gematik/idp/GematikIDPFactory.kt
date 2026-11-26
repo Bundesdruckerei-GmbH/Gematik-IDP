@@ -22,6 +22,7 @@ import org.keycloak.provider.ProviderConfigurationBuilder
 import org.keycloak.provider.ServerInfoAwareProviderFactory
 import java.net.UnknownHostException
 import java.security.cert.CertificateException
+import javax.net.ssl.SSLHandshakeException
 import java.time.Clock
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
@@ -83,8 +84,13 @@ class GematikIDPFactory : AbstractIdentityProviderFactory<GematikIDP>(), ServerI
     override fun getConfigProperties(): MutableList<ProviderConfigProperty> =
         ProviderConfigurationBuilder.create()
             .authenticationFlow()
+            .authenticatorVersion()
             .authenticatorAuthorizationUrl()
+            .loginTimeoutMs()
             .timeoutMs()
+            .authenticatorPortRangeStart()
+            .authenticatorPortRangeEnd()
+            .authenticatorHttpServerTimeoutMs()
             .openidConfigUrl()
             .validateTokenSignerCertificate()
             .validateOpenIDConfigSigningCertificate()
@@ -111,7 +117,7 @@ class GematikIDPFactory : AbstractIdentityProviderFactory<GematikIDP>(), ServerI
         } catch (e: Exception) {
             when (e) {
                 // catch exception to be able to open configuration page
-                is UnknownHostException, is JoseException, is CertificateException -> {
+                is UnknownHostException, is JoseException, is CertificateException, is SSLHandshakeException -> {
                     logger.warn("Failed to fetch openid configuration from $url", e)
                     null
                 }
